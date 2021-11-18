@@ -1,0 +1,47 @@
+#!/bin/bash
+set -e
+
+THIS_DIR=$(dirname $(realpath "$0"))
+
+set -e
+
+. "$THIS_DIR/../lib/aws-environment.sh"
+. "$THIS_DIR/../lib/aws-sso-setup.sh"
+. "$THIS_DIR/../lib/gr-ecr-login.sh"
+
+function entrypoint() {
+
+    local help_message cmd
+
+    case "$1" in
+    -h | --help)
+        help_message=true
+        shift
+        ;;
+    aws)
+        shift
+        aws-environment $@
+        exit 0
+        ;;
+    *) ;;
+    esac
+
+    #######
+    # HELP TEXT
+    #######
+    if [[ ! -z $help_message ]]; then
+        local format
+        format="    %-18s\\t%10s\\n"
+        echo "This is a wrapper for various Included Health engineering tools."
+        echo "Usage: ih {tool} {tool arguments}"
+        echo "Tools:"
+        printf "$format" "aws" "Configure AWS environment. This replaces the aws-environment command."
+        exit 0
+    fi
+
+    echo "Invalid args, use --help for help."
+    exit 1
+
+}
+
+entrypoint "$@"
