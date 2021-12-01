@@ -1,0 +1,1182 @@
+#!/usr/bin/env bash
+
+###############################################################################
+
+# File           :  bootstrap
+
+# Description    :  Bootstrap for setup for dev environment; covers terminal setup, GitHub, and role specific options
+
+# Author         :  Kory Hunter, Lucas Cantor & Miah Bentley - for Grand Rounds, Inc.
+
+# Original Date  :  2020.09.17
+
+# About          :  Hackathon Fall 2020 project to re-work the bootrstrap
+
+# Notes          :
+
+
+###############################################################################
+
+# Interface to handle setup
+
+# show help file
+function help() {
+    OUTPUT="
+Sets up and configures the shell environment and tooling for a user workstation.
+
+OPTIONS:
+
+   f)  Full Setup, start to finish
+
+   b)  Configure Zsh/Bash Setup
+            - Backup old profiles and create new ones with our default configuration
+
+   g)  Create Github Config
+            - Create a basic github config file with our default settings
+
+   s)  Configure SSH key
+            - Create a 4k ssh key if you don't have one
+
+   w)  Setup Github Web Access
+            - Walk through setting up github with your ssh and gpg keys
+
+   t)  Setup Team Specific Repos and Configurations
+            - Select from available teams, run their bootstrap and setup their packages and pip requirements
+                *NOTE: Requires Github web access and engineering repo first
+
+   c)  Setup for AWS Credentials
+            - Just makes the hidden folder where your AWS creds should live
+
+   e)  Source Engineering bash files
+            - Symlinks bash files from the engineering repo and sources them to your shell
+
+   d)  Install Brew/apt packages (included in option t)
+            - Installs global engineering and team specific packages
+
+   v)  Install Python Versions
+            - Installs base python versions and pyenv to manage them
+
+   m)  Install PIP Modules (included in option t)
+            - Installs global engineering and team specific pip requirements
+
+   r)  Setup Github Repos (included in option t)
+            - Lets you choose your team and clone their repos
+
+   a)  Setup AWS Access
+            - prompts you for intial AWS initialization
+
+   x)  Setup .bashrc
+            - Create a new rc with our default configuration, or append to an existing one
+   z)  Setup .zshrc
+            - Create a new rc with our default configuration, or append to an existing one
+
+"
+echo "$OUTPUT"
+}
+
+###############################################################################
+# Team Options
+
+# Define array for user selected teams
+selected_teams_list=()
+
+# Index array to allow user to select
+function do_select_teams() {
+
+    # Create an array from teams listed in /engineering/bootstrap/teams
+    teams_array=(${GR_HOME}/engineering/bootstrap/teams/*/)
+
+    echo "Please enter a number for a team from this list."
+    sleep 1
+
+    for i in "${!teams_array[@]}" # Display team list with index
+    do
+        echo "$i $(basename ${teams_array[$i]})"
+    done
+
+    read -p "Enter number next to a team: " INDEX # Prompt User for team
+    TEAM=${teams_array[$INDEX]}
+    team_check teams_array"${TEAM}" # Check user input using function to compare to array
+    until [ $? -eq 0 ]; do # Until there is a match with array
+        echo -e "Incorrect team entered, try again." # Notify user match not successful
+        read -p "Please Enter Team: " INDEX
+        TEAM=${teams_array[$INDEX]}
+        team_check teams_array"${TEAM}"
+    done
+    selected_teams_list+=("$(basename ${TEAM})")
+    echo ""
+}
+
+# Confirm teams against array
+function team_check() {
+    local ARRAY="$1[@]"
+    local IN=1
+    for i in "${!ARRAY}"; do
+        if [[ $i == "$TEAMS" ]]; then
+            IN=0
+            break
+        fi
+    done
+    return $IN
+}
+
+# Confirm selected teams with user
+function do_confirm_teams() {
+    if [[ "${#selected_teams_list[@]}" -gt 0 ]]; then
+        local confirmation
+        echo "Please confirm the teams you've selected."
+        for team_name in "${selected_teams_list[@]}"; do
+            echo "${team_name}"
+        done
+
+        read -p "Does this look correct? (y/n)? " confirmation
+                until [ "$confirmation" = "y" ]; do
+                    echo "Let's try again."
+                    sleep 1
+                    unset selected_teams_list
+                    do_team_setup
+                    read -p "Does this look correct? (y/n)? " confirmation
+                done
+    fi
+}
+
+# Request user to define team(s)
+function do_define_teams () {
+    local response
+    read -p "Would you like to add one or more team specific configurations? (y/n)? " response
+    case "$response" in
+        [yY])
+            local answer
+            do_select_teams
+            read -p "Would you like to add more teams? (y/n)? " answer
+            until [ "$answer" = "n" ]; do
+                do_select_teams
+                read -p "Would you like to add more teams? (y/n)? " answer
+            done
+
+        ;;
+
+        [nN])
+            echo "Alright, we won't add any teams to the setup this time."
+        ;;
+
+        *)
+            echo "You've selected an invalid response, try again."
+            do_team_setup
+        ;;
+    esac
+    echo ""
+}
+
+# Define and confirm teams
+function do_team_setup() {
+    print_header "Starting Team Selection"
+    do_define_teams
+    do_confirm_teams
+    echo ""
+}
+
+# Run bootstrap for each team defined
+function do_team_bootstraps () {
+    for team_name in "${selected_teams_list[@]}"; do
+        if [ -e "${GR_HOME}/engineering/bootstrap/teams/$team_name/bootstrap" ]; then
+            print_header "Running bootstrap script for $team_name:"
+            /bin/bash "${GR_HOME}/engineering/bootstrap/teams/$team_name/bootstrap"
+        else
+            echo "Error: no bootstrap script found for $team_name"
+        fi
+    done
+    echo ""
+}
+
+# Formatting for headers
+function print_header() {
+    section="${1}"
+    pad_length=$(((100 - ${#section}) / 2))
+    padding=""
+    for ((x=1; x <= pad_length; x++)); do
+        padding+="="
+    done
+    echo "${padding} ${section} ${padding}"
+}
+
+# Detect platform
+function check_which_platform() {
+    platform="$(uname)"
+    case "${platform}" in
+        Darwin)
+            echo "Platform detected: OS X"
+            return 0
+            ;;
+        Linux)
+            echo "Platform detected: Linux"
+            return 1
+            ;;
+        *)
+            echo "Platform not supported"
+            exit 1
+            ;;
+    esac
+}
+
+# Prompt the user if they need a full setup or would like to see options
+function prompt_is_full_setup() {
+    echo ""
+    echo "Are we doing a full workstation setup or do you need to see your options?"
+    read -p "Enter (f) for a full setup or (o) to see your options: " full_setup_result
+    echo ""
+}
+
+# Prompt user if okay to proceed
+function confirm() {
+    local action="${1}"
+    local response
+    echo "${action}"
+    echo "OK to proceed? (y/n)?: "
+    read -sn1 response
+    case "${response}" in
+        [yY])
+            return 0
+        ;;
+        *)
+            return 1
+        ;;
+    esac
+
+}
+
+# Get name from system whoami
+function get_name_osx() {
+    full_name="$(id -F)"
+}
+
+# Get name from system whoami
+function get_name_lnx() {
+    gecos_name="$(getent passwd "$(whoami)" | cut -d ':' -f 5 | cut -d ',' -f1)"
+    if [[ -n "${gecos_name}" ]]; then
+        full_name="${gecos_name}"
+    else
+        echo "Can't find real name ..."
+        fix_name
+    fi
+}
+
+# Allow user to enter own name (Linux only)
+function fix_name() {
+    echo "Please enter or correct your name"
+    sudo chfn "${USER}"
+
+}
+
+# Set up user's name and associated info
+function parse_name_info() {
+    local names=(${full_name})
+    email_domain="grandrounds.com"
+
+    echo ""
+    echo "Welcome ${names[0]}"
+
+    # Add test to see if initials are already set in the environment, otherwise prompt
+    if [[ -z ${INITIALS+x} ]]; then
+        read -p "What is your middle initial? " middle_i
+    else
+        middle_i="${INITIALS:1:1}"
+    fi
+
+    inits="${names[0]:0:1}${middle_i}${names[1]:0:1}"
+    inits="$(tr '[:lower:]' '[:upper:]' <<< "${inits}")"
+
+    username="${names[0]:0:1}${names[1]}"
+    username="$(tr '[:upper:]' '[:lower:]' <<< "${username}")"
+
+    dot_name="$(tr '[:upper:]' '[:lower:]' <<< "${full_name}" | tr -d '[:punct:]' | tr ' ' \.)"
+
+    email_addy="${dot_name}@${email_domain}"
+
+}
+
+# Parse and display user's name/name-based info
+function do_name_stuff() {
+    if [[ "${platform}" = "Darwin" ]]; then
+        get_name_osx
+    else
+        get_name_lnx
+    fi
+    parse_name_info
+
+    echo ""
+    echo "Username: ${username}"
+    echo "Initials: ${inits}"
+    echo "Dot Name: ${dot_name}"
+    echo "Email: ${email_addy}"
+
+    confirm "If the above information should be changed, please contact a member of our IT team before proceeding."
+    confirm_name_result=$?
+    if [[ ${confirm_name_result} -ne 0 ]]; then
+        exit 1
+    fi
+    echo ""
+}
+
+# Set up standard zprofile config to point to bash
+function std_zprofile() {
+
+    cat <<-'EOF'
+        HOMEDIR=~/
+
+        # Load .bash_profile if it exists
+        test -f ${HOME}/.bash_profile && source ${HOME}/.bash_profile
+
+        # Load .zshrc if it exists
+        test -f ${HOME}/.zshrc && source ${HOME}/.zshrc
+
+EOF
+}
+
+# Set up standard bash config file: ~/.bash_profile (OS X) or ~/.bashrc (Linux)
+function std_bash_profile() {
+
+    cat <<-'EOF'
+        HOMEDIR=~/
+
+        ############################################################
+        # These items are standard and are used for various functions at Grand Rounds
+        ## Grand Rounds Bootstrap Config ##
+
+        # Load .bashrc if it exists
+        test -f ${HOME}/.bashrc && source ${HOME}/.bashrc
+
+        # Load .bash_aliases if it exists
+        test -f ${HOME}/.bash_aliases && source ${HOME}/.bash_aliases
+
+        # Load everything from profile.d folder
+        for file in ${HOME}/.profile.d/*.sh; do
+          source ${file};
+        done
+
+        #Make sure ~/bin is in the path
+        [[ ! "$PATH" =~ "${HOME}/bin" ]] && export PATH="${HOME}/bin:${PATH}"
+
+        export PATH=${HOME}/engineering/bin:${PATH}
+
+        #Determine where a shell function is defined / declared
+        function find_function {
+          shopt -s extdebug
+          declare -F "\$1"
+          shopt -u extdebug
+        }
+
+
+EOF
+}
+
+# Aliases needed for AWS setup and AWS scripts
+function do_add_alias_exports() {
+
+    echo "
+        ############################################################
+        # Important GR Aliases
+
+        export INITIALS=${inits}
+
+        export GR_GPGKEY_ADDRESS=${email_addy}
+
+        #Folder path to where you will be checking out git projects
+        export GR_HOME=${HOME}/src/
+
+        export GR_USERNAME=${dot_name}
+        export GR_ABBREV_USERNAME=${username}
+
+        export KEY_SUFFIX=grandrounds.com
+        export GIT_ORG=consultingmd
+
+        export CLICOLOR=1
+        export LSCOLORS=GxFxCxDxBxegedabagaced
+
+        ############################################################
+        # Please add your own personal customizations below this
+        ############################################################
+
+    " >> ${HOME}/.bash_profile
+}
+
+# Backup zprofile if existing and create new one with defaults
+function do_zprofile() {
+    if [[ -e "${HOME}/.zprofile" ]]; then
+        backup_file="old_zprofile_$(date +%F)"
+        echo "Backing up existing .zprofile as: ${backup_file}"
+        sleep 1
+        mv "${HOME}/.zprofile" "${HOME}/${backup_file}"
+    fi
+    echo "Writing new .zprofile from template"
+    std_zprofile > "${HOME}/.zprofile"
+}
+
+# Backup bash_profile if existing and create new one with defaults
+function do_bash_profile() {
+    if [[ -e "${HOME}/.bash_profile" ]]; then
+        backup_file="old_bash_profile_$(date +%F)"
+        echo "Backing up existing .bash_profile as: ${backup_file}"
+        sleep 1
+        mv "${HOME}/.bash_profile" "${HOME}/${backup_file}"
+    fi
+    echo "Writing new .bash_profile from template"
+    std_bash_profile > "${HOME}/.bash_profile"
+}
+
+# Define standard bashrc template
+function std_bashrc_init() {
+    cat <<-'EOF'
+
+        ##########################################################
+        ## Grand Rounds Bootstrap Config ##
+
+        # show git branch in prompt (with color)
+
+        function parse_git_branch () {
+          git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+        }
+
+        RED="\033[0;31m"
+        YELLOW="\033[0;33m"
+        GREEN="\033[0;32m"
+        NO_COLOR="\033[0m"
+        LTBLUE="\033[1;34m"
+
+        function git_color {
+          local git_status="$(git status 2> /dev/null)"
+
+          if [[ $git_status =~ "working tree clean" ]]; then
+            echo -e $GREEN
+          elif [[ $git_status =~ "Your branch is ahead of" ]]; then
+            echo -e $YELLOW
+          elif [[ $git_status =~ "nothing added to commit but untracked" ]]; then
+            echo -e $YELLOW
+          elif [[ $git_status =~ "Changes to be committed" ]]; then
+            echo -e $YELLOW
+          elif [[ $git_status =~ "Changes not staged for commit" ]]; then
+            echo -e $RED
+          else
+            echo -e $NO_COLOR
+          fi
+        }
+
+        # Set command prompt to include branch names & Status when in a git folder
+        PS1="\\[\[$LTBLUE\]\h\[$NO_COLOR\]:\w\[\$(git_color)\]\$(parse_git_branch)\[$NO_COLOR\]\$ "
+
+        # Python managment
+        export PYENV_ROOT="$HOME/.pyenv"
+        export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+
+        # Open SSL management
+        export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
+        export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
+        export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
+        export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
+        ##########################################################
+
+EOF
+}
+
+# Define standard zshrc template
+function std_zshrc_init() {
+    cat <<-'EOF'
+
+        ##########################################################
+        ## Grand Rounds Bootstrap Config ##
+
+        # show git branch in prompt
+        parse_git_branch() {
+            git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+        }
+
+        setopt PROMPT_SUBST
+        PROMPT='%9c%{%F{green}%}$(parse_git_branch)%{%F{none}%} $ '
+
+        # Python managment
+        export PYENV_ROOT="$HOME/.pyenv"
+        export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+
+        # Open SSL management
+        export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
+        export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
+        export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
+        export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
+        ##########################################################
+
+EOF
+}
+
+# Set quick aliases for shell to access repos
+function std_bash_aliases() {
+    cat <<-'EOF'
+        # Standard Repo Aliases
+        alias src='cd $HOME/src'
+        alias eng='cd $HOME/src/engineering'
+EOF
+}
+
+# Create a bash_aliases file where aliases can be stored
+function do_create_bash_aliases() {
+    if [[ ! -e "${HOME}/.bash_aliases" ]]; then
+        echo "Creating new ~/.bash_aliases file"
+        touch "${HOME}/.bash_aliases"
+        std_bash_aliases >> "${HOME}/.bash_aliases"
+    fi
+}
+
+# Create bashrc if it doesn't exist, if it does, append standard template
+function do_create_bashrc() {
+    if [[ ! -e "${HOME}/.bashrc" ]]; then
+        echo "Creating new ~/.bashrc file"
+        touch "${HOME}/.bashrc"
+        std_bashrc_init >> "${HOME}/.bashrc"
+    else
+        do_append_bashrc
+    fi
+    echo ""
+}
+
+# Create zshrc if it doesn't exist, if it does, append standard template
+function do_create_zshrc() {
+    if [[ ! -e "${HOME}/.zshrc" ]]; then
+        echo "Creating new ~/.zshrc file"
+        touch "${HOME}/.zshrc"
+        std_zshrc_init >> "${HOME}/.zshrc"
+    else
+        do_append_zshrc
+    fi
+    echo ""
+}
+
+# Append standard template to bashrc
+function do_append_bashrc() {
+    echo "Adding Grand Rounds config to .bashrc"
+
+    grep -qF "Grand Rounds Bootstrap Config" "${HOME}/.bashrc" && echo "NOTE: Already exists, appending instead" || std_bashrc_init >> "${HOME}/.bashrc"
+}
+
+# Append standard template to zshrc
+function do_append_zshrc() {
+    echo "Adding Grand Rounds config to .zshrc"
+
+    grep -qF "Grand Rounds Bootstrap Config" "${HOME}/.zshrc" && echo "NOTE: Already exists, appending instead" || std_zshrc_init >> "${HOME}/.zshrc"
+}
+
+# Define standard template for bashrc
+function std_bashrc_to_append() {
+    cat <<-EOF
+
+        ##########################################################
+        ## Grand Rounds Bootstrap Config on $(date +%F)
+
+        HOMEDIR=~/
+
+        # Load everything from profile.d folder
+        for file in \${HOME}/.profile.d/*.sh; do
+          source \${file};
+        done
+
+        export CLICOLOR=1
+        export LSCOLORS=GxFxCxDxBxegedabagaced
+
+        #Make sure ~/bin is in the path
+        [[ ! "\$PATH" =~ "\${HOME}/bin" ]] && export PATH="\${HOME}/bin:\${PATH}"
+
+        #Determine where a shell function is defined / declared
+        function find_function {
+          shopt -s extdebug
+          declare -F "\$1"
+          shopt -u extdebug
+        }
+EOF
+}
+
+# Sets up bash_profile
+function do_bash_config() {
+    print_header "Setting up bash config"
+
+    if [[ "${platform}" = "Darwin" ]]; then
+        bash_file="${HOME}/.bash_profile"
+        do_create_bash_aliases
+        do_bash_profile
+        do_zprofile
+        do_add_alias_exports
+    else
+        bash_file="${HOME}/.bashrc"
+        do_append_bashrc
+    fi
+
+    ENG_PATH="export PATH=\${GR_HOME}/engineering/bin:\${PATH}"
+    grep -qF "${ENG_PATH}" "${bash_file}" || echo -e "\n${ENG_PATH}" >> "${bash_file}"
+
+    mkdir -p "${HOME}/src"
+
+    mkdir -p "${HOME}/.profile.d"
+    pushd "${HOME}/.profile.d" >/dev/null 2>&1
+    popd >/dev/null 2>&1
+
+    echo ""
+
+    re_source
+}
+
+# Source all appropriate files for to refresh the shell
+function re_source() {
+    echo "Sourcing recently updated files."
+    echo ""
+    echo "If you haven't completed your setup yet, you can expect to see errors for missing files."
+    echo ""
+    #Re-source the zprofile, zshrc, bash_profile and/or bashrc so they are available for the rest of this run
+    if [[ -e "${HOME}/.bash_profile" ]]; then
+        source ~/.bash_profile
+    fi
+    if [[ -e "${HOME}/.bashrc" ]]; then
+        source ~/.bashrc
+    fi
+    if [[ -e "${HOME}/.zprofile" ]]; then
+        source ~/.zprofile
+    fi
+    if [[ -e "${HOME}/.zshrc" ]]; then
+        source ~/.zshrc
+    fi
+}
+
+# Define arrary for repos to live
+repo_list=()
+
+# Create array from repos.txt file for each team
+function do_define_repos() {
+    print_header "Identifying team specific repos"
+    for team_name in "${selected_teams_list[@]}"; do
+        REPO_PATH="${GR_HOME}/engineering/bootstrap/teams/$team_name/repos.txt"
+        if [ -e "${REPO_PATH}" ]; then
+            while IFS= read -r line; do
+                repo_list+=("$line")
+            done < ${REPO_PATH}
+
+        else
+            echo "Error: no team repos file found for $team_name"
+        fi
+    done
+}
+
+# Clones team repos
+function do_clone_repos() {
+
+    do_define_repos
+
+    print_header "Cloning repos from GitHub"
+    git_clone_err_msg="Warning: Unable to clone ${repo} repo. Check that you have access to ConsultingMD and have added your SSH public key to GitHub.\nIf this is the first time through you can safely ignore this warning."
+
+    # clone all selected repos
+    mkdir -p "${GR_HOME}"
+    pushd "${GR_HOME}" >/dev/null 2>&1
+        for repo in ${repo_list[@]}; do
+            echo -e "\n* Cloning ${repo} repo to ${GR_HOME}"
+            if [ ! -d "${GR_HOME}/${repo}" ]; then
+                git clone git@github.com:ConsultingMD/"${repo}".git || { echo -e "${git_clone_err_msg}"; skipped_items_list+=("do_clone_repos:::${repo}"); true; }
+            else
+                echo "Skipping git clone for ${repo} repo -- ${GR_HOME}/${repo} already exists"
+            fi
+        done
+    popd >/dev/null 2>&1
+    echo ""
+}
+
+# Define array for brew packages, starting with defaults to install for all users
+brew_packages=(awscli git jq gnu-getopt pyenv)
+
+# Update brew_packages array with items from brew.txt file for each team
+function do_define_packages() {
+    if [[ "${#selected_teams_list[@]}" -gt 0 ]]; then
+        echo "Identifying team specific brew packages"
+
+        for team_name in "${selected_teams_list[@]}"; do
+            BREW_PATH="${GR_HOME}/engineering/bootstrap/teams/$team_name/brew.txt"
+            if [ -e "${BREW_PATH}" ]; then
+                while IFS= read -r line; do
+                    brew_packages+=("$line")
+                done < ${BREW_PATH}
+
+            else
+                echo "Error: no team brew file found for $team_name"
+            fi
+        done
+    fi
+}
+
+# Installs packages via homebrew for OS X
+function do_install_homebrew_pkgs_osx() {
+    print_header "Installing Brew Packages"
+
+    do_define_packages
+
+    # install all selected brew packages
+    for pkg in "${brew_packages[@]}"; do
+        brew install "${pkg}"
+    done
+}
+
+# Installs packages via apt for Linux
+function do_install_apt_pkgs_lnx() {
+    print_header "Installing Packages"
+
+    apt_packages=(awscli curl git jq python-pip python3-pip gnu-getopt pyenv)
+
+    sudo apt-get -qq update
+    echo "Installing apt packages"
+    for pkg in "${apt_packages[@]}"; do
+        sudo apt-get -qq install "${pkg}"
+    done
+
+}
+
+# Define array for pip3 modules, starting with defaults to install for all users
+pip3_modules=(boto3 passlib python-gnupg)
+
+# Confirms pip3 is installed and if it is not, installs pip3
+function ensure_pip3_available() {
+    if [[ ! $(which pip3) ]]; then
+        echo "Installing pip3"
+        sudo easy_install3 pip
+    fi
+}
+
+# Update pip3_modules array with items from requirments.txt file for each team
+function do_define_modules() {
+    if [[ "${#selected_teams_list[@]}" -gt 0 ]]; then
+        echo "Identifying team specific pip module requirements"
+
+        for team_name in "${selected_teams_list[@]}"; do
+            REQUIREMENTS_PATH="${GR_HOME}/engineering/bootstrap/teams/$team_name/requirements.txt"
+            if [ -e "${REQUIREMENTS_PATH}" ]; then
+                while IFS= read -r line; do
+                    pip3_modules+=("$line")
+                done < ${REQUIREMENTS_PATH}
+
+            else
+                echo "Error: no team pip module requirements file found for $team_name"
+            fi
+        done
+    fi
+}
+
+# Install pip modules to system python
+    # Note: Some errors show up around permissions but this seems to still satisfy aws currently,
+    # pip is installed with python and when attempting to execute these commands individually later,
+    # requirment is satisfied in brew's python install
+function do_sys_pip_modules() {
+    print_header "Installing pip modules"
+    ensure_pip3_available
+    do_define_modules
+
+    # install all selected pip modules
+    for module in ${pip3_modules[@]}; do
+        echo "Installing pip3 module: ${module}"
+        pip3 install --quiet --upgrade "${module}"
+    done
+    echo ""
+}
+
+# Configure python for virtualenv and install pip/pip3 modules
+function do_python_setup() {
+    print_header "Configuring Python and Pyenv"
+    pyenv install 3.6.5
+    pyenv install 3.7.0
+    pyenv global 3.6.5
+    echo ""
+}
+
+# Create empty directory for AWS creds
+function do_setup_aws_creds() {
+    mkdir -p "${HOME}/.aws-creds"
+    mkdir -p "${HOME}/.aws"
+    open "${HOME}/.aws-creds"
+    confirm "We're going to pause here while you place your AWS credentials in their hidden folder /.aws-creds. I've opened that for you."
+    aws_confirm=$?
+        if [[ ${aws_confirm} -ne 0 ]]; then
+        confirm "We're going to pause here while you place your AWS credentials in their hidden folder /.aws-creds"
+        aws_confirm=$?
+    fi
+    echo ""
+}
+
+# Basic Github config
+function do_configure_git() {
+    print_header "Configuring git"
+
+    git config --global user.name "${full_name}"
+    git config --global user.email "${email_addy}"
+    git config --global color.ui true
+    git config --global core.excludesfile "${HOME}/.gitignore_global"
+    git config --global push.default simple
+    git config --global pull.default simple
+
+
+    #Make sure the desired src directory exists if GR_HOME is declared
+    [[ ! -z ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
+
+    echo "# Ignore Mac OS specific files" >>"${HOME}/.gitignore_global"
+    echo ".DS_Store" >>"${HOME}/.gitignore_global"
+
+    echo "Created git global config as follows:"
+    git config --global --list
+    echo ""
+}
+
+# Source and symlink files for engineering bash
+function do_source_bash_dir() {
+    print_header "Sourcing Engineering bash files"
+
+    bash_path="${GR_HOME}/engineering/bash/"
+
+    if [[ -d "${bash_path}" ]]; then
+        echo "Sourcing files from ${bash_path} and linking to local .profile.d/"
+
+        mkdir -p "${HOME}/.profile.d"
+        pushd "${HOME}/.profile.d" >/dev/null 2>&1
+            # SC-NOTE: We want the variable expansion below, so not quoting and disable 2046 - https://github.com/koalaman/shellcheck/wiki/SC2046
+            #shellcheck disable=SC2046
+            paths=($bash_path)
+            for path in "${paths[@]}"; do
+                for file in ${path}/*.sh; do
+                    ln -fs "${file}" $(basename "${file}")
+                done
+            done
+        ln -fs "${HOME}/src/engineering/bash/aws-env.sh" "${HOME}/.profile.d"
+        popd >/dev/null 2>&1
+    else
+        echo "Warning: Failed to locate ${bash_path}.  Make sure you have the repo checked out and up to date."
+        skipped_items_list+=('do_source_bash_dir')
+    fi
+    echo ""
+}
+
+# Create SSH config file
+function ssh_config_template() {
+    cat <<-'EOF'
+        Host *
+        user ubuntu
+        UseKeychain yes
+        IdentityFile ~/.ssh/id_rsa
+
+EOF
+}
+
+function do_create_ssh_config() {
+    if [[ ! -e $HOME/.ssh/config ]]; then
+        echo "Creating new ssh config file"
+        touch "${HOME}/.ssh/config"
+        ssh_config_template > "${HOME}/.ssh/config"
+    else
+        echo "You already have an SSH config file, please look for help if you need to update it."
+        skipped_items_list+=('do_create_ssh_config')
+    fi
+}
+
+# Configure SSH key
+function do_config_ssh() {
+    print_header "Configuring SSH"
+
+    if [[ ! -e $HOME/.ssh/id_rsa ]]; then
+        ssh-keygen -f "$HOME/.ssh/id_rsa" -b4096 -t rsa -C "${email_addy}"
+        ssh-add
+        eval "$(ssh-agent -s)"
+        do_create_ssh_config
+        ssh-add -K ~/.ssh/id_rsa
+    elif [[ "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" |cut -d' ' -f1 )" == "4096" ]]; then
+        echo "Excellent - you have a 4k ssh key created and installed"
+        ssh-add
+        eval "$(ssh-agent -s)"
+        do_create_ssh_config
+        ssh-add -K ~/.ssh/id_rsa
+    else
+        echo "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
+        echo "Contact an adult for help in resolving this."
+        skipped_items_list+=('do_config_ssh')
+    fi
+    echo ""
+}
+
+# Step through setting up github web access
+function do_github_web_setup() {
+    print_header "Time to setup SSH into GitHub"
+    echo "Open GitHub from this link and sign in:"
+    echo ""
+    echo "https://github.com/settings/keys"
+    echo ""
+    confirm "Ready to add your key? I'll copy it to your clipboard for you"
+    confirm_git_key=$?
+    if [[ ${confirm_git_key} -ne 0 ]]; then
+        do_github_web_setup
+    fi
+    pbcopy < ~/.ssh/id_rsa.pub
+    echo "Your key should be in your clipboard now"
+    echo "
+    1) In the Title field, add a descriptive label for the new key.
+    2) Paste your key into the Key field
+    3) Click Add SSH key
+    4) If prompted, confirm your GitHub password
+    "
+    confirm "Ready to check if we are up and running?"
+    confirm_running=$?
+    if [[ ${confirm_running} -ne 0 ]]; then
+        confirm "Ready to check if we are up and running?"
+        confirm_running=$?
+    fi
+    ssh git@github.com
+
+    confirm "Now we are going to add your gpg key. Are you ready?"
+    confirm_git_gpg=$?
+    if [[ ${confirm_git_gpg} -ne 0 ]]; then
+        confirm "Now we are going to add your gpg key. Are you ready?"
+        confirm_git_gpg=$?
+    fi
+    echo "From the same key settings page, Click the New GPG Key button. I'll copy your key to your clipboard for you"
+    gpg --armor --export ${email_addy} | pbcopy
+    confirm "Paste the copied key into the text field in GitHub and click Add GPG Key"
+    confirm_git_done=$?
+    if [[ ${confirm_git_done} -ne 0 ]]; then
+        confirm "Let us know when you are ready"
+        confirm_git_done=$?
+    fi
+
+    echo ""
+
+    print_header "Cloning the Engineering repo now that we have access"
+    mkdir -p "${GR_HOME}"
+    pushd "${GR_HOME}" >/dev/null 2>&1
+        echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
+            if [ ! -d "${GR_HOME}/engineering" ]; then
+                git clone git@github.com:ConsultingMD/engineering.git || { echo -e "${git_clone_err_msg}"; skipped_items_list+=("do_clone_repos:::engineering"); true; }
+            else
+                echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
+            fi
+    popd >/dev/null 2>&1
+}
+
+# Step through setting up AWS access
+function do_setup_aws_access() {
+    print_header "Starting AWS Access Setup"
+    echo "You will see warnings that the AWS access list doesn't exist yet, this is expected"
+    source ${HOME}/src/engineering/bash/aws-env.sh
+    echo "When prompted, enter your GPG passphrase"
+    aws-environment operations
+    aws-environment --init
+    echo ""
+}
+
+# Completion notice
+function show_finished() {
+    echo "That's it, you are set!"
+    echo "Make sure to completely quit and restart terminal before trying to check out any of the new stuff."
+}
+
+# Install homebrew
+function do_brew_install() {
+    if [[ "${platform}" = "Darwin" ]]; then
+        print_header "Installing HomeBrew"
+
+        if [[ ! $(which brew) ]]; then
+            echo "Installing homebrew"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        fi
+        echo "Updating homebrew"
+        brew update
+    else
+        echo "It looks like you're running Linux, we'll install apt packages later"
+    fi
+    echo ""
+}
+
+# Install brew packages
+function do_package_config() {
+    if [[ "${platform}" = "Darwin" ]]; then
+        do_install_homebrew_pkgs_osx
+    else
+        do_install_apt_pkgs_lnx
+    fi
+    echo ""
+}
+
+# Confirm selected options with user
+function do_confirm_options() {
+    if [[ "${#to_do_list[@]}" -gt 0 ]]; then
+        local confirmation
+        echo "Please confirm the options you've selected."
+        for set_option in "${to_do_list[@]}"; do
+            echo "${set_option}"
+        done
+
+        read -p "Does this look correct? (y/n)? " confirmation
+            until [ "$confirmation" = "y" ]; do
+              echo "Let's try again."
+              unset to_do_list
+              sleep 1
+              do_define_options
+              read -p "Does this look correct? (y/n)? " confirmation
+            done
+        echo ""
+    fi
+}
+
+# Define setup options for user to select
+function do_select_options() {
+  local OPTION
+  help
+  read -p "Enter a letter to choose a single setup item: " OPTION # Prompt User for setup option
+  # add option selected by the user to a to-do list
+    case "${OPTION}" in
+
+       f)
+           to_do_list+=('run_full_setup')
+           ;;
+       d)
+           to_do_list+=('do_package_config')
+           ;;
+       c)
+           to_do_list+=('do_setup_aws_creds')
+           ;;
+       e)
+           to_do_list+=('do_source_bash_dir')
+           ;;
+       b)
+           to_do_list+=('do_bash_config')
+           ;;
+       h)
+           to_do_list+=('do_brew_install')
+           ;;
+       m)
+           to_do_list+=('do_sys_pip_modules')
+           ;;
+       v)
+           to_do_list+=('do_python_setup')
+           ;;
+       g)
+           to_do_list+=('do_configure_git')
+           ;;
+       s)
+           to_do_list+=('do_config_ssh')
+           ;;
+       w)
+           to_do_list+=('do_github_web_setup')
+           ;;
+       b)
+           to_do_list+=('do_source_bash_dir')
+           ;;
+       a)
+           to_do_list+=('do_setup_aws_access')
+           ;;
+       t)
+           to_do_list+=('do_team_setup do_team_bootstraps do_clone_repos do_package_config do_sys_pip_modules')
+           ;;
+       r)
+           to_do_list+=('do_clone_repos')
+           ;;
+       x)
+           to_do_list+=('do_create_bashrc')
+           ;;
+       z)
+           to_do_list+=('do_create_zshrc')
+           ;;
+       *)
+           echo "You've chosen an invalid option, please try again"
+           sleep 1
+           help
+           do_select_options
+           ;;
+    esac
+}
+
+# Request user to select setup option(s)
+function do_define_options() {
+  do_select_options
+
+  local answer
+  read -p "Would you like to add more options? (y/n)? " answer
+  until [ "$answer" = "n" ]; do
+      do_select_options
+      read -p "Would you like to add more options? (y/n)? " answer
+  done
+}
+
+# Automatically run all functions for full workstation setup
+function run_full_setup() {
+
+    print_header "Beginning Workstation Setup"
+    do_brew_install                           # opt h
+    do_bash_config                            # opt b
+    do_configure_git                          # opt g
+    do_config_ssh                             # opt s
+    do_github_web_setup                       # opt w
+    do_team_setup                             # opt t
+    do_setup_aws_creds                        # opt c
+    do_create_bashrc                          # opt x
+    do_create_zshrc                           # opt z
+    re_source
+    do_team_bootstraps                          # included in option t
+    do_clone_repos                            # opt r
+    do_package_config                         # opt d, team specific included in option t
+    do_python_setup                           # opt v
+    do_sys_pip_modules                        # opt m, team specific included in option t
+    do_source_bash_dir                        # opt e
+    re_source
+    do_setup_aws_access                       # opt a
+}
+
+############## Starting Main Script #################
+main() {
+
+    # Set array for to_do_list to work through user selected setup options
+    to_do_list=()
+    # Set array skipped_items_list to note things that couldn't be completed
+    skipped_items_list=()
+
+    echo ""
+    echo "Welcome to the bootstrap for your Grand Rounds Developer Environment"
+    prompt_is_full_setup
+    case "${full_setup_result}" in
+        f)
+           to_do_list+=('run_full_setup')
+        ;;
+
+        o)
+            echo "Please select from the following list of setup options"
+            sleep 1
+            do_define_options
+            do_confirm_options
+        ;;
+
+        *)
+            echo "You've responded incorrectly, please try again."
+            prompt_is_full_setup
+        ;;
+    esac
+
+    check_which_platform
+    do_name_stuff
+
+    for task in "${to_do_list[@]}"; do
+        echo "Starting task: ${task}"
+        ${task}
+    done
+
+    if [[ "${#skipped_items_list[@]}" -gt 0 ]]; then
+        echo ""
+        print_header "Summary: Skipped Tasks"
+        echo "The following ${#skipped_items_list[@]} tasks were skipped during this setup."
+        echo "Please come back to these later to complete workstation setup."
+        for item in "${skipped_items_list[@]}"; do
+            echo "${item}"
+        done
+    fi
+
+    show_finished
+}
+
+main
+
+exit 0
