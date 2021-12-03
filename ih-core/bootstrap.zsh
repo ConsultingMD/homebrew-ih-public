@@ -1,19 +1,13 @@
 #!/bin/zsh
 
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+if ! command -v brew &> /dev/null; then
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
 
 brew update
 
 brew tap ConsultingMD/homebrew-ih-public git@github.com:ConsultingMD/homebrew-ih-public.git
 
-brew install ih-tools
+brew install ih-core
 
-brewdir="$(brew --prefix ih-core)/scripts/profile.sh"
-ihcoresource=". ${brewdir}/scripts/profile.sh"
-zshrc="$HOME/.zshrc"
-
-if [ ! -e $HOME/.zshrc ]; then
-   echo $ihcoresource  > $zsrc
-else ! grep -q $ihcoresource $zshrc then
-   echo $ihcoresource >> $zshrc
-fi
+ih-setup full-setup

@@ -10,6 +10,7 @@ class IhCore < Formula
 
   depends_on "asdf"
   depends_on "awscli"
+  depends_on "nano"
   #depends_on "gh"
   #depends_on "git"
   #depends_on "gnu-getopt"
