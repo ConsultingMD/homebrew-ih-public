@@ -18,7 +18,7 @@ echo "$VERSION" > "$THIS_DIR/../ih-core/bin/VERSION"
 
 if [[ $(git status --short) != '' ]]; then
     git add "$THIS_DIR/../formula/ih-core.rb"
-    git add "$THIS_DIR/../ih-core/VERSION"
+    git add "$THIS_DIR/../ih-core/bin/VERSION"
     git commit -m "Bump version to $VERSION"
 fi
 git tag -a "$VERSION" -m "Release version $VERSION"
