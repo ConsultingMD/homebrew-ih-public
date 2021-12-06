@@ -15,3 +15,17 @@ automate workflows.
 The brew formula just points to the release bundle in github. It downloads the release bundle (which contains
 all the code in this repo) and copies the ih-core/bin and ih-core/lib directories into the brew location,
 and links ih-setup into /usr/local/bin.
+
+Note that the brew formula will eventually depend on a bunch of other tools we want to
+automatically install, but right now it doesn't (this makes testing easier).
+
+Note that we are also not yet installing or wiring up asdf plugins.
+
+Note that we are not currently setting up the AWS environment stuff.
+
+## Testing
+
+To test out the setup script without affecting your actual setup, run the script
+at `./meta/test-setup.sh`. It will create a fake home directory where you can
+experiment with the `ih-setup` command. Run `./meta/test-setup.sh reset` to 
+purge the fake directory and create a new one.
