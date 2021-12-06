@@ -34,6 +34,6 @@ git push
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION" --target "$BRANCH" ./ih-core/bootstrap.sh
+gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION" --target "$BRANCH" ./ih-core/bootstrap
 
 set +e
