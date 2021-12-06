@@ -1,4 +1,11 @@
-#!/bin/bash
+#!/bin/zsh
+
+# This script tests the ih-setup script be creating 
+# a temporary home directory and setting $HOME to it,
+# then starting a new shell in that directory.
+# It also adds the bin directory of ih-core to the 
+# path to simulate having installed it using brew.
+
 
 THIS_DIR=$(dirname $(realpath "$0"))
 
@@ -20,11 +27,11 @@ echo "Using $HOME as home"
 
 mkdir -p /tmp/ih-core-test
 
-BREW_BIN="$THIS_DIR/../ih-core/bin"
+BIN_DIR="$THIS_DIR/../ih-core/bin"
 
 cd "$HOME"
 
-export PATH="$BREW_BIN:$PATH"
+export PATH="$BIN_DIR:$PATH"
 
 unset GR_HOME
 unset DOD_HOME
@@ -39,7 +46,9 @@ for name in $VARS; do
     unset $name
 done
 
-$BREW_BIN/ih-setup "$@"
+export BIN_DIR=$BIN_DIR
+
+$BIN_DIR/ih-setup
 
 if [[ ! $? ]]; then
     echo "Bootstrap failed"

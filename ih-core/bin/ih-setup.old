@@ -1,0 +1,734 @@
+#!/usr/bin/env bash
+
+###############################################################################
+
+# File           :  bootstrap
+
+# Description    :  Bootstrap for setup for dev environment; covers terminal setup, GitHub, and role specific options
+
+# Author         :  Kory Hunter, Lucas Cantor & Miah Bentley - for Grand Rounds, Inc.
+
+# Original Date  :  2020.09.17
+
+# About          :  Hackathon Fall 2020 project to re-work the bootrstrap
+
+# Notes          :
+
+
+###############################################################################
+
+# Interface to handle setup
+
+BIN_DIR=$(dirname $(realpath "$0"))
+IH_DIR="$HOME/.ih"
+IH_CUSTOM_DIR="$IH_DIR/custom"
+
+###############################################################################
+# Team Options
+
+# Define array for user selected teams
+selected_teams_list=()
+
+# Index array to allow user to select
+function do_select_teams() {
+
+    # Create an array from teams listed in /engineering/bootstrap/teams
+    teams_array=(${GR_HOME}/engineering/bootstrap/teams/*/)
+
+    echo "Please enter a number for a team from this list."
+    sleep 1
+
+    for i in "${!teams_array[@]}" # Display team list with index
+    do
+        echo "$i $(basename ${teams_array[$i]})"
+    done
+
+    read -p "Enter number next to a team: " INDEX # Prompt User for team
+    TEAM=${teams_array[$INDEX]}
+    team_check teams_array"${TEAM}" # Check user input using function to compare to array
+    until [ $? -eq 0 ]; do # Until there is a match with array
+        echo -e "Incorrect team entered, try again." # Notify user match not successful
+        read -p "Please Enter Team: " INDEX
+        TEAM=${teams_array[$INDEX]}
+        team_check teams_array"${TEAM}"
+    done
+    selected_teams_list+=("$(basename ${TEAM})")
+    echo ""
+}
+
+# Confirm teams against array
+function team_check() {
+    local ARRAY="$1[@]"
+    local IN=1
+    for i in "${!ARRAY}"; do
+        if [[ $i == "$TEAMS" ]]; then
+            IN=0
+            break
+        fi
+    done
+    return $IN
+}
+
+# Confirm selected teams with user
+function do_confirm_teams() {
+    if [[ "${#selected_teams_list[@]}" -gt 0 ]]; then
+        local confirmation
+        echo "Please confirm the teams you've selected."
+        for team_name in "${selected_teams_list[@]}"; do
+            echo "${team_name}"
+        done
+
+        read -p "Does this look correct? (y/n)? " confirmation
+                until [ "$confirmation" = "y" ]; do
+                    echo "Let's try again."
+                    sleep 1
+                    unset selected_teams_list
+                    do_team_setup
+                    read -p "Does this look correct? (y/n)? " confirmation
+                done
+    fi
+}
+
+# Request user to define team(s)
+function do_define_teams () {
+    local response
+    read -p "Would you like to add one or more team specific configurations? (y/n)? " response
+    case "$response" in
+        [yY])
+            local answer
+            do_select_teams
+            read -p "Would you like to add more teams? (y/n)? " answer
+            until [ "$answer" = "n" ]; do
+                do_select_teams
+                read -p "Would you like to add more teams? (y/n)? " answer
+            done
+
+        ;;
+
+        [nN])
+            echo "Alright, we won't add any teams to the setup this time."
+        ;;
+
+        *)
+            echo "You've selected an invalid response, try again."
+            do_team_setup
+        ;;
+    esac
+    echo ""
+}
+
+# Define and confirm teams
+function do_team_setup() {
+    print_header "Starting Team Selection"
+    do_define_teams
+    do_confirm_teams
+    echo ""
+}
+
+# Run bootstrap for each team defined
+function do_team_bootstraps () {
+    for team_name in "${selected_teams_list[@]}"; do
+        if [ -e "${GR_HOME}/engineering/bootstrap/teams/$team_name/bootstrap" ]; then
+            print_header "Running bootstrap script for $team_name:"
+            /bin/bash "${GR_HOME}/engineering/bootstrap/teams/$team_name/bootstrap"
+        else
+            echo "Error: no bootstrap script found for $team_name"
+        fi
+    done
+    echo ""
+}
+
+# Formatting for headers
+function print_header() {
+    section="${1}"
+    pad_length=$(((100 - ${#section}) / 2))
+    padding=""
+    for ((x=1; x <= pad_length; x++)); do
+        padding+="="
+    done
+    echo "${padding} ${section} ${padding}"
+}
+
+# Detect platform
+function check_which_platform() {
+    platform="$(uname)"
+    case "${platform}" in
+        Darwin)
+            echo "Platform detected: OS X"
+            return 0
+            ;;
+        Linux)
+            echo "Platform detected: Linux"
+            return 1
+            ;;
+        *)
+            echo "Platform not supported"
+            exit 1
+            ;;
+    esac
+}
+
+# Prompt the user if they need a full setup or would like to see options
+function prompt_is_full_setup() {
+    echo ""
+    echo "Are we doing a full workstation setup or do you need to see your options?"
+    read -p "Enter (f) for a full setup or (o) to see your options: " full_setup_result
+    echo ""
+}
+
+SKIP_CONFIRMATION=0
+
+# Prompt user if okay to proceed
+function confirm() {
+    local action="${1}"
+    local response
+    echo "${action}"
+
+    if test $SKIP_CONFIRMATION -eq 1; then
+        return 0
+    fi
+
+    echo "OK to proceed? (y/N)"
+    read -sn1 response
+    case "${response}" in
+        [yY])
+            return 0
+        ;;
+        *)
+            return 1
+        ;;
+    esac
+}
+
+# shellcheck disable=SC2016
+BOOTSTRAP_SOURCE_LINE='
+# This loads the Included Health shell augmentations into your interactive shell
+. $HOME/.ih/augment.sh
+'
+
+# Create bashrc if it doesn't exist, if it does, append standard template
+function ih::private::configure-bashrc() {
+    if [[ ! -e "${HOME}/.bashrc" ]]; then
+        echo "Creating new ~/.bashrc file"
+        touch "${HOME}/.bashrc"
+    fi
+    # shellcheck disable=SC2016
+    if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.bashrc"; then
+        echo "Included Health shell augmentation already sourced in .bashrc"
+    else 
+        echo "Appending Included Health config to .bashrc"
+        # shellcheck disable=SC2016
+        echo "$BOOTSTRAP_SOURCE_LINE">> "${HOME}/.bashrc"
+
+
+    echo "Updated .bashrc to include this line at the end:
+
+$BOOTSTRAP_SOURCE_LINE
+
+If you want to source IH scripts earlier, adjust your .bashrc"
+    fi
+
+}
+
+# Create zshrc if it doesn't exist, if it does, append standard template
+function ih::private::configure-zshrc() {
+    if [[ ! -e "${HOME}/.zshrc" ]]; then
+        echo "Creating new ~/.zshrc file"
+        touch "${HOME}/.zshrc"
+    fi
+
+    # shellcheck disable=SC2016
+    if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.zshrc"; then
+        echo "Included Health shell augmentation already sourced in .zshrc"
+    else 
+        echo "Appending Included Health config to .zshrc"
+        echo "$BOOTSTRAP_SOURCE_LINE" >> "${HOME}/.zshrc"
+        echo "Updated .zshrc to include this line at the end:
+
+$BOOTSTRAP_SOURCE_LINE
+
+If you want to source IH scripts earlier, adjust your .zshrc"
+    fi
+}
+
+# Sets up shell integrations
+function ih::shell() {
+    print_header "Setting up Included Health shell augmentations"
+
+    SHELL_DIR="${BIN_DIR}/shell"
+
+    confirm "This command will 
+    - Copy some default shell setup scripts into $HOME/.ih
+      These scripts wire up shared commands that are needed for 
+      engineering work.
+    - Create some convential files where you can customize aliases
+      and other shell things (if those files don't already exist)
+    - Give you a chance to fill out some environment variables
+      with your personal information (if you haven't done this yet)
+    "
+
+    confirm_edit=$?
+    if [[ ${confirm_edit} -ne 0 ]]; then
+        # shellcheck disable=SC2263
+        echo "You can't continue bootstrapping until you've updated your shell."
+        exit 1
+    fi
+
+    echo "Copying shell augmentation templates to ${IH_DIR}"
+
+    mkdir -p "$IH_DIR"
+    cp -rn "${SHELL_DIR}/custom/" "${IH_DIR}/custom" || :
+    cp -R "${SHELL_DIR}/default/" "${IH_DIR}/default"
+    cp "${SHELL_DIR}/augment.sh" "${IH_DIR}/augment.sh"
+
+    ih::private::configure-profile
+
+    echo "Configuring shells to source IH shell configs"
+
+    ih::private::configure-bashrc
+    ih::private::configure-zshrc
+
+    echo ""
+
+    re_source
+
+    echo "Shell configuration complete. When you start a new shell you'll have all the Included Health scripts available."
+}
+
+function ih::private::validate-profile() {
+
+    PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
+    PROFILE_TEMPLATE_FILE="$BIN_DIR/shell/custom/00_env.sh"
+
+    set -e
+    VARS=$(cat $PROFILE_TEMPLATE_FILE | grep export | cut -f 2 -d" " - | cut -f 1 -d"=" -)
+    set +e
+
+
+    source $PROFILE_FILE
+
+    status=0
+    for name in $VARS; do
+        value="${!name}"
+        if [[ -z "$value" ]]; then
+        echo "$name environment variable must not be empty"
+        status=1
+        fi
+    done
+
+    if [[ $status -ne 0 ]]; then
+        echo "Set missing vars in $PROFILE_FILE"
+    fi
+
+    return $status
+}
+
+
+function ih::private::configure-profile(){
+
+    re_source
+
+    ih::private::validate-profile
+    local PROFILE_VALID=$?
+    local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
+
+    if [[ $PROFILE_VALID -ne 0 ]]; then 
+        confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
+        confirm_edit=$?
+        if [[ ${confirm_edit} -ne 0 ]]; then
+            # shellcheck disable=SC2263
+            echo "You can't continue bootstrapping until you've updated your environment variables."
+            # shellcheck disable=SC2263
+            echo "You can manually edit ${PROFILE_FILE} and re-run the script."
+            exit 1
+        fi
+
+        nano "$PROFILE_FILE"
+
+        ih::private::configure-profile
+    fi
+
+    re_source
+}
+
+# Source all appropriate files for to refresh the shell
+function re_source() {
+    exec 3> /dev/stderr 2> /dev/null
+    exec 4> /dev/stdout 1> /dev/null
+
+    echo "Sourcing recently updated files."
+
+    local BOOTSTRAP_FILE="$IH_DIR"/augment.sh
+    source "$BOOTSTRAP_FILE"
+
+    exec 2>&3
+    exec 1>&4
+}
+
+# Define arrary for repos to live
+repo_list=()
+
+# Create array from repos.txt file for each team
+function do_define_repos() {
+    print_header "Identifying team specific repos"
+    for team_name in "${selected_teams_list[@]}"; do
+        REPO_PATH="${GR_HOME}/engineering/bootstrap/teams/$team_name/repos.txt"
+        if [ -e "${REPO_PATH}" ]; then
+            while IFS= read -r line; do
+                repo_list+=("$line")
+            done < ${REPO_PATH}
+
+        else
+            echo "Error: no team repos file found for $team_name"
+        fi
+    done
+}
+
+# Clones team repos
+function do_clone_repos() {
+
+    do_define_repos
+
+    print_header "Cloning repos from GitHub"
+    git_clone_err_msg="Warning: Unable to clone ${repo} repo. Check that you have access to ConsultingMD and have added your SSH public key to GitHub.\nIf this is the first time through you can safely ignore this warning."
+
+    # clone all selected repos
+    mkdir -p "${GR_HOME}"
+    pushd "${GR_HOME}" >/dev/null 2>&1
+        for repo in ${repo_list[@]}; do
+            echo -e "\n* Cloning ${repo} repo to ${GR_HOME}"
+            if [ ! -d "${GR_HOME}/${repo}" ]; then
+                git clone git@github.com:ConsultingMD/"${repo}".git || { echo -e "${git_clone_err_msg}"; skipped_items_list+=("do_clone_repos:::${repo}"); true; }
+            else
+                echo "Skipping git clone for ${repo} repo -- ${GR_HOME}/${repo} already exists"
+            fi
+        done
+    popd >/dev/null 2>&1
+    echo ""
+}
+
+# Define array for brew packages, starting with defaults to install for all users
+brew_packages=(awscli git jq gnu-getopt pyenv)
+
+# Update brew_packages array with items from brew.txt file for each team
+function do_define_packages() {
+    if [[ "${#selected_teams_list[@]}" -gt 0 ]]; then
+        echo "Identifying team specific brew packages"
+
+        for team_name in "${selected_teams_list[@]}"; do
+            BREW_PATH="${GR_HOME}/engineering/bootstrap/teams/$team_name/brew.txt"
+            if [ -e "${BREW_PATH}" ]; then
+                while IFS= read -r line; do
+                    brew_packages+=("$line")
+                done < ${BREW_PATH}
+
+            else
+                echo "Error: no team brew file found for $team_name"
+            fi
+        done
+    fi
+}
+
+# Basic Github config
+function ih::git() {
+    print_header "Configuring git"
+
+    confirm "This command will:
+    - update your global git config to use some good defaults
+    - create $GR_HOME if it doesn't exist
+    - create a default global .gitignore if one doesn't exist"
+
+    confirm_proceed=$?
+    if [[ ${confirm_proceed} -ne 0 ]]; then
+        echo "Skipping git configuration command."
+        return 0
+    fi
+
+    # Profile must be valid before we can 
+    ih::private::configure-profile
+
+    git config --global user.name "${GITHUB_USER}"
+    git config --global user.email "${EMAIL_ADDRESS}"
+    git config --global color.ui true
+    git config --global core.excludesfile "${HOME}/.gitignore_global"
+    git config --global push.default simple
+    git config --global pull.default simple
+    git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+
+    #Make sure the desired src directory exists if GR_HOME is declared
+    [[ ! -z ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
+
+    # Copy the gitignore template into global if there isn't already a global.
+    cp -n "${BIN_DIR}/git/gitignore" "${HOME}/.gitignore_global" || :
+
+    echo "Updated git global config as follows:"
+    PAGER=cat git config --global --list
+    echo ""
+
+    echo "Git configuration completed."
+}
+
+# Configure SSH key
+function ih::ssh() {
+    print_header "Configuring SSH"
+
+    local SSH_CONFIG_PATH=$HOME/.ssh/config
+
+    confirm "This command will:
+    - Check that you have an SSH key and create one if you don't
+    - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"
+    
+    confirm_proceed=$?
+    if [[ ${confirm_proceed} -ne 0 ]]; then
+        echo "Skipping SSH configuration command."
+        return 0
+    fi
+
+    # Profile must be valid before we can 
+    ih::private::configure-profile
+
+    mkdir -p "$HOME"/.ssh
+
+    cp -n "${BIN_DIR}/ssh/sshconfig" "${SSH_CONFIG_PATH}" || :
+
+    eval "$(ssh-agent -s)"
+
+    if [[ ! -e $HOME/.ssh/id_rsa ]]; then
+        ssh-keygen -f "$HOME/.ssh/id_rsa" -b4096 -t rsa -C "${EMAIL_ADDRESS}"
+        ssh-add -K $HOME/.ssh/id_rsa
+    else 
+        # make sure there's a public key file because 
+        # ssh-keygen -l doesn't decrypt encrypted private keys
+        if [[ ! -e $HOME/.ssh/id_rsa.pub ]]; then
+            ssh-keygen -f "$HOME/.ssh/id_rsa" -y > "$HOME/.ssh/id_rsa.pub"
+        fi
+
+        if [[ "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" |cut -d' ' -f1 )" == "4096" ]]; then
+            echo "Excellent - you have a 4k ssh key created and installed"
+            eval "$(ssh-agent -s)"
+            ssh-add -K $HOME/.ssh/id_rsa
+        else
+            echo "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
+            echo "Contact an adult for help in resolving this."
+        fi
+    fi
+    echo ""
+    echo "SSH configuration completed."
+}
+
+# Step through setting up github web access
+function ih::github() {
+    print_header "Time to set up GitHub"
+
+    confirm "This command will:
+    - Authenticate you to GitHub via the gh CLI tool
+    - Configure your GitHub account to support authenticating with your SSH key
+    - Clone the engineering repo where some additional scripts are stored"
+    
+    if [[ ${confirm_proceed} -ne 0 ]]; then
+        echo "Skipping GitHub configuration command. You will not be able to clone any repos until this is completed."
+        return 0
+    fi
+
+    if [[ ! -e $HOME/.ssh/id_rsa.pub ]]; then
+        echo "You don't have an SSH key configured, we need to do that first."
+        ih:ssh
+    fi
+
+    ih::private::configure-profile
+
+    # make sure gh is installed
+    command -v gh >/dev/null 2>&1 || brew install gh
+
+    # log in with scopes we need to update keys
+    gh auth login --scopes repo,read:org,admin:public_key,user
+
+    local PUBLIC_KEY
+    local EXISTING_KEYS
+    PUBLIC_KEY=$(cat "$HOME"/.ssh/id_rsa.pub)
+    EXISTING_KEYS=$(gh ssh-key list)
+
+    if [[ $EXISTING_KEYS =~ $PUBLIC_KEY ]]; then 
+        echo "Your SSH key has already been added to GitHub"
+    else 
+        gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
+    fi
+
+    ssh git@github.com
+
+    echo ""
+
+    print_header "Cloning the Engineering repo now that we have access"
+    mkdir -p "${GR_HOME}"
+    pushd "${GR_HOME}" >/dev/null 2>&1 || exit 1
+        echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
+            if [ ! -d "${GR_HOME}/engineering" ]; then
+                git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 || { echo -e "${git_clone_err_msg}"; skipped_items_list+=("do_clone_repos:::engineering"); true; }
+            else
+                echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
+            fi
+    popd >/dev/null 2>&1 || exit 1
+
+    re_source
+
+    echo ""
+    echo "GitHub configuration complete"
+}
+
+
+# Step through setting up AWS access
+function do_setup_aws_access() {
+    print_header "Starting AWS Access Setup"
+    echo "You will see warnings that the AWS access list doesn't exist yet, this is expected"
+    source ${HOME}/src/engineering/bash/aws-env.sh
+    echo "When prompted, enter your GPG passphrase"
+    aws-environment operations
+    aws-environment --init
+    echo ""
+}
+
+# Completion notice
+function ih::private::done() {
+    echo "That's it, you are set!"
+    echo "Make sure to completely quit and restart terminal before trying to check out any of the new stuff."
+}
+
+
+ih::private::subcommands() {
+  compgen -A function | grep -e '^ih::' | grep -v -e '--help' -e private | sed 's/ih:://' | sort
+}
+
+ih::help() {
+  local subcommands=$(ih::private::subcommands | tr ' ' '\012' | sed '2,$s;^;    ;')
+
+  cat <<USAGE
+  Usage:
+    ih-setup <subcommand> <options> <arguments>
+
+  Subcommands:
+    ${subcommands}
+
+  Global flags:
+    -y    Don't prompt for confirmation
+
+USAGE
+}
+
+
+ih::full-setup() {
+  
+      # Set array for to_do_list to work through user selected setup options
+    to_do_list=()
+    # Set array skipped_items_list to note things that couldn't be completed
+    skipped_items_list=()
+
+    echo ""
+    echo "Welcome to the bootstrap for your Included Health Developer Environment"
+    echo "This setup is running from $(pwd) and will treat ${HOME} as the home directory."
+    echo ""
+
+    ih::shell
+    ih::ssh
+    ih::git
+    ih::github
+    # TODO: AWS setup
+    # ih::aws 
+
+}
+
+ih-setup() {
+  for arg; do
+    if [[ $arg == "-y" ]]; then 
+        SKIP_CONFIRMATION=1
+    fi
+  done
+
+  local command=${1:?"Usage: ih-setup <subcommand> <options> <arguments>"}
+  shift
+
+  case "${command}" in
+  -h | -? | --help) command=help
+  esac
+
+  case "${command}" in
+  help)
+    ;;
+  private::*)
+    : # Assume the caller knows what they're doing
+    ;;
+  *)
+    ;;
+  esac
+
+  ih::${command} "${@}"
+}
+
+############## Starting Main Script #################
+main() {
+
+    # Set array for to_do_list to work through user selected setup options
+    to_do_list=()
+    # Set array skipped_items_list to note things that couldn't be completed
+    skipped_items_list=()
+
+    echo ""
+    echo "Welcome to the bootstrap for your Grand Rounds Developer Environment"
+    echo "This setup is running from $(pwd) and will treat ${HOME} as the home directory."
+    prompt_is_full_setup
+    case "${full_setup_result}" in
+        f)
+           to_do_list+=('run_full_setup')
+        ;;
+
+        o)
+            echo "Please select from the following list of setup options"
+            sleep 1
+            do_define_options
+            do_confirm_options
+        ;;
+
+        *)
+            echo "You've responded incorrectly, please try again."
+            prompt_is_full_setup
+        ;;
+    esac
+
+    check_which_platform
+    do_name_stuff
+
+    for task in "${to_do_list[@]}"; do
+        echo "Starting task: ${task}"
+        ${task}
+    done
+
+    if [[ "${#skipped_items_list[@]}" -gt 0 ]]; then
+        echo ""
+        print_header "Summary: Skipped Tasks"
+        echo "The following ${#skipped_items_list[@]} tasks were skipped during this setup."
+        echo "Please come back to these later to complete workstation setup."
+        for item in "${skipped_items_list[@]}"; do
+            echo "${item}"
+        done
+    fi
+
+    show_finished
+}
+
+
+# Boilerplate to invoke main function if not being sourced
+# See https://stackoverflow.com/questions/2683279/how-to-detect-if-a-script-is-being-sourced/14706745#14706745
+sourced=0
+if [ -n "$ZSH_EVAL_CONTEXT" ]; then
+  case $ZSH_EVAL_CONTEXT in *:file) sourced=1;; esac
+elif [ -n "$KSH_VERSION" ]; then
+  [ "$(cd $(dirname -- $0) && pwd -P)/$(basename -- $0)" != "$(cd $(dirname -- ${.sh.file}) && pwd -P)/$(basename -- ${.sh.file})" ] && sourced=1
+elif [ -n "$BASH_VERSION" ]; then
+  (return 0 2>/dev/null) && sourced=1
+else # All other shells: examine $0 for known shell binary filenames
+  # Detects `sh` and `dash`; add additional shell filenames as needed.
+  case ${0##*/} in sh|dash) sourced=1;; esac
+fi
+
+if [ $sourced == 0 ] ; then
+  ih-setup "${@}"
+fi

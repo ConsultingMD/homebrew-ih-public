@@ -8,11 +8,11 @@
 
 # Directory where you want to clone Legacy Grand Rounds repos,
 # which are currently located in the ConsultingMD org.
-export GR_HOME="$HOME/src/github.com/ConsultingMD/"
+export GR_HOME="$HOME/src/github.com/ConsultingMD"
 
 # Directory where you want to clone Legacy Doctor on Demand repos,
 # which are currently located in the doctorondemand org.
-export DOD_HOME="$HOME/src/github.com/doctorondemand/"
+export DOD_HOME="$HOME/src/github.com/doctorondemand"
 
 # Your GitHub username
 export GITHUB_USER=
