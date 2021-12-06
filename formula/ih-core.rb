@@ -8,15 +8,16 @@ class IhCore < Formula
   url "https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/0.0.1-beta1.tar.gz"
   head "https://github.com/ConsultingMD/homebrew-ih-public", :using => :git
 
-  #depends_on "asdf"
-  #depends_on "awscli"
-  #depends_on "nano"
-  #depends_on "gh"
-  #depends_on "git"
-  #depends_on "gnu-getopt"
-  #depends_on "jq"
-  #depends_on "go-jira"
-  #depends_on "virtualenv"
+  depends_on "asdf"
+  depends_on "python@3.9"
+  depends_on "awscli"
+  depends_on "nano"
+  depends_on "gh"
+  depends_on "git"
+  depends_on "gnu-getopt"
+  depends_on "jq"
+  depends_on "go-jira"
+  depends_on "virtualenv"
 
   def install
     lib.install Dir["ih-core/lib/*"]

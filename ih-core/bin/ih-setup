@@ -44,8 +44,8 @@ function ih::private::try-invoke() {
   fi
   local STEP=$1
   local COMMAND=$2
-  if typeset -f "ih::setup::$1::$2" >/dev/null; then
-    "ih::setup::$1::$2"
+  if command -v "ih::setup::$STEP::$COMMAND" >/dev/null; then
+    "ih::setup::$STEP::$COMMAND"
     code=$?
     return $code
   else
