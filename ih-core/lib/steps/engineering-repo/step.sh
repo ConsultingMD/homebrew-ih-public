@@ -2,7 +2,7 @@
 
 function ih::setup::engineering-repo::help() {
     echo "Clone engineering repo to access additional scripts
-    
+
     This step will:
     - Clone the ConsultingMD/engineering repo"
 }

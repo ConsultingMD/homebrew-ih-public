@@ -25,11 +25,11 @@ function ih::setup::shell::test(){
             ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
             source "${IH_DIR}/augment.sh"
             return 0
-        else 
+        else
             ih::setup::shell::private::validate-profile
             return $?
         fi
-    else 
+    else
         ih::log::debug "Augment file not found"
         return 1
     fi
@@ -84,7 +84,7 @@ function ih::setup::shell::private::configure-bashrc() {
     # shellcheck disable=SC2016
     if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.bashrc"; then
         echo "Included Health shell augmentation already sourced in .bashrc"
-    else 
+    else
         echo "Appending Included Health config to .bashrc"
         # shellcheck disable=SC2016
         echo "$BOOTSTRAP_SOURCE_LINE">> "${HOME}/.bashrc"
@@ -109,7 +109,7 @@ function ih::setup::shell::private::configure-zshrc() {
     # shellcheck disable=SC2016
     if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.zshrc"; then
         echo "Included Health shell augmentation already sourced in .zshrc"
-    else 
+    else
         echo "Appending Included Health config to .zshrc"
         echo "$BOOTSTRAP_SOURCE_LINE" >> "${HOME}/.zshrc"
         echo "Updated .zshrc to include this line at the end:
@@ -130,7 +130,7 @@ function ih::setup::shell::private::configure-profile(){
     local PROFILE_VALID=$?
     local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
 
-    if [[ $PROFILE_VALID -ne 0 ]]; then 
+    if [[ $PROFILE_VALID -ne 0 ]]; then
         ih::private::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
         confirm_edit=$?
         if [[ ${confirm_edit} -ne 0 ]]; then
@@ -171,7 +171,7 @@ function ih::setup::shell::private::validate-profile() {
     local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
     local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/steps/shell/custom/00_env.sh"
 
-    if [[ ! -f $PROFILE_FILE ]]; then 
+    if [[ ! -f $PROFILE_FILE ]]; then
         return 1
     fi
 

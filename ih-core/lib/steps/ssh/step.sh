@@ -4,7 +4,7 @@ function ih::setup::ssh::help() {
     local SSH_CONFIG_PATH=$HOME/.ssh/config
 
     echo "Configure SSH settings
-    
+
     - Check that you have an SSH key and create one if you don't
     - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"
 }

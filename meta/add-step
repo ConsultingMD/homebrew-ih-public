@@ -3,19 +3,19 @@
 
 STEP=${1:?"You must provide a name for your new step"}
 
-THIS_DIR=$(dirname $(realpath "$0"))
+THIS_DIR=$(dirname "$(realpath "$0")")
 STEPS_DIR="$THIS_DIR/../ih-core/lib/steps"
 
-STEP_DIR="$BIN_DIR/$STEP"
+STEP_DIR="$STEPS_DIR/$STEP"
 
 if [[ -d $STEP_DIR ]]; then
-    echo "A step named $STEP already exists" 
+    echo "A step named $STEP already exists"
     return 1
 fi
 
-mkdir -p "$STEP_DIR"
-# shellcheck disable=SC2016
-echo "#!/bin/bash
+function step-template(){
+    cat <<END
+#!/bin/bash
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
@@ -44,4 +44,8 @@ function ih::setup::$STEP::deps(){
 function ih::setup::$STEP::install(){
     echo 'Installing...'
 }
-" > "$STEP_DIR/step.sh"
+END
+}
+
+mkdir -p "$STEP_DIR"
+step-template > "$STEP_DIR/step.sh"

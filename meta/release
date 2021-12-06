@@ -6,7 +6,7 @@
 # This command will fail if the repo is dirty, or if the release already exists.
 # It will cause a commit with the new version updates
 
-THIS_DIR=$(dirname $(realpath "$0"))
+THIS_DIR=$(dirname "$(realpath "$0")")
 
 VERSION=${1:?"You must provide a version for the release"}
 

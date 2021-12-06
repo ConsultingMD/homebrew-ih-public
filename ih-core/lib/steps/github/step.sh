@@ -2,7 +2,7 @@
 
 function ih::setup::github::help(){
     echo "Configure github settings
-    
+
     This step will:
     - Authenticate you to GitHub via the gh CLI tool
     - Configure your GitHub account to support authenticating with your SSH key"
@@ -12,7 +12,7 @@ function ih::setup::github::test(){
 
     local SSH_RESULT
     SSH_RESULT=$(ssh git@github.com 2>&1)
-    
+
     if [[ $SSH_RESULT =~ "You've successfully authenticated" ]]; then
         return 0
     fi
@@ -38,9 +38,9 @@ function ih::setup::github::install(){
     PUBLIC_KEY=$(cat "$HOME"/.ssh/id_rsa.pub)
     EXISTING_KEYS=$(gh ssh-key list)
 
-    if [[ $EXISTING_KEYS =~ $PUBLIC_KEY ]]; then 
+    if [[ $EXISTING_KEYS =~ $PUBLIC_KEY ]]; then
         echo "Your SSH key has already been added to GitHub"
-    else 
+    else
         gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
     fi
 

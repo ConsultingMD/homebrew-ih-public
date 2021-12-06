@@ -1,11 +1,11 @@
 # homebrew-ih-public
 
-This repo contains the scripts and brew formulas used to onboard developers and 
-automate workflows. 
+This repo contains the scripts and brew formulas used to onboard developers and
+automate workflows.
 
 ## Folders
 
-- [./meta](./meta) Contains scripts and tools for managing working on this repo itself. 
+- [./meta](./meta) Contains scripts and tools for managing working on this repo itself.
   This will be refactored to be the template for how we want to standardize repo init/build/test commands.
 - [./ih-core](./ih-core) Contains the core tools used by all teams, and the bootstrapping scripts for initial onboarding/setup.
   See the readme in this folder for details on how to install the ih-core components.
@@ -26,6 +26,6 @@ Note that we are not currently setting up the AWS environment stuff.
 ## Testing
 
 To test out the setup script without affecting your actual setup, run the script
-at `./meta/test-setup.sh`. It will create a fake home directory where you can
-experiment with the `ih-setup` command. Run `./meta/test-setup.sh reset` to 
+at `./meta/test-setup`. It will create a fake home directory where you can
+experiment with the `ih-setup` command. Run `./meta/test-setup reset` to
 purge the fake directory and create a new one.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This file wires in the scripts which are defined in the 
+# This file wires in the scripts which are defined in the
 # ConsultingMD/engineering repo so that the scripts and functions
 # are available in your shell.
 
@@ -11,7 +11,7 @@ ENGINEERING_BASH=${ENGINEERING_DIR}/bash
 if [[ -d "${ENGINEERING_BASH}" ]]; then
 
     #Make sure engineering bin is in the path
-    if [[ ! "$PATH" =~ ${ENGINEERING_BIN} ]]; then 
+    if [[ ! "$PATH" =~ ${ENGINEERING_BIN} ]]; then
         export PATH="${ENGINEERING_BIN}:${PATH}"
     fi
 

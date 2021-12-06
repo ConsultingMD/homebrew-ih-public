@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# This script tests the ih-setup script be creating 
+# This script tests the ih-setup script be creating
 # a temporary home directory and setting $HOME to it,
 # then starting a new shell in that directory.
-# It also adds the bin directory of ih-core to the 
+# It also adds the bin directory of ih-core to the
 # path to simulate having installed it using brew.
 # If you pass "reset" as an argument the test directory
 # will be deleted and recreated.
@@ -20,7 +20,7 @@ command=${1:-""}
 
 
 case "${command}" in
-reset) 
+reset)
   echo "Deleting temp home if it exists"
   test -d /tmp/ih-core-test && rm -rf /tmp/ih-core-test
   shift
@@ -52,7 +52,7 @@ done
 
 export BIN_DIR=$BIN_DIR
 
-if [[ $# -gt 0 ]]; then 
+if [[ $# -gt 0 ]]; then
   "$BIN_DIR/ih-setup" "$@"
 
   if [[ ! $? ]]; then

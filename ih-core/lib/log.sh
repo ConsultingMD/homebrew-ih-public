@@ -3,7 +3,7 @@
 # These are logging functions that can be used by step scripts.
 
 ih::log::debug() {
-    if [[ $IH_DEBUG = 1 ]]; then 
+    if [[ $IH_DEBUG = 1 ]]; then
         printf "\e[90mDBUG: %s\e[0m\n" "$1" 1>&2
     fi
 }

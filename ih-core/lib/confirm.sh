@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 function ih::private::confirm(){
     local action="${1}"
@@ -10,7 +10,7 @@ function ih::private::confirm(){
     fi
 
     echo "OK to proceed? (y/N)"
-    read -sn1 response
+    read -rsn1 response
     case "${response}" in
         [yY])
             return 0

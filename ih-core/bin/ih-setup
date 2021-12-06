@@ -266,7 +266,7 @@ $SUBCOMMAND"
     -y    Don't prompt for confirmation
     -v    Verbose logging
 
-Version: 
+Version:
     $(cat "${IH_CORE_BIN_DIR}/VERSION")
 
 USAGE
