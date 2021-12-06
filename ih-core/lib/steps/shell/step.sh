@@ -18,8 +18,6 @@ function ih::setup::shell::help(){
 
 function ih::setup::shell::test(){
 
-    env | grep IH
-
     ih::log::debug "Checking for shell augment files and variables..."
     if [[ -f "${IH_DIR}/augment.sh" ]]; then
         ih::log::debug "Found augment.sh"
@@ -45,7 +43,7 @@ function ih::setup::shell::deps(){
 
 function ih::setup::shell::install(){
 
-    local THIS_DIR="$IH_CORE_DIR/bin/shell"
+    local THIS_DIR="$IH_CORE_LIB_DIR/steps/shell"
 
     echo "Copying shell augmentation templates to ${IH_DIR}"
 
@@ -171,7 +169,7 @@ function re_source() {
 function ih::setup::shell::private::validate-profile() {
 
     local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
-    local PROFILE_TEMPLATE_FILE="$IH_CORE_DIR/bin/shell/custom/00_env.sh"
+    local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/steps/shell/custom/00_env.sh"
 
     if [[ ! -f $PROFILE_FILE ]]; then 
         return 1

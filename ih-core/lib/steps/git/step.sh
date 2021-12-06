@@ -11,11 +11,15 @@ function ih::setup::git::help(){
 
 function ih::setup::git::test(){
 
+    source "$HOME/.ih/augment.sh"
+
     if [[ ! -f $HOME/.gitignore_global ]]; then
+        ih::log::debug ".gitignore_global not found in $HOME"
         return 1
     fi
 
     if [[ $(git config --global user.name) != "$GITHUB_USER" ]]; then
+        ih::log::debug "git config user.name ($(git config --global user.name)) != GITHUB_USER ($GITHUB_USER)"
         return 1
     fi
 
@@ -44,7 +48,8 @@ function ih::setup::git::install(){
     [[ -n ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
 
     # Copy the gitignore template into global if there isn't already a global.
-    cp -n "${BIN_DIR}/git/gitignore" "${HOME}/.gitignore_global" || :
+
+    cp -n "${IH_CORE_LIB_DIR}/steps/git/gitignore" "${HOME}/.gitignore_global" || :
 
     echo "Updated git global config as follows:"
     git -P config --global --list

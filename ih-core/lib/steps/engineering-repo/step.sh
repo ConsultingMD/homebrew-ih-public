@@ -24,7 +24,17 @@ function ih::setup::engineering-repo::install() {
 
     mkdir -p "${GR_HOME}"
 
-    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/engineering" 
+    if [ -d "${GR_HOME}/engineering" ]; then
+        ih::log::error "The destination folder ${GR_HOME}/engineering already exists"
+        return 1
+    fi
 
-    echo "Engineering repo cloned"
+    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/engineering"
+
+    if [[ $? -ne 1  ]]; then
+        return 1
+    fi
+
+    ih::log::info "Engineering repo cloned"
+    ih::log::warn "You should source .zshrc or .bashrc to ensure the engineering scripts are loaded (or start a new shell)"
 }
