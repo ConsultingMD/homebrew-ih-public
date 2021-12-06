@@ -12,8 +12,7 @@ brew tap ConsultingMD/homebrew-ih-public git@github.com:ConsultingMD/homebrew-ih
 brew install ih-core
 ```
 
-Once you've install the ih-core components using brew you can run `ih-setup install` to begin onboarding.
-
+Once you've installed the ih-core components using brew you can run `ih-setup install` to begin onboarding.
 
 ## Folders
 
@@ -25,7 +24,7 @@ Once you've install the ih-core components using brew you can run `ih-setup inst
 ## Overview
 
 The ih-setup script works by scanning the folders in ./lib/steps for files which contain functions
-which match the pattern `ih::setup::(\w*)::install`. These functions are considered represent installers
+which match the pattern `ih::setup::(\w*)::install`. These functions are considered to represent installers
 for setup steps. The setup steps are expected to implement several functions following that pattern:
 
 - `ih::setup::NAME::help` Describes what the step does
