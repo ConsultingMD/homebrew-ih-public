@@ -17,9 +17,11 @@ sed -i '' "s/^  url.*/  url \"${URL//\//\\/}\""/ "$THIS_DIR/../formula/ih-core.r
 
 git add "$THIS_DIR/../formula/ih-core.rb"
 git commit -m "Bump version to $VERSION"
-git tag -a "$VERSION"
+git tag -a "$VERSION" -m "Release version $VERSION"
 git push
 
 set +e
 
-gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION"
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION"  --target "$BRANCH"
