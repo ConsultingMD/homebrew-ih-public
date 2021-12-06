@@ -8,5 +8,5 @@
 # Only continue if we're on zsh
 SHELL=$(ps -cp "$$" -o command="")
 if [[ ! $SHELL =~ "zsh" ]]; then
-    return 0
+  return 0
 fi

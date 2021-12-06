@@ -10,14 +10,14 @@ ENGINEERING_BASH=${ENGINEERING_DIR}/bash
 
 if [[ -d "${ENGINEERING_BASH}" ]]; then
 
-    #Make sure engineering bin is in the path
-    if [[ ! "$PATH" =~ ${ENGINEERING_BIN} ]]; then
-        export PATH="${ENGINEERING_BIN}:${PATH}"
-    fi
+  #Make sure engineering bin is in the path
+  if [[ ! "$PATH" =~ ${ENGINEERING_BIN} ]]; then
+    export PATH="${ENGINEERING_BIN}:${PATH}"
+  fi
 
-    # this sets up aws-environment, vault-token and more.
-    for f in "$ENGINEERING_BASH"/*; do
-        # shellcheck source=/dev/null
-        . "$f"
-    done
+  # this sets up aws-environment, vault-token and more.
+  for f in "$ENGINEERING_BASH"/*; do
+    # shellcheck source=/dev/null
+    . "$f"
+  done
 fi

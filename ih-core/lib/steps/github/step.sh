@@ -1,68 +1,68 @@
 #!/bin/bash
 
-function ih::setup::github::help(){
-    echo "Configure github settings
+function ih::setup::github::help() {
+  echo "Configure github settings
 
     This step will:
     - Authenticate you to GitHub via the gh CLI tool
     - Configure your GitHub account to support authenticating with your SSH key"
 }
 
-function ih::setup::github::test(){
+function ih::setup::github::test() {
 
-    local SSH_RESULT
-    SSH_RESULT=$(ssh git@github.com 2>&1)
+  local SSH_RESULT
+  SSH_RESULT=$(ssh git@github.com 2>&1)
 
-    if [[ $SSH_RESULT =~ "You've successfully authenticated" ]]; then
-        return 0
-    fi
+  if [[ $SSH_RESULT =~ "You've successfully authenticated" ]]; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
-function ih::setup::github::deps(){
-    # echo "other steps"
-    echo "shell git ssh"
+function ih::setup::github::deps() {
+  # echo "other steps"
+  echo "shell git ssh"
 }
 
-function ih::setup::github::install(){
+function ih::setup::github::install() {
 
-    # make sure gh is installed
-    command -v gh >/dev/null 2>&1 || brew install gh
+  # make sure gh is installed
+  command -v gh >/dev/null 2>&1 || brew install gh
 
-    # log in with scopes we need to update keys
-    gh auth login --scopes repo,read:org,admin:public_key,user
+  # log in with scopes we need to update keys
+  gh auth login --scopes repo,read:org,admin:public_key,user
 
-    local PUBLIC_KEY
-    local EXISTING_KEYS
-    PUBLIC_KEY=$(cat "$HOME"/.ssh/id_rsa.pub)
-    EXISTING_KEYS=$(gh ssh-key list)
+  local PUBLIC_KEY
+  local EXISTING_KEYS
+  PUBLIC_KEY=$(cat "$HOME"/.ssh/id_rsa.pub)
+  EXISTING_KEYS=$(gh ssh-key list)
 
-    if [[ $EXISTING_KEYS =~ $PUBLIC_KEY ]]; then
-        echo "Your SSH key has already been added to GitHub"
-    else
-        gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
-    fi
+  if [[ $EXISTING_KEYS =~ $PUBLIC_KEY ]]; then
+    echo "Your SSH key has already been added to GitHub"
+  else
+    gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
+  fi
 
-    ssh git@github.com
+  ssh git@github.com
 
-    echo ""
+  echo ""
 
-    print_header "Cloning the Engineering repo now that we have access"
-    mkdir -p "${GR_HOME}"
-    pushd "${GR_HOME}" >/dev/null 2>&1 || exit 1
-        echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
-            if [ ! -d "${GR_HOME}/engineering" ]; then
-                set -e
-                git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5
-                set +e
-            else
-                echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
-            fi
-    popd >/dev/null 2>&1 || exit 1
+  print_header "Cloning the Engineering repo now that we have access"
+  mkdir -p "${GR_HOME}"
+  pushd "${GR_HOME}" >/dev/null 2>&1 || exit 1
+  echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
+  if [ ! -d "${GR_HOME}/engineering" ]; then
+    set -e
+    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5
+    set +e
+  else
+    echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
+  fi
+  popd >/dev/null 2>&1 || exit 1
 
-    re_source
+  re_source
 
-    echo ""
-    echo "GitHub configuration complete"
+  echo ""
+  echo "GitHub configuration complete"
 }

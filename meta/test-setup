@@ -10,14 +10,12 @@
 # Any other arguments will be passed to ih-setup in the
 # new shell.
 
-
 THIS_DIR=$(dirname "$(realpath "$0")")
 
 export HOME=/tmp/ih-core-test
 export ZDOTDIR=$HOME
 
 command=${1:-""}
-
 
 case "${command}" in
 reset)
@@ -47,7 +45,7 @@ unset JIRA_USERNAME
 unset AWS_DEFAULT_ROLE
 
 for name in $VARS; do
-    unset "$name"
+  unset "$name"
 done
 
 export BIN_DIR=$BIN_DIR
@@ -56,7 +54,7 @@ if [[ $# -gt 0 ]]; then
   "$BIN_DIR/ih-setup" "$@"
 
   if [[ ! $? ]]; then
-      echo "Bootstrap failed"
+    echo "Bootstrap failed"
   fi
 fi
 

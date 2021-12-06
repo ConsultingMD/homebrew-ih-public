@@ -21,20 +21,19 @@ set -e
 # Update the formula and the version file with the new version
 URL="https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/$VERSION.tar.gz"
 sed -i '' "s/^  url.*/  url \"${URL//\//\\/}\""/ "$THIS_DIR/../formula/ih-core.rb"
-echo "$VERSION" > "$THIS_DIR/../ih-core/bin/VERSION"
+echo "$VERSION" >"$THIS_DIR/../ih-core/bin/VERSION"
 
 # If updating the files caused a change then commit that change.
 if [[ $(git status --short) != '' ]]; then
-    git add "$THIS_DIR/../formula/ih-core.rb"
-    git add "$THIS_DIR/../ih-core/bin/VERSION"
-    git commit -m "Bump version to $VERSION"
+  git add "$THIS_DIR/../formula/ih-core.rb"
+  git add "$THIS_DIR/../ih-core/bin/VERSION"
+  git commit -m "Bump version to $VERSION"
 fi
 git tag -a "$VERSION" -m "Release version $VERSION"
 git push
 
-
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION"  --target "$BRANCH" ./ih-core/bootstrap.sh
+gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION" --target "$BRANCH" ./ih-core/bootstrap.sh
 
 set +e

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 STEP=${1:?"You must provide a name for your new step"}
 
 THIS_DIR=$(dirname "$(realpath "$0")")
@@ -9,12 +8,12 @@ STEPS_DIR="$THIS_DIR/../ih-core/lib/steps"
 STEP_DIR="$STEPS_DIR/$STEP"
 
 if [[ -d $STEP_DIR ]]; then
-    echo "A step named $STEP already exists"
-    return 1
+  echo "A step named $STEP already exists"
+  return 1
 fi
 
-function step-template(){
-    cat <<END
+function step-template() {
+  cat <<END
 #!/bin/bash
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
@@ -48,4 +47,4 @@ END
 }
 
 mkdir -p "$STEP_DIR"
-step-template > "$STEP_DIR/step.sh"
+step-template >"$STEP_DIR/step.sh"

@@ -14,48 +14,48 @@ source "$IH_CORE_LIB_DIR/log.sh"
 
 # Attempts to return help for the step passed as an argument
 function ih::private::step-help() {
-    if typeset -f "ih::setup::$1::help" >/dev/null; then
-        "ih::setup::$1::help"
-    else
-        echo ""
-    fi
+  if typeset -f "ih::setup::$1::help" >/dev/null; then
+    "ih::setup::$1::help"
+  else
+    echo ""
+  fi
 }
 
 # Attempts to return dependencies for the step passed as an argument
 function ih::private::step-deps() {
-    local OUTPUT
-    OUTPUT=$(ih::private::try-invoke "$1" deps)
-    RESULT=$?
-    echo "$OUTPUT"
-    return $RESULT
+  local OUTPUT
+  OUTPUT=$(ih::private::try-invoke "$1" deps)
+  RESULT=$?
+  echo "$OUTPUT"
+  return $RESULT
 }
 
 function ih::private::step-install() {
-    if typeset -f "ih::setup::$1::install" >/dev/null; then
-        "ih::setup::$1::install"
-        code=$?
-        return $code
-    else
-        echo "STEP $1 HAS NO INSTALL"
-        return 1
-    fi
+  if typeset -f "ih::setup::$1::install" >/dev/null; then
+    "ih::setup::$1::install"
+    code=$?
+    return $code
+  else
+    echo "STEP $1 HAS NO INSTALL"
+    return 1
+  fi
 }
 
 function ih::private::try-invoke() {
-    if [[ $# -ne 2 ]]; then
-        ih::log::error "ih::private::try-invoke takes arguments STEP COMMAND"
-        return 1
-    fi
-    local STEP=$1
-    local COMMAND=$2
-    if typeset -f "ih::setup::$1::$2" >/dev/null; then
-        "ih::setup::$1::$2"
-        code=$?
-        return $code
-    else
-        ih::log::error "Step $1 does not implement command $2"
-        return 1
-    fi
+  if [[ $# -ne 2 ]]; then
+    ih::log::error "ih::private::try-invoke takes arguments STEP COMMAND"
+    return 1
+  fi
+  local STEP=$1
+  local COMMAND=$2
+  if typeset -f "ih::setup::$1::$2" >/dev/null; then
+    "ih::setup::$1::$2"
+    code=$?
+    return $code
+  else
+    ih::log::error "Step $1 does not implement command $2"
+    return 1
+  fi
 }
 
 # Attempts to test that a step has been installed.
@@ -64,117 +64,117 @@ function ih::private::try-invoke() {
 # Otherwise it invokes the function, and echoes it's output,
 # and returns the result.
 function ih::private::step-test() {
-    local RESULT
+  local RESULT
 
-    if typeset -f "ih::setup::$1::test" >/dev/null; then
-        "ih::setup::$1::test"
-        RESULT=$?
-        return $RESULT
-    else
-        echo "Step $1 does not implement a test method"
-        return 1
-    fi
+  if typeset -f "ih::setup::$1::test" >/dev/null; then
+    "ih::setup::$1::test"
+    RESULT=$?
+    return $RESULT
+  else
+    echo "Step $1 does not implement a test method"
+    return 1
+  fi
 }
 
 function ih::private::list-steps() {
-    local STEPS
-    local DAG
-    local SORTED
+  local STEPS
+  local DAG
+  local SORTED
 
-    STEPS=$(compgen -A function | grep -E '^ih::setup::[A-z0-9_-]+::install' | grep -v NAME | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
+  STEPS=$(compgen -A function | grep -E '^ih::setup::[A-z0-9_-]+::install' | grep -v NAME | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
 
-    for STEP in $STEPS; do
-        DEPS=$(ih::private::step-deps "$STEP")
-        if [[ -z $DEPS ]]; then
-            DAG="$DAG
+  for STEP in $STEPS; do
+    DEPS=$(ih::private::step-deps "$STEP")
+    if [[ -z $DEPS ]]; then
+      DAG="$DAG
 $STEP $STEP"
-        else
-            for DEP in $DEPS; do
-                DAG="$DAG
+    else
+      for DEP in $DEPS; do
+        DAG="$DAG
 $DEP $STEP"
-            done
-        fi
-    done
+      done
+    fi
+  done
 
-    SORTED=$(echo "$DAG" | tsort | tr '\n' ' ')
+  SORTED=$(echo "$DAG" | tsort | tr '\n' ' ')
 
-    echo "$SORTED"
+  echo "$SORTED"
 }
 
 function ih::private::load-steps() {
 
-    local STEP_FILES
+  local STEP_FILES
 
-    STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' "$IH_CORE_LIB_DIR")
+  STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' "$IH_CORE_LIB_DIR")
 
-    for STEP_FILE in $STEP_FILES; do
-        ih::log::debug "Steps found in $STEP_FILE"
-        # shellcheck disable=SC1090
-        . "$STEP_FILE"
-    done
+  for STEP_FILE in $STEP_FILES; do
+    ih::log::debug "Steps found in $STEP_FILE"
+    # shellcheck disable=SC1090
+    . "$STEP_FILE"
+  done
 }
 
 function ih::private::apply-to-steps() {
-    local COMMAND=$1
-    shift
-    STEPS=$*
-    if [[ -z $STEPS ]]; then
-        STEPS=$(ih::private::list-steps)
-    fi
-    for STEP in $STEPS; do
-        "ih::private::$COMMAND" "$STEP"
-    done
+  local COMMAND=$1
+  shift
+  STEPS=$*
+  if [[ -z $STEPS ]]; then
+    STEPS=$(ih::private::list-steps)
+  fi
+  for STEP in $STEPS; do
+    "ih::private::$COMMAND" "$STEP"
+  done
 }
 
 function ih::private::describe-step() {
-    blue "--------- $1 -----------\n"
-    ih::private::step-help "$1"
-    echo ""
-    echo "depends on: $(ih::private::step-deps "$1")"
-    echo ""
+  blue "--------- $1 -----------\n"
+  ih::private::step-help "$1"
+  echo ""
+  echo "depends on: $(ih::private::step-deps "$1")"
+  echo ""
 }
 
 function ih::private::test-step() {
-    ih::log::debug "Testing step $STEP..."
-    if [[ $IH_DEBUG = "1" ]]; then
-        ih::private::step-test "$STEP"
-    else
-        ih::private::step-test "$STEP" >/dev/null
-    fi
-    TEST_CODE=$?
-    if [[ $TEST_CODE = 0 ]]; then
-        green "$STEP has been installed\n"
-    else
-        red "$STEP needs to be installed\n"
-    fi
+  ih::log::debug "Testing step $STEP..."
+  if [[ $IH_DEBUG = "1" ]]; then
+    ih::private::step-test "$STEP"
+  else
+    ih::private::step-test "$STEP" >/dev/null
+  fi
+  TEST_CODE=$?
+  if [[ $TEST_CODE = 0 ]]; then
+    green "$STEP has been installed\n"
+  else
+    red "$STEP needs to be installed\n"
+  fi
 }
 
 function ih::private::test-deps() {
-    local DEPTH="$2  "
-    local FAILED=0
-    local DEP
-    local DEPS
-    DEPS=$(ih::private::try-invoke "$1" deps)
-    for DEP in $DEPS; do
-        ih::private::step-test "$DEP" >/dev/null
-        TEST_CODE=$?
-        if [[ $TEST_CODE != 0 ]]; then
-            red "$DEPTH Dependency $DEP not installed\n"
-            FAILED=1
-        else
-            green "$DEPTH Dependency $DEP is installed\n"
-        fi
-        ih::private::test-deps "$DEP" "$DEPTH"
-        TEST_CODE=$?
-        if [[ $TEST_CODE != 0 ]]; then
-            FAILED=1
-        fi
-    done
-
-    if [[ $FAILED = "1" ]]; then
-        return 1
+  local DEPTH="$2  "
+  local FAILED=0
+  local DEP
+  local DEPS
+  DEPS=$(ih::private::try-invoke "$1" deps)
+  for DEP in $DEPS; do
+    ih::private::step-test "$DEP" >/dev/null
+    TEST_CODE=$?
+    if [[ $TEST_CODE != 0 ]]; then
+      red "$DEPTH Dependency $DEP not installed\n"
+      FAILED=1
+    else
+      green "$DEPTH Dependency $DEP is installed\n"
     fi
-    return 0
+    ih::private::test-deps "$DEP" "$DEPTH"
+    TEST_CODE=$?
+    if [[ $TEST_CODE != 0 ]]; then
+      FAILED=1
+    fi
+  done
+
+  if [[ $FAILED = "1" ]]; then
+    return 1
+  fi
+  return 0
 
 }
 
@@ -184,66 +184,66 @@ function ih::private::test-deps() {
 # If IH_NO_CONFIRM is set to 1 it will skip confirmation; otherwise it will ask the user to confirm
 # before invoking the step.
 function ih::private::install-step() {
-    local TEST_CODE
-    if [ "$IH_FORCE" != "1" ]; then
-        ih::log::debug "Checking whether step $STEP needs to be installed..."
-        ih::private::step-test "$STEP" >/dev/null
-        TEST_CODE=$?
-        if [[ $TEST_CODE -eq 0 ]]; then
-            ih::log::info "${STEP} has been installed (use --force to re-install)"
-            return 0
-        fi
-
-        ih::private::test-deps "$STEP" >/dev/null
-        TEST_CODE=$?
-        if [[ $TEST_CODE -ne 0 ]]; then
-            red "$STEP dependencies have not been installed (use --force to ignore)\n"
-            ih::private::test-deps "$STEP"
-            return 1
-        fi
-
+  local TEST_CODE
+  if [ "$IH_FORCE" != "1" ]; then
+    ih::log::debug "Checking whether step $STEP needs to be installed..."
+    ih::private::step-test "$STEP" >/dev/null
+    TEST_CODE=$?
+    if [[ $TEST_CODE -eq 0 ]]; then
+      ih::log::info "${STEP} has been installed (use --force to re-install)"
+      return 0
     fi
 
-    ih::log::info "Planning to install step $STEP..."
-
-    if [ "$IH_NO_CONFIRM" != "1" ]; then
-
-        CONFIRM_TEXT=$(ih::private::step-help "$STEP")
-        if [[ -z $CONFIRM_TEXT ]]; then
-            CONFIRM_TEXT="About to install step $STEP"
-        fi
-
-        ih::private::confirm "$CONFIRM_TEXT"
-        CONFIRMED_STEP=$?
-        if [[ $CONFIRMED_STEP -ne 0 ]]; then
-            yellow "Skipping step $STEP\n"
-            return 0
-        fi
+    ih::private::test-deps "$STEP" >/dev/null
+    TEST_CODE=$?
+    if [[ $TEST_CODE -ne 0 ]]; then
+      red "$STEP dependencies have not been installed (use --force to ignore)\n"
+      ih::private::test-deps "$STEP"
+      return 1
     fi
 
-    ih::private::step-install "$STEP"
+  fi
 
-    SUCCCESS=$?
-    if [[ $SUCCCESS -eq 0 ]]; then
-        green "Installed step $STEP\n"
-    else
-        ih::log::error "💩 Installation of step $STEP failed"
-        return 1
+  ih::log::info "Planning to install step $STEP..."
+
+  if [ "$IH_NO_CONFIRM" != "1" ]; then
+
+    CONFIRM_TEXT=$(ih::private::step-help "$STEP")
+    if [[ -z $CONFIRM_TEXT ]]; then
+      CONFIRM_TEXT="About to install step $STEP"
     fi
+
+    ih::private::confirm "$CONFIRM_TEXT"
+    CONFIRMED_STEP=$?
+    if [[ $CONFIRMED_STEP -ne 0 ]]; then
+      yellow "Skipping step $STEP\n"
+      return 0
+    fi
+  fi
+
+  ih::private::step-install "$STEP"
+
+  SUCCCESS=$?
+  if [[ $SUCCCESS -eq 0 ]]; then
+    green "Installed step $STEP\n"
+  else
+    ih::log::error "💩 Installation of step $STEP failed"
+    return 1
+  fi
 }
 
 ih::help() {
-    local SUBCOMMANDS
-    SUBCOMMANDS=$(ih::private::list-steps | tr '\n' ' ')
+  local SUBCOMMANDS
+  SUBCOMMANDS=$(ih::private::list-steps | tr '\n' ' ')
 
-    WITH_HELP=""
-    for SUBCOMMAND in $SUBCOMMANDS; do
-        SUBCOMMAND=$(printf "    %-18s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
-        WITH_HELP="$WITH_HELP
+  WITH_HELP=""
+  for SUBCOMMAND in $SUBCOMMANDS; do
+    SUBCOMMAND=$(printf "    %-18s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
+    WITH_HELP="$WITH_HELP
 $SUBCOMMAND"
-    done
+  done
 
-    cat <<USAGE
+  cat <<USAGE
  Usage:
     ih-setup [flags...] {SUBCOMMAND} [arguments]
 
@@ -274,67 +274,67 @@ USAGE
 
 function main() {
 
-    if [[ $# -eq 0 ]]; then
-        ih::help
-        exit 0
-    fi
+  if [[ $# -eq 0 ]]; then
+    ih::help
+    exit 0
+  fi
 
-    while getopts "yfv" arg; do
-        case $arg in
-        y) export IH_NO_CONFIRM=1 ;;
-        f) export IH_FORCE=1 ;;
-        v) export IH_DEBUG=1 ;;
-        *)
-            ih::help
-            exit 1
-            ;;
-        esac
-    done
-
-    shift $((OPTIND - 1))
-
-    local IS_AUGMENT_SOURCED_IN_SHELL
-    if [[ $IH_AUGMENT_SOURCED = "yes" ]]; then
-        IS_AUGMENT_SOURCED_IN_SHELL="yes"
-    fi
-
-    local command=${1:?"Run ih-setup help for usage"}
-    shift
-
-    case "${command}" in
-    -h | -? | --help) command=help ;;
+  while getopts "yfv" arg; do
+    case $arg in
+    y) export IH_NO_CONFIRM=1 ;;
+    f) export IH_FORCE=1 ;;
+    v) export IH_DEBUG=1 ;;
+    *)
+      ih::help
+      exit 1
+      ;;
     esac
+  done
 
-    case "${command}" in
-    help) ;;
+  shift $((OPTIND - 1))
 
-    all)
-        ih::private::install-all
-        ;;
-    install)
-        ih::private::apply-to-steps install-step "$*"
-        RESULT=$?
-        if [[ -z $IS_AUGMENT_SOURCED_IN_SHELL ]]; then
-            ih::log::warn "Remember to source .zshrc or .bashrc to add IH augments to your shell"
-        fi
-        return $?
-        ;;
-    describe)
-        ih::private::apply-to-steps describe-step "$*"
-        return $?
-        ;;
-    check)
-        ih::private::apply-to-steps test-step "$*"
-        return $?
-        ;;
-    private::*)
-        : # Assume the caller knows what they're doing
-        ;;
-    *) ;;
+  local IS_AUGMENT_SOURCED_IN_SHELL
+  if [[ $IH_AUGMENT_SOURCED = "yes" ]]; then
+    IS_AUGMENT_SOURCED_IN_SHELL="yes"
+  fi
 
-    esac
+  local command=${1:?"Run ih-setup help for usage"}
+  shift
 
-    ih::${command} "${@}"
+  case "${command}" in
+  -h | -? | --help) command=help ;;
+  esac
+
+  case "${command}" in
+  help) ;;
+
+  all)
+    ih::private::install-all
+    ;;
+  install)
+    ih::private::apply-to-steps install-step "$*"
+    RESULT=$?
+    if [[ -z $IS_AUGMENT_SOURCED_IN_SHELL ]]; then
+      ih::log::warn "Remember to source .zshrc or .bashrc to add IH augments to your shell"
+    fi
+    return $?
+    ;;
+  describe)
+    ih::private::apply-to-steps describe-step "$*"
+    return $?
+    ;;
+  check)
+    ih::private::apply-to-steps test-step "$*"
+    return $?
+    ;;
+  private::*)
+    : # Assume the caller knows what they're doing
+    ;;
+  *) ;;
+
+  esac
+
+  ih::${command} "${@}"
 }
 
 ih::private::load-steps

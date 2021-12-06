@@ -4,9 +4,8 @@
 # It will not be overwritten when the core bootstrapping
 # module is updated
 
-
 # Only continue if we're on bash
 SHELL=$(ps -cp "$$" -o command="")
 if [[ ! $SHELL =~ "bash" ]]; then
-    return 0
+  return 0
 fi
