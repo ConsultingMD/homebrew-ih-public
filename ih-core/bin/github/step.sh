@@ -4,7 +4,7 @@ THIS_DIR=$(dirname $BASH_SOURCE)
 IH_DIR="$HOME/.ih"
 IH_CUSTOM_DIR="$IH_DIR/custom"
 
-function step::github::help(){
+function ih::setup::github::help(){
     echo "Configure github settings
     
     This step will:
@@ -12,7 +12,7 @@ function step::github::help(){
     - Configure your GitHub account to support authenticating with your SSH key"
 }
 
-function step::github::test(){
+function ih::setup::github::test(){
 
     local SSH_RESULT
     SSH_RESULT=$(ssh git@github.com 2>&1)
@@ -24,12 +24,12 @@ function step::github::test(){
     return 1
 }
 
-function step::github::deps(){
+function ih::setup::github::deps(){
     # echo "other steps"
     echo "shell git ssh"
 }
 
-function step::github::install(){
+function ih::setup::github::install(){
 
     # make sure gh is installed
     command -v gh >/dev/null 2>&1 || brew install gh

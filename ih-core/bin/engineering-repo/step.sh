@@ -4,14 +4,14 @@ THIS_DIR=$(dirname $BASH_SOURCE)
 IH_DIR="$HOME/.ih"
 IH_CUSTOM_DIR="$IH_DIR/custom"
 
-function step::engineering-repo::help() {
+function ih::setup::engineering-repo::help() {
     echo "Clone engineering repo to access additional scripts
     
     This step will:
     - Clone the ConsultingMD/engineering repo"
 }
 
-function step::engineering-repo::test() {
+function ih::setup::engineering-repo::test() {
     if [ -d "${GR_HOME}/engineering" ]; then
         return 0
     fi
@@ -19,12 +19,12 @@ function step::engineering-repo::test() {
     return 1
 }
 
-function step::engineering-repo::deps() {
+function ih::setup::engineering-repo::deps() {
     # echo "other steps"
     echo "github"
 }
 
-function step::engineering-repo::install() {
+function ih::setup::engineering-repo::install() {
 
     mkdir -p "${GR_HOME}"
 

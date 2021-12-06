@@ -1,36 +1,34 @@
 #!/bin/bash
 
-THIS_DIR=$(dirname $BASH_SOURCE)
 IH_DIR="$HOME/.ih"
 IH_CUSTOM_DIR="$IH_DIR/custom"
 
-function step::shell::help(){
-    echo "Add Included Health shell augmentations
+function ih::setup::shell::help(){
+    echo "Augment shell with Included Health components
 
-    This command will:
-    - Copy some default shell setup scripts into $HOME/.ih
-      These scripts wire up shared commands that are needed for 
-      engineering work.
+    This step will:
+    - Copy the augment.sh shell setup scripts into $HOME/.ih
+      and source it in .zshrc and .bashrc. This script sources
+      additional scripts that are used for engineering work.
     - Create some convential files where you can customize aliases
       and other shell things (if those files don't already exist)
     - Give you a chance to fill out some environment variables
-      with your personal information (if you haven't done this yet."
+      with your personal information (if you haven't done this yet)."
 }
 
-function step::shell::test(){
-    step::shell::private::validate-profile
+function ih::setup::shell::test(){
+    ih::setup::shell::private::validate-profile
     return $?
 }
 
-function step::shell::deps(){
+function ih::setup::shell::deps(){
     # echo "other steps"
     echo ""
 }
 
-function step::shell::install(){
+function ih::setup::shell::install(){
 
-
-    echo "Installing from script in $THIS_DIR"
+    local THIS_DIR="$IH_CORE_DIR/bin/shell"
 
     echo "Copying shell augmentation templates to ${IH_DIR}"
 
@@ -39,12 +37,12 @@ function step::shell::install(){
     cp -R "${THIS_DIR}/default/" "${IH_DIR}/default"
     cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
-    step::shell::private::configure-profile
+    ih::setup::shell::private::configure-profile
 
     echo "Configuring shells to source IH shell configs"
 
-    step::shell::private::configure-bashrc
-    step::shell::private::configure-zshrc
+    ih::setup::shell::private::configure-bashrc
+    ih::setup::shell::private::configure-zshrc
 
     echo ""
 
@@ -63,7 +61,7 @@ BOOTSTRAP_SOURCE_LINE='
 '
 
 # Create bashrc if it doesn't exist, if it does, append standard template
-function step::shell::private::configure-bashrc() {
+function ih::setup::shell::private::configure-bashrc() {
     if [[ ! -e "${HOME}/.bashrc" ]]; then
         echo "Creating new ~/.bashrc file"
         touch "${HOME}/.bashrc"
@@ -87,7 +85,7 @@ If you want to source IH scripts earlier, adjust your .bashrc"
 }
 
 # Create zshrc if it doesn't exist, if it does, append standard template
-function step::shell::private::configure-zshrc() {
+function ih::setup::shell::private::configure-zshrc() {
     if [[ ! -e "${HOME}/.zshrc" ]]; then
         echo "Creating new ~/.zshrc file"
         touch "${HOME}/.zshrc"
@@ -109,11 +107,11 @@ If you want to source IH scripts earlier, adjust your .zshrc"
 
 
 
-function step::shell::private::configure-profile(){
+function ih::setup::shell::private::configure-profile(){
 
     re_source
 
-    step::shell::private::validate-profile
+    ih::setup::shell::private::validate-profile
     local PROFILE_VALID=$?
     local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
 
@@ -130,7 +128,7 @@ function step::shell::private::configure-profile(){
 
         nano "$PROFILE_FILE"
 
-        step::shell::private::configure-profile
+        ih::setup::shell::private::configure-profile
     fi
 
     re_source
@@ -152,10 +150,10 @@ function re_source() {
 
 
 
-function step::shell::private::validate-profile() {
+function ih::setup::shell::private::validate-profile() {
 
     local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
-    local PROFILE_TEMPLATE_FILE="$THIS_DIR/custom/00_env.sh"
+    local PROFILE_TEMPLATE_FILE="$IH_CORE_DIR/bin/shell/custom/00_env.sh"
 
     if [[ ! -f $PROFILE_FILE ]]; then 
         return 1

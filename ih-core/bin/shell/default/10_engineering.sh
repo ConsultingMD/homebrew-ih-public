@@ -20,7 +20,4 @@ if [[ -d "${ENGINEERING_BASH}" ]]; then
         # shellcheck source=/dev/null
         . "$f"
     done
-
-else 
-  echo "Warning: Failed to locate engineering repo at ${ENGINEERING_DIR}.  Make sure you have the repo checked out and up to date."
 fi

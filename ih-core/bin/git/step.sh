@@ -4,14 +4,16 @@ THIS_DIR=$(dirname $BASH_SOURCE)
 IH_DIR="$HOME/.ih"
 IH_CUSTOM_DIR="$IH_DIR/custom"
 
-function step::git::help(){
-    echo "Configure git settings:
+function ih::setup::git::help(){
+    echo "Configure git settings
+
+    This step will:
     - update your global git config to use some good defaults
     - create $GR_HOME if it doesn't exist
     - create a default global .gitignore if one doesn't exist"
 }
 
-function step::git::test(){
+function ih::setup::git::test(){
 
     if [[ ! -f $HOME/.gitignore_global ]]; then
         return 1
@@ -24,15 +26,15 @@ function step::git::test(){
     return 0
 }
 
-function step::git::deps(){
+function ih::setup::git::deps(){
     # echo "other steps"
     echo "shell"
 }
 
-function step::git::install(){
+function ih::setup::git::install(){
 
     # Profile must be valid before we can setup git
-    step::shell::private::configure-profile
+    ih::setup::shell::private::configure-profile
 
     git config --global user.name "${GITHUB_USER}"
     git config --global user.email "${EMAIL_ADDRESS}"

@@ -4,7 +4,7 @@ THIS_DIR=$(dirname $BASH_SOURCE)
 IH_DIR="$HOME/.ih"
 IH_CUSTOM_DIR="$IH_DIR/custom"
 
-function step::ssh::help(){
+function ih::setup::ssh::help(){
     local SSH_CONFIG_PATH=$HOME/.ssh/config
 
     echo "Configure SSH settings
@@ -13,7 +13,7 @@ function step::ssh::help(){
     - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"    
 }
 
-function step::ssh::test(){
+function ih::setup::ssh::test(){
 
     if [[ -f $HOME/.ssh/config ]]; then
         if [[ -f "$HOME/.ssh/id_rsa.pub" ]]; then
@@ -26,12 +26,12 @@ function step::ssh::test(){
     return 1
 }
 
-function step::ssh::deps(){
+function ih::setup::ssh::deps(){
     # echo "other steps"
     echo "shell"
 }
 
-function step::ssh::install(){
+function ih::setup::ssh::install(){
 
     local SSH_CONFIG_PATH=$HOME/.ssh/config
 
