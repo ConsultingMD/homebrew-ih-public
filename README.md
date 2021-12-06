@@ -8,6 +8,7 @@ automate workflows.
 - [./meta](./meta) Contains scripts and tools for managing working on this repo itself. 
   This will be refactored to be the template for how we want to standardize repo init/build/test commands.
 - [./ih-core](./ih-core) Contains the core tools used by all teams, and the bootstrapping scripts for initial onboarding/setup.
+  See the readme in this folder for details on how to install the ih-core components.
 - [./formula](./formula) Contains the brew formula implemented in this repo.
 
 ## Brew
