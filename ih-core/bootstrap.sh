@@ -12,4 +12,4 @@ brew install ih-core
 
 ih-setup install
 
-echo "Remember to source your .zshrc or .bashrc now that setup is complete, or start a new shell."
+echo "If install succeeded, remember to source your .zshrc or .bashrc now that setup is complete, or start a new shell."
