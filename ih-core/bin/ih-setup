@@ -14,33 +14,29 @@ source "$IH_CORE_LIB_DIR/log.sh"
 
 # Attempts to return help for the step passed as an argument
 function ih::private::step-help() {
-  if typeset -f "ih::setup::$1::help" >/dev/null; then
-    "ih::setup::$1::help"
-  else
-    echo ""
-  fi
+  ih::private::try-invoke "$1" help
+}
+
+function ih::private::step-test() {
+  ih::private::try-invoke "$1" test
+  return $?
 }
 
 # Attempts to return dependencies for the step passed as an argument
 function ih::private::step-deps() {
-  local OUTPUT
-  OUTPUT=$(ih::private::try-invoke "$1" deps)
-  RESULT=$?
-  echo "$OUTPUT"
-  return $RESULT
+  ih::private::try-invoke "$1" deps
+  return $?
 }
 
 function ih::private::step-install() {
-  if typeset -f "ih::setup::$1::install" >/dev/null; then
-    "ih::setup::$1::install"
-    code=$?
-    return $code
-  else
-    echo "STEP $1 HAS NO INSTALL"
-    return 1
-  fi
+  ih::private::try-invoke "$1" install
+  return $?
 }
 
+# Tries to invoke a step command $2 on a step $1.
+# If it can't be invoked because it doesn't exist,
+# this will log an error and return 1. Otherwise
+# it will return the result of invoking the command.
 function ih::private::try-invoke() {
   if [[ $# -ne 2 ]]; then
     ih::log::error "ih::private::try-invoke takes arguments STEP COMMAND"
@@ -58,26 +54,9 @@ function ih::private::try-invoke() {
   fi
 }
 
-# Attempts to test that a step has been installed.
-# If the step doesn't implement the ::test function
-# then this echoes "UNKNOWN" and returns 1.
-# Otherwise it invokes the function, and echoes it's output,
-# and returns the result.
-function ih::private::step-test() {
-  local RESULT
-
-  if typeset -f "ih::setup::$1::test" >/dev/null; then
-    "ih::setup::$1::test"
-    RESULT=$?
-    return $RESULT
-  else
-    echo "Step $1 does not implement a test method"
-    return 1
-  fi
-}
-
 function ih::private::list-steps() {
   local STEPS
+  local STEP
   local DAG
   local SORTED
 
@@ -104,6 +83,7 @@ $DEP $STEP"
 function ih::private::load-steps() {
 
   local STEP_FILES
+  local STEP_FILE
 
   STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' "$IH_CORE_LIB_DIR")
 
@@ -114,6 +94,9 @@ function ih::private::load-steps() {
   done
 }
 
+# Applies command $1 to the steps listed in the rest of the arguments.
+# If there are no steps listed then the command will be applied to
+# all the known steps.
 function ih::private::apply-to-steps() {
   local COMMAND=$1
   shift
@@ -126,6 +109,8 @@ function ih::private::apply-to-steps() {
   done
 }
 
+# Prints the description of the step in $1
+# along the the deps.
 function ih::private::describe-step() {
   blue "--------- $1 -----------\n"
   ih::private::step-help "$1"
@@ -134,6 +119,9 @@ function ih::private::describe-step() {
   echo ""
 }
 
+# Tests the step $1 with nicer logging.
+# If IH_DEBUG is not set to 1 then this will
+# discard the output of the test command for the step.
 function ih::private::test-step() {
   ih::log::debug "Testing step $STEP..."
   if [[ $IH_DEBUG = "1" ]]; then
@@ -149,6 +137,9 @@ function ih::private::test-step() {
   fi
 }
 
+# Tests the dependencies of the step in $1,
+# recursively. Returns 1 if any dependency
+# is not installed.
 function ih::private::test-deps() {
   local DEPTH="$2  "
   local FAILED=0
@@ -207,14 +198,14 @@ function ih::private::install-step() {
   ih::log::info "Planning to install step $STEP..."
 
   if [ "$IH_NO_CONFIRM" != "1" ]; then
-
+    local CONFIRM_TEXT
     CONFIRM_TEXT=$(ih::private::step-help "$STEP")
     if [[ -z $CONFIRM_TEXT ]]; then
       CONFIRM_TEXT="About to install step $STEP"
     fi
 
     ih::private::confirm "$CONFIRM_TEXT"
-    CONFIRMED_STEP=$?
+    local CONFIRMED_STEP=$?
     if [[ $CONFIRMED_STEP -ne 0 ]]; then
       yellow "Skipping step $STEP\n"
       return 0
@@ -223,7 +214,7 @@ function ih::private::install-step() {
 
   ih::private::step-install "$STEP"
 
-  SUCCCESS=$?
+  local SUCCCESS=$?
   if [[ $SUCCCESS -eq 0 ]]; then
     green "Installed step $STEP\n"
   else
@@ -236,7 +227,7 @@ ih::help() {
   local SUBCOMMANDS
   SUBCOMMANDS=$(ih::private::list-steps | tr '\n' ' ')
 
-  WITH_HELP=""
+  local WITH_HELP=""
   for SUBCOMMAND in $SUBCOMMANDS; do
     SUBCOMMAND=$(printf "    %-18s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
     WITH_HELP="$WITH_HELP
@@ -281,13 +272,13 @@ function main() {
 
   while getopts "yfv" arg; do
     case $arg in
-    y) export IH_NO_CONFIRM=1 ;;
-    f) export IH_FORCE=1 ;;
-    v) export IH_DEBUG=1 ;;
-    *)
-      ih::help
-      exit 1
-      ;;
+      y) export IH_NO_CONFIRM=1 ;;
+      f) export IH_FORCE=1 ;;
+      v) export IH_DEBUG=1 ;;
+      *)
+        ih::help
+        exit 1
+        ;;
     esac
   done
 
@@ -302,35 +293,36 @@ function main() {
   shift
 
   case "${command}" in
-  -h | -? | --help) command=help ;;
+    -h | -? | --help) command=help ;;
   esac
 
   case "${command}" in
-  help) ;;
+    help) ;;
 
-  all)
-    ih::private::install-all
-    ;;
-  install)
-    ih::private::apply-to-steps install-step "$*"
-    RESULT=$?
-    if [[ -z $IS_AUGMENT_SOURCED_IN_SHELL ]]; then
-      ih::log::warn "Remember to source .zshrc or .bashrc to add IH augments to your shell"
-    fi
-    return $?
-    ;;
-  describe)
-    ih::private::apply-to-steps describe-step "$*"
-    return $?
-    ;;
-  check)
-    ih::private::apply-to-steps test-step "$*"
-    return $?
-    ;;
-  private::*)
-    : # Assume the caller knows what they're doing
-    ;;
-  *) ;;
+    all)
+      ih::private::install-all
+      ;;
+    install)
+      ih::private::apply-to-steps install-step "$*"
+      local INSTALL_RESULT
+      INSTALL_RESULT=$?
+      if [[ -z $IS_AUGMENT_SOURCED_IN_SHELL ]]; then
+        ih::log::warn "Remember to source .zshrc or .bashrc to add IH augments to your shell"
+      fi
+      return $INSTALL_RESULT
+      ;;
+    describe)
+      ih::private::apply-to-steps describe-step "$*"
+      return $?
+      ;;
+    check)
+      ih::private::apply-to-steps test-step "$*"
+      return $?
+      ;;
+    private::*)
+      : # Assume the caller knows what they're doing
+      ;;
+    *) ;;
 
   esac
 

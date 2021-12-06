@@ -18,11 +18,11 @@ export ZDOTDIR=$HOME
 command=${1:-""}
 
 case "${command}" in
-reset)
-  echo "Deleting temp home if it exists"
-  test -d /tmp/ih-core-test && rm -rf /tmp/ih-core-test
-  shift
-  ;;
+  reset)
+    echo "Deleting temp home if it exists"
+    test -d /tmp/ih-core-test && rm -rf /tmp/ih-core-test
+    shift
+    ;;
 esac
 
 echo "Using $HOME as home"

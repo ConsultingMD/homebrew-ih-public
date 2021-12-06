@@ -44,25 +44,12 @@ function ih::setup::github::install() {
     gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
   fi
 
-  ssh git@github.com
-
-  echo ""
-
-  print_header "Cloning the Engineering repo now that we have access"
-  mkdir -p "${GR_HOME}"
-  pushd "${GR_HOME}" >/dev/null 2>&1 || exit 1
-  echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
-  if [ ! -d "${GR_HOME}/engineering" ]; then
-    set -e
-    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5
-    set +e
-  else
-    echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
+  if ih::setup::github::test; then
+    echo "GitHub configuration complete"
+    return 0
   fi
-  popd >/dev/null 2>&1 || exit 1
 
-  re_source
+  ih::log::error "Github configuration failed, try installing again with -v flag for details"
+  return 1
 
-  echo ""
-  echo "GitHub configuration complete"
 }

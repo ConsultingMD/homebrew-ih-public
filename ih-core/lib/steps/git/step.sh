@@ -11,6 +11,7 @@ function ih::setup::git::help() {
 
 function ih::setup::git::test() {
 
+  # shellcheck disable=SC1091
   source "$HOME/.ih/augment.sh"
 
   if [[ ! -f $HOME/.gitignore_global ]]; then
@@ -45,7 +46,7 @@ function ih::setup::git::install() {
   git config --global url.ssh://git@github.com/.insteadOf https://github.com/
 
   #Make sure the desired src directory exists if GR_HOME is declared
-  [[ -n ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
+  [[ -n ${GR_HOME} ]] && mkdir -p "${GR_HOME}"
 
   # Copy the gitignore template into global if there isn't already a global.
 
