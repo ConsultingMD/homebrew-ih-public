@@ -15,8 +15,10 @@ URL="https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/$VERSI
 
 sed -i '' "s/^  url.*/  url \"${URL//\//\\/}\""/ "$THIS_DIR/../formula/ih-core.rb"
 
-git add "$THIS_DIR/../formula/ih-core.rb"
-git commit -m "Bump version to $VERSION"
+if [[ $(git status --short) != '' ]]; then
+    git add "$THIS_DIR/../formula/ih-core.rb"
+    git commit -m "Bump version to $VERSION"
+fi
 git tag -a "$VERSION" -m "Release version $VERSION"
 git push
 
