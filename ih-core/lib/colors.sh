@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: namespace these
+
 black() {
     printf "\e[30m%b\e[0m" "$1"
 }

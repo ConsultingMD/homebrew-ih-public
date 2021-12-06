@@ -1,9 +1,5 @@
 #!/bin/bash
 
-THIS_DIR=$(dirname $BASH_SOURCE)
-IH_DIR="$HOME/.ih"
-IH_CUSTOM_DIR="$IH_DIR/custom"
-
 function ih::setup::ssh::help(){
     local SSH_CONFIG_PATH=$HOME/.ssh/config
 
@@ -43,9 +39,9 @@ function ih::setup::ssh::install(){
 
     if [[ ! -e $HOME/.ssh/id_rsa ]]; then
         ssh-keygen -f "$HOME/.ssh/id_rsa" -b4096 -t rsa -C "${EMAIL_ADDRESS}"
-        ssh-add -K $HOME/.ssh/id_rsa
+        ssh-add -K "$HOME/.ssh/id_rsa"
     else 
-        # make sure there's a public key file because 
+        # make sure there's a public key file because
         # ssh-keygen -l doesn't decrypt encrypted private keys
         if [[ ! -e $HOME/.ssh/id_rsa.pub ]]; then
             ssh-keygen -f "$HOME/.ssh/id_rsa" -y > "$HOME/.ssh/id_rsa.pub"
@@ -54,7 +50,7 @@ function ih::setup::ssh::install(){
         if [[ "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" |cut -d' ' -f1 )" == "4096" ]]; then
             echo "Excellent - you have a 4k ssh key created and installed"
             eval "$(ssh-agent -s)"
-            ssh-add -K $HOME/.ssh/id_rsa
+            ssh-add -K "$HOME/.ssh/id_rsa"
         else
             echo "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
             echo "Contact an adult for help in resolving this."

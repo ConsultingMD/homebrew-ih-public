@@ -1,9 +1,5 @@
 #!/bin/bash
 
-THIS_DIR=$(dirname $BASH_SOURCE)
-IH_DIR="$HOME/.ih"
-IH_CUSTOM_DIR="$IH_DIR/custom"
-
 function ih::setup::engineering-repo::help() {
     echo "Clone engineering repo to access additional scripts
     

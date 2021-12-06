@@ -159,6 +159,7 @@ function re_source() {
     echo "Sourcing recently updated files."
 
     local BOOTSTRAP_FILE="$IH_DIR"/augment.sh
+    # shellcheck disable=SC1090
     source "$BOOTSTRAP_FILE"
 
     exec 2>&3
@@ -177,9 +178,11 @@ function ih::setup::shell::private::validate-profile() {
     fi
 
     set -e
-    local VARS=$(cat $PROFILE_TEMPLATE_FILE | grep export | cut -f 2 -d" " - | cut -f 1 -d"=" -)
+    local VARS
+    VARS=$(grep export "$PROFILE_TEMPLATE_FILE"  | cut -f 2 -d" " - | cut -f 1 -d"=" -)
 
-    source $PROFILE_FILE
+    # shellcheck disable=SC1090
+    source "$PROFILE_FILE"
 
     set +e
 

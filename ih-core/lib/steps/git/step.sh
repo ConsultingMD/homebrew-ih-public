@@ -1,9 +1,5 @@
 #!/bin/bash
 
-THIS_DIR=$(dirname $BASH_SOURCE)
-IH_DIR="$HOME/.ih"
-IH_CUSTOM_DIR="$IH_DIR/custom"
-
 function ih::setup::git::help(){
     echo "Configure git settings
 
@@ -45,13 +41,13 @@ function ih::setup::git::install(){
     git config --global url.ssh://git@github.com/.insteadOf https://github.com/
 
     #Make sure the desired src directory exists if GR_HOME is declared
-    [[ ! -z ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
+    [[ -n ${GR_HOME+x} ]] && mkdir -p "${GR_HOME}"
 
     # Copy the gitignore template into global if there isn't already a global.
     cp -n "${BIN_DIR}/git/gitignore" "${HOME}/.gitignore_global" || :
 
     echo "Updated git global config as follows:"
-    PAGER=cat git config --global --list
+    git -P config --global --list
     echo ""
 
     echo "Git configuration completed."

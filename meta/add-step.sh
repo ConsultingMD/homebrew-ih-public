@@ -4,7 +4,7 @@
 STEP=${1:?"You must provide a name for your new step"}
 
 THIS_DIR=$(dirname $(realpath "$0"))
-BIN_DIR="$THIS_DIR/../ih-core/bin"
+STEPS_DIR="$THIS_DIR/../ih-core/lib/steps"
 
 STEP_DIR="$BIN_DIR/$STEP"
 

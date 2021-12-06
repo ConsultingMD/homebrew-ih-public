@@ -1,9 +1,5 @@
 #!/bin/bash
 
-THIS_DIR=$(dirname $BASH_SOURCE)
-IH_DIR="$HOME/.ih"
-IH_CUSTOM_DIR="$IH_DIR/custom"
-
 function ih::setup::github::help(){
     echo "Configure github settings
     
@@ -57,7 +53,9 @@ function ih::setup::github::install(){
     pushd "${GR_HOME}" >/dev/null 2>&1 || exit 1
         echo -e "\n* Cloning Engineering repo to ${GR_HOME}, this will take a while..."
             if [ ! -d "${GR_HOME}/engineering" ]; then
-                git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 || { echo -e "${git_clone_err_msg}"; skipped_items_list+=("do_clone_repos:::engineering"); true; }
+                set -e
+                git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5
+                set +e
             else
                 echo "Skipping git clone for engineering repo -- ${GR_HOME}/engineering already exists"
             fi

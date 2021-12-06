@@ -1,17 +1,21 @@
 #!/bin/bash
 
-export IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
+export IH_CORE_DIR
+IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
 
+# shellcheck source=../lib/confirm.sh
 source "$IH_CORE_LIB_DIR/confirm.sh"
+# shellcheck source=../lib/colors.sh
 source "$IH_CORE_LIB_DIR/colors.sh"
+# shellcheck source=../lib/log.sh
 source "$IH_CORE_LIB_DIR/log.sh"
 
 # Attempts to return help for the step passed as an argument
 function ih::private::step-help() {
-    if typeset -f ih::setup::$1::help >/dev/null; then
-        ih::setup::$1::help
+    if typeset -f "ih::setup::$1::help" >/dev/null; then
+        "ih::setup::$1::help"
     else
         echo ""
     fi
@@ -20,15 +24,15 @@ function ih::private::step-help() {
 # Attempts to return dependencies for the step passed as an argument
 function ih::private::step-deps() {
     local OUTPUT
-    OUTPUT=$(ih::private::try-invoke $1 deps)
+    OUTPUT=$(ih::private::try-invoke "$1" deps)
     RESULT=$?
-    echo $OUTPUT
+    echo "$OUTPUT"
     return $RESULT
 }
 
 function ih::private::step-install() {
-    if typeset -f ih::setup::$1::install >/dev/null; then
-        ih::setup::$1::install
+    if typeset -f "ih::setup::$1::install" >/dev/null; then
+        "ih::setup::$1::install"
         code=$?
         return $code
     else
@@ -44,8 +48,8 @@ function ih::private::try-invoke() {
     fi
     local STEP=$1
     local COMMAND=$2
-    if typeset -f ih::setup::$1::$2 >/dev/null; then
-        ih::setup::$1::$2
+    if typeset -f "ih::setup::$1::$2" >/dev/null; then
+        "ih::setup::$1::$2"
         code=$?
         return $code
     else
@@ -62,8 +66,8 @@ function ih::private::try-invoke() {
 function ih::private::step-test() {
     local RESULT
 
-    if typeset -f ih::setup::$1::test >/dev/null; then
-        ih::setup::$1::test
+    if typeset -f "ih::setup::$1::test" >/dev/null; then
+        "ih::setup::$1::test"
         RESULT=$?
         return $RESULT
     else
@@ -79,13 +83,13 @@ function ih::private::list-steps() {
 
     STEPS=$(compgen -A function | grep -E '^ih::setup::[A-z0-9_-]+::install' | grep -v NAME | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
 
-    for STEP in $(echo $STEPS); do
-        DEPS=$(ih::private::step-deps $STEP)
+    for STEP in $STEPS; do
+        DEPS=$(ih::private::step-deps "$STEP")
         if [[ -z $DEPS ]]; then
             DAG="$DAG
 $STEP $STEP"
         else
-            for DEP in $(echo $DEPS); do
+            for DEP in $DEPS; do
                 DAG="$DAG
 $DEP $STEP"
             done
@@ -101,11 +105,12 @@ function ih::private::load-steps() {
 
     local STEP_FILES
 
-    STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' $IH_CORE_DIR)
+    STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' "$IH_CORE_LIB_DIR")
 
-    for STEP_FILE in $(echo $STEP_FILES); do
-        # echo "Steps found in $STEP_FILE"
-        . $STEP_FILE
+    for STEP_FILE in $STEP_FILES; do
+        ih::log::debug "Steps found in $STEP_FILE"
+        # shellcheck disable=SC1090
+        . "$STEP_FILE"
     done
 }
 
@@ -125,7 +130,7 @@ function ih::private::describe-step() {
     blue "--------- $1 -----------\n"
     ih::private::step-help "$1"
     echo ""
-    echo "depends on: $(ih::private::step-deps $1)"
+    echo "depends on: $(ih::private::step-deps "$1")"
     echo ""
 }
 
@@ -148,7 +153,8 @@ function ih::private::test-deps() {
     local DEPTH="$2  "
     local FAILED=0
     local DEP
-    local DEPS=$(ih::private::try-invoke $1 deps)
+    local DEPS
+    DEPS=$(ih::private::try-invoke "$1" deps)
     for DEP in $DEPS; do
         ih::private::step-test "$DEP" >/dev/null
         TEST_CODE=$?
@@ -215,7 +221,7 @@ function ih::private::install-step() {
         fi
     fi
 
-    ih::private::step-install $STEP
+    ih::private::step-install "$STEP"
 
     SUCCCESS=$?
     if [[ $SUCCCESS -eq 0 ]]; then
@@ -227,19 +233,19 @@ function ih::private::install-step() {
 }
 
 ih::help() {
-    local subcommands
-    subcommands=$(ih::private::list-steps | tr '\n' ' ')
+    local SUBCOMMANDS
+    SUBCOMMANDS=$(ih::private::list-steps | tr '\n' ' ')
 
-    withHelp=""
-    for subcommand in $subcommands; do
-        subcommand=$(printf "    %-18s %s" $subcommand "$(ih::private::step-help $subcommand | head -n 1)")
-        withHelp="$withHelp
-$subcommand"
+    WITH_HELP=""
+    for SUBCOMMAND in $SUBCOMMANDS; do
+        SUBCOMMAND=$(printf "    %-18s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
+        WITH_HELP="$WITH_HELP
+$SUBCOMMAND"
     done
 
     cat <<USAGE
  Usage:
-    ih-setup [flags...] {subcommand} [arguments]
+    ih-setup [flags...] {SUBCOMMAND} [arguments]
 
  Subcommands:
     help              Show this help
@@ -253,7 +259,7 @@ $subcommand"
                       in dependency order.
 
  Setup Steps:
-    ${withHelp}
+    ${WITH_HELP}
 
  Global flags:
     -f    Force command even if heuristics indicate it's not needed
@@ -261,7 +267,7 @@ $subcommand"
     -v    Verbose logging
 
 Version: 
-    $(cat ${IH_CORE_BIN_DIR}/VERSION)
+    $(cat "${IH_CORE_BIN_DIR}/VERSION")
 
 USAGE
 }
@@ -285,7 +291,7 @@ function main() {
         esac
     done
 
-    shift $(($OPTIND - 1))
+    shift $((OPTIND - 1))
 
     local IS_AUGMENT_SOURCED_IN_SHELL
     if [[ $IH_AUGMENT_SOURCED = "yes" ]]; then
