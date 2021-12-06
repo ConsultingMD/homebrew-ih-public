@@ -239,7 +239,7 @@ $subcommand"
 
     cat <<USAGE
  Usage:
-    ih-setup <subcommand> <options> <arguments>
+    ih-setup [flags...] {subcommand} [arguments]
 
  Subcommands:
     help              Show this help
@@ -259,6 +259,9 @@ $subcommand"
     -f    Force command even if heuristics indicate it's not needed
     -y    Don't prompt for confirmation
     -v    Verbose logging
+
+Version: 
+    $(cat ${IH_CORE_BIN_DIR}/VERSION)
 
 USAGE
 }

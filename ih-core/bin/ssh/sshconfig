@@ -1,4 +1,4 @@
-        Host *
-        user unknown
+Host *
+        User unknown
         UseKeychain yes
         IdentityFile $HOME/.ssh/id_rsa

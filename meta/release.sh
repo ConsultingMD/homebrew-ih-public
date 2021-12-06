@@ -14,6 +14,7 @@ set -e
 URL="https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/$VERSION.tar.gz"
 
 sed -i '' "s/^  url.*/  url \"${URL//\//\\/}\""/ "$THIS_DIR/../formula/ih-core.rb"
+cat "$VERSION" > "$THIS_DIR/../ih-core/VERSION"
 
 if [[ $(git status --short) != '' ]]; then
     git add "$THIS_DIR/../formula/ih-core.rb"
