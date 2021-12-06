@@ -32,7 +32,7 @@ for setup steps. The setup steps are expected to implement several functions fol
 - `ih::setup::NAME::deps` Returns a list of the other steps this step depends on
 - `ih::setup::NAME::install` Installs the step
 
-To add more steps use the script `./meta/add-step.sh $NAME`.
+To add more steps use the script `./meta/add-step $NAME`.
 
 The `ih-setup` script provides commands for installing the steps and checking if they are installed.
 If you run `ih-setup install` it installs all the steps which are not yet installed.
