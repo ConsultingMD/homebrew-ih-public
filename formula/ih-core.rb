@@ -19,8 +19,7 @@ class IhCore < Formula
   #depends_on "virtualenv"
 
   def install
-    throw "x"
-    lib.install Dir["ih-core/libxxx/"]
+    lib.install Dir["ih-core/lib/*"]
     bin.install Dir["ih-core/bin/*"]
   end
 

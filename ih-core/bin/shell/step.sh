@@ -17,8 +17,25 @@ function ih::setup::shell::help(){
 }
 
 function ih::setup::shell::test(){
-    ih::setup::shell::private::validate-profile
-    return $?
+
+    env | grep IH
+
+    ih::log::debug "Checking for shell augment files and variables..."
+    if [[ -f "${IH_DIR}/augment.sh" ]]; then
+        ih::log::debug "Found augment.sh"
+        if [[ -z $IH_AUGMENT_SOURCED ]]; then
+            ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
+            source "${IH_DIR}/augment.sh"
+            return 0
+        else 
+            ih::setup::shell::private::validate-profile
+            return $?
+        fi
+    else 
+        ih::log::debug "Augment file not found"
+        return 1
+    fi
+
 }
 
 function ih::setup::shell::deps(){
@@ -170,13 +187,13 @@ function ih::setup::shell::private::validate-profile() {
     for name in $VARS; do
         value="${!name}"
         if [[ -z "$value" ]]; then
-        echo "$name environment variable must not be empty"
+        ih::log::debug "$name environment variable must not be empty"
         status=1
         fi
     done
 
     if [[ $status -ne 0 ]]; then
-        echo "Set missing vars in $PROFILE_FILE"
+        ih::log::warn "Set missing vars in $PROFILE_FILE"
     fi
 
     return $status

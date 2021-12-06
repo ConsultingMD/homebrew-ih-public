@@ -1,33 +1,33 @@
 #!/bin/bash
 
 black() {
-    printf "\e[30m%s\e[0m\n" "$1"
+    printf "\e[30m%b\e[0m" "$1"
 }
 
 red() {
-    printf "\e[31m%s\e[0m\n" "$1"
+    printf "\e[31m%b\e[0m" "$1"
 }
 
 green() {
-    printf "\e[32m%s\e[0m\n" "$1"
+    printf "\e[32m%b\e[0m" "$1"
 }
 
 yellow() {
-    printf "\e[33m%s\e[0m\n" "$1"
+    printf "\e[33m%b\e[0m" "$1"
 }
 
 blue() {
-    printf "\e[34m%s\e[0m\n" "$1"
+    printf "\e[34m%b\e[0m" "$1"
 }
 
 magenta() {
-    printf "\e[35m%s\e[0m\n" "$1"
+    printf "\e[35m%b\e[0m" "$1"
 }
 
 cyan() {
-    printf "\e[36m%s\e[0m\n" "$1"
+    printf "\e[36m%b\e[0m" "$1"
 }
 
 gray() {
-    printf "\e[90m%s\e[0m\n" "$1"
+    printf "\e[90m%b\e[0m" "$1"
 }
