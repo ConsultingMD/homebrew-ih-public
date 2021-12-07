@@ -10,9 +10,12 @@ function ih::setup::git::help() {
 }
 
 function ih::setup::git::test() {
+  if [[ ! -f $HOME/.ih/augment.sh ]]; then
+    ih::log::debug ".gitignore_global not found in $HOME"
+    return 1
+  fi
 
-  # shellcheck disable=SC1091
-  source "$HOME/.ih/augment.sh"
+  ih::private::re-source
 
   if [[ ! -f $HOME/.gitignore_global ]]; then
     ih::log::debug ".gitignore_global not found in $HOME"
@@ -33,7 +36,6 @@ function ih::setup::git::deps() {
 }
 
 function ih::setup::git::install() {
-
   # Profile must be valid before we can setup git
   ih::setup::shell::private::configure-profile
 
@@ -42,14 +44,12 @@ function ih::setup::git::install() {
   git config --global color.ui true
   git config --global core.excludesfile "${HOME}/.gitignore_global"
   git config --global push.default simple
-  git config --global pull.default simple
   git config --global url.ssh://git@github.com/.insteadOf https://github.com/
 
-  #Make sure the desired src directory exists if GR_HOME is declared
+  # Make sure the desired src directory exists if GR_HOME is declared
   [[ -n ${GR_HOME} ]] && mkdir -p "${GR_HOME}"
 
   # Copy the gitignore template into global if there isn't already a global.
-
   cp -n "${IH_CORE_LIB_DIR}/steps/git/gitignore" "${HOME}/.gitignore_global" || :
 
   echo "Updated git global config as follows:"
@@ -57,5 +57,4 @@ function ih::setup::git::install() {
   echo ""
 
   echo "Git configuration completed."
-
 }

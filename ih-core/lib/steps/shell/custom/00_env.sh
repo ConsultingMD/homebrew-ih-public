@@ -23,15 +23,20 @@ export EMAIL_ADDRESS=
 # Your 3 character initials
 export INITIALS=
 
-# Your Legacy Grand Rounds username, probably firstname.lastname
-export GR_USERNAME=
+# Your full name, the name you would introduce yourself with.
+export FULL_NAME=""
+
+# Your username, probably firstname.lastname
+export IH_USERNAME=
+# This is copied for legacy compatibility
+export GR_USERNAME="$IH_USERNAME"
 
 # The username you have in JIRA.
-# As of 11/2021 :
-# if your email address is @grandrounds.com or @includedhealth.com,
-# your JIRA username is probably "$GR_USERNAME@grandrounds.com"
-# if your email address is @doctorondemand, your JIRA username is probably
-# your email address
+# Before 1/15/2022:
+# If you've already logged in to JIRA with an email address,
+# use that. Otherwise, if you're new, use "$GR_USERNAME@grandrounds.com"
+# After 1/15/2022:
+# Use $GR_USERNAME@includedhealth.com
 export JIRA_USERNAME=
 
 # This is the default value used to authenticate to AWS resources

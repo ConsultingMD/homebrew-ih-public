@@ -1,8 +1,5 @@
 #!/bin/bash
 
-IH_DIR="$HOME/.ih"
-IH_CUSTOM_DIR="$IH_DIR/custom"
-
 function ih::setup::shell::help() {
   echo "Augment shell with Included Health components
 
@@ -10,7 +7,7 @@ function ih::setup::shell::help() {
     - Copy the augment.sh shell setup scripts into $HOME/.ih
       and source it in .zshrc and .bashrc. This script sources
       additional scripts that are used for engineering work.
-    - Create some convential files where you can customize aliases
+    - Create some conventional files where you can customize aliases
       and other shell things (if those files don't already exist)
     - Give you a chance to fill out some environment variables
       with your personal information (if you haven't done this yet)."
@@ -49,7 +46,7 @@ function ih::setup::shell::install() {
 
   mkdir -p "$IH_DIR"
   cp -rn "${THIS_DIR}/custom/" "${IH_DIR}/custom" || :
-  cp -R "${THIS_DIR}/default/" "${IH_DIR}/default"
+  cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
   ih::setup::shell::private::configure-profile
@@ -136,7 +133,7 @@ function ih::setup::shell::private::configure-profile() {
       exit 1
     fi
 
-    nano "$PROFILE_FILE"
+    ${EDITOR:-nano} "$PROFILE_FILE"
 
     ih::setup::shell::private::configure-profile
   fi
@@ -181,7 +178,7 @@ function ih::setup::shell::private::validate-profile() {
   for name in $VARS; do
     value="${!name}"
     if [[ -z "$value" ]]; then
-      ih::log::debug "$name environment variable must not be empty"
+      ih::log::warn "$name environment variable must not be empty"
       status=1
     fi
   done

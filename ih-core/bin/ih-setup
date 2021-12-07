@@ -1,16 +1,29 @@
 #!/bin/bash
 
+# The directory where ih-core has been installed
 export IH_CORE_DIR
 IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
 
-# shellcheck source=../lib/confirm.sh
-source "$IH_CORE_LIB_DIR/confirm.sh"
-# shellcheck source=../lib/colors.sh
-source "$IH_CORE_LIB_DIR/colors.sh"
-# shellcheck source=../lib/log.sh
-source "$IH_CORE_LIB_DIR/log.sh"
+# The directory where IH shell augments are to be installed
+export IH_DIR="$HOME/.ih"
+
+# The directory where IH shell custom files are to be installed
+# These are files that shall not be overwritten during an upgrade,
+# they are for the user to customize.
+export IH_CUSTOM_DIR="$IH_DIR/custom"
+
+# The directory where IH shell default files are to be installed
+# These are files that may be overwritten during an upgrade
+export IH_DEFAULT_DIR="$IH_DIR/default"
+
+for f in "$IH_CORE_LIB_DIR"/utils/*; do
+  # shellcheck source=/dev/null
+  if grep "#!/" "$f"; then
+    . "$f"
+  fi
+done
 
 # Attempts to return help for the step passed as an argument
 function ih::private::step-help() {
@@ -58,7 +71,6 @@ function ih::private::list-steps() {
   local STEPS
   local STEP
   local DAG
-  local SORTED
 
   STEPS=$(compgen -A function | grep -E '^ih::setup::[A-z0-9_-]+::install' | grep -v NAME | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
 
@@ -75,13 +87,10 @@ $DEP $STEP"
     fi
   done
 
-  SORTED=$(echo "$DAG" | tsort | tr '\n' ' ')
-
-  echo "$SORTED"
+  echo "$DAG" | tsort | tr '\n' ' '
 }
 
 function ih::private::load-steps() {
-
   local STEP_FILES
   local STEP_FILE
 
@@ -109,8 +118,8 @@ function ih::private::apply-to-steps() {
   done
 }
 
-# Prints the description of the step in $1
-# along the the deps.
+# Pretty prints the description of the step in $1
+# along with the deps.
 function ih::private::describe-step() {
   blue "--------- $1 -----------\n"
   ih::private::step-help "$1"
@@ -170,9 +179,10 @@ function ih::private::test-deps() {
 }
 
 # Calls install on the steps passed as arguments.
-# If IH_FORCE is set to 1 it will install each step; otheriwise it will skip steps where
-# assert-installed returns 0
-# If IH_NO_CONFIRM is set to 1 it will skip confirmation; otherwise it will ask the user to confirm
+# If IH_FORCE is set to 1 it will install each step;
+# otheriwise it will skip steps where assert-installed returns 0
+# If IH_NO_CONFIRM is set to 1 it will skip confirmation;
+# otherwise it will ask the user to confirm
 # before invoking the step.
 function ih::private::install-step() {
   local TEST_CODE
@@ -181,7 +191,7 @@ function ih::private::install-step() {
     ih::private::step-test "$STEP" >/dev/null
     TEST_CODE=$?
     if [[ $TEST_CODE -eq 0 ]]; then
-      ih::log::info "${STEP} has been installed (use --force to re-install)"
+      ih::log::info "${STEP} has been installed (use -f to re-install)"
       return 0
     fi
 

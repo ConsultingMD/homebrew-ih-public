@@ -11,10 +11,14 @@ IH_DIR=$HOME/.ih
 
 for f in "$IH_DIR"/default/*; do
   # shellcheck source=/dev/null
-  . "$f"
+  if grep -q "#!/" "$f"; then
+    . "$f"
+  fi
 done
 
 for f in "$IH_DIR"/custom/*; do
   # shellcheck source=/dev/null
-  . "$f"
+  if grep -q "#!/" "$f"; then
+    . "$f"
+  fi
 done

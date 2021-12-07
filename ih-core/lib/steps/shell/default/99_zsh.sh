@@ -15,13 +15,23 @@ if [[ ! $SHELL =~ "zsh" ]]; then
 fi
 
 # show git branch in prompt
-parse_git_branch() {
+_parse_git_branch() {
   git branch 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+}
+
+_awsenv() {
+  if [ -n "$AWS_ENVIRONMENT" ]; then
+    echo "🔧$AWS_ENVIRONMENT"
+  elif [ -n "$AWS_ACCESS_KEY_ID" ]; then
+    echo "🔧ops"
+  else
+    echo ""
+  fi
 }
 
 setopt PROMPT_SUBST
 #shellcheck disable=SC2016
-export PROMPT='%9c%{%F{green}%}$(parse_git_branch)%{%F{none}%} $ '
+export PROMPT='%9c%{%F{green}%}$(_parse_git_branch)%{%F{none}%} $(_awsenv) $ '
 
 # Open SSL management
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
@@ -29,10 +39,14 @@ export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
 export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
 
+# Refresh the path hashes since we changed it
+rehash
+
 export CLICOLOR=1
 export LSCOLORS=GxFxCxDxBxegedabagaced
 
 # Open .zshrc in an editor and then source it when you're done.
 alias edit-zshrc="\$EDITOR \$HOME/.zshrc && source \$HOME/.zshrc"
 # Open your default zsh aliases file in an editor and then source it when you're done.
-alias edit-aliases="\$EDITOR \$HOME/.ih.d/custom/zsh.sh && source \$HOME/.ih.d/custom/zsh.sh"
+alias edit-aliases="\$EDITOR \$HOME/.ih/custom/99_zsh.sh && source \$HOME/.ih/custom/99_zsh.sh"
+alias edit-env="\$EDITOR \$HOME/.ih/custom/00_env.sh && source \$HOME/.ih/custom/00_env.sh"

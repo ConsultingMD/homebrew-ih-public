@@ -43,6 +43,7 @@ unset INITIALS
 unset GR_USERNAME
 unset JIRA_USERNAME
 unset AWS_DEFAULT_ROLE
+unset EDITOR
 
 for name in $VARS; do
   unset "$name"
@@ -59,4 +60,6 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # open a new shell in our test context.
-zsh
+# Disable command hashing to prevent it from choosing the
+# installed ih-setup over the one in the modified path
+zsh --nohashcmds

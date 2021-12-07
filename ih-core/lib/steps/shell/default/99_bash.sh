@@ -18,7 +18,7 @@ fi
 
 # show git branch in prompt (with color)
 
-function parse_git_branch() {
+function _parse_git_branch() {
   git branch 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
 }
 
@@ -26,9 +26,8 @@ RED="\033[0;31m"
 YELLOW="\033[0;33m"
 GREEN="\033[0;32m"
 NO_COLOR="\033[0m"
-LTBLUE="\033[1;34m"
 
-function git_color {
+function _git_color {
   local git_status
   git_status="$(git status 2>/dev/null)"
 
@@ -47,8 +46,26 @@ function git_color {
   fi
 }
 
+_awscolor() {
+  case "$AWS_ENVIRONMENT" in
+    production) echo -e "$RED" ;;
+    uat) echo -e "$YELLOW" ;;
+    *) echo -e "$GREEN" ;;
+  esac
+}
+
+_awsenv() {
+  if [ -n "$AWS_ENVIRONMENT" ]; then
+    echo "🔧$AWS_ENVIRONMENT"
+  elif [ -n "$AWS_ACCESS_KEY_ID" ]; then
+    echo "🔧ops"
+  else
+    echo ""
+  fi
+}
+
 # Set command prompt to include branch names & Status when in a git folder
-PS1="\\[\[$LTBLUE\]\h\[$NO_COLOR\]:\w\[\$(git_color)\]\$(parse_git_branch)\[$NO_COLOR\]\$ "
+PS1="\[\$(_git_color)\]\$(_parse_git_branch)\[$NO_COLOR\]\[\$(_awscolor)\]\$(_awsenv)\[$NO_COLOR\] \w\$ "
 
 # Open SSL management
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
@@ -71,3 +88,4 @@ function find_function {
 alias edit-bashrc="\$EDITOR \$HOME/.bashrc && source \$HOME/.bashrc"
 # Open your default bash aliases file in an editor and then source it when you're done.
 alias edit-aliases="\$EDITOR \$HOME/.ih.d/custom/bash.sh && source \$HOME/.ih.d/custom/bash.sh"
+alias edit-env="\$EDITOR \$HOME/.ih/custom/00_env.sh && source \$HOME/.ih/custom/00_env.sh"
