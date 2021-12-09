@@ -11,5 +11,3 @@ brew tap ConsultingMD/homebrew-ih-public git@github.com:ConsultingMD/homebrew-ih
 brew install ih-core
 
 ih-setup install
-
-echo "If install succeeded, remember to source your .zshrc or .bashrc now that setup is complete, or start a new shell."

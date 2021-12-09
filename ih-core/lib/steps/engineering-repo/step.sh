@@ -32,5 +32,5 @@ function ih::setup::engineering-repo::install() {
   git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/engineering" || return
 
   ih::log::info "Engineering repo cloned"
-  ih::log::warn "You should source .zshrc or .bashrc to ensure the engineering scripts are loaded (or start a new shell)"
+  export IH_WANT_RE_SOURCE=1
 }
