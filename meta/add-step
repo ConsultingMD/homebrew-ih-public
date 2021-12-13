@@ -50,12 +50,6 @@ function ih::setup::$STEP::test(){
     return 0
 }
 
-# Echo a space-delimited list of tags to apply to this step
-# Tags are used to filter and group steps
-function ih::setup::$STEP::tags(){
-    echo "$TAG"
-}
-
 # Echo a space-delimited list of steps which must be installed before this one can be.
 function ih::setup::$STEP::deps(){
     # echo "step1 step2"

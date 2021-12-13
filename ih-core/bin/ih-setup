@@ -161,7 +161,7 @@ function ih::private::apply-to-steps() {
       STEPS=("${ALLSTEPS[@]}")
       ;;
     1)
-      if [[ $1 =~ \. ]]; then
+      if [[ $1 =~ [\.|\+|\*] ]]; then
         for STEP in "${ALLSTEPS[@]}"; do
           if [[ "$STEP" =~ ${1} ]]; then
             STEPS+=("$STEP")
@@ -311,7 +311,7 @@ ih::help() {
 
   local WITH_HELP=""
   for SUBCOMMAND in $SUBCOMMANDS; do
-    SUBCOMMAND=$(printf "    %-18s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
+    SUBCOMMAND=$(printf "    %-25s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
     WITH_HELP="$WITH_HELP
 $SUBCOMMAND"
   done
@@ -320,16 +320,28 @@ $SUBCOMMAND"
  Usage:
     ih-setup [flags...] {SUBCOMMAND} [arguments]
 
+ When you provide a "step" argument you can pass a single step by name,
+ multiple steps by name, or you can provide a prefix ending in a "."
+ (like "core.") to apply the command to all steps with that prefix.
+
+ Most likely you want to use the "core." prefix for all commands.
+ When you install a bunch of steps using a prefix they will be installed
+ in dependency order, so it's safe to run any time.
+
+ By default steps will not be installed if they apper install if they appear
+ to have been installed already. Steps are intended to be idempotent and running
+ them with the -f flag to force them to be installed should be safe.
+
  Subcommands:
-    help              Show this help
+    help                Show this help
 
-    check [step...]   Check if steps are installed
+    check [step...]     Check if steps are installed
 
-    describe {step}   Shows details about the step
+    describe [step...]  Shows details about the step(s)
 
-    install [step...] Install setup steps. If no steps are provided as arguments
-                      then all steps not currently installed will be installed,
-                      in dependency order.
+    install [step...]   Install setup steps. If no steps are provided as arguments
+                        then all steps not currently installed will be installed,
+                        in dependency order.
 
  Setup Steps:
     ${WITH_HELP}
@@ -339,32 +351,6 @@ $SUBCOMMAND"
     -y    Don't prompt for confirmation
     -v    Verbose logging
 
-Version:
-    $(cat "${IH_CORE_BIN_DIR}/VERSION")
-
-USAGE
-}
-
-function ih::private::global-flags() {
-  echo " Global flags:
-    -f    Force command even if heuristics indicate it's not needed
-    -y    Don't prompt for confirmation
-    -v    Verbose logging
-"
-}
-
-function ih::install::help() {
-  cat <<USAGE
- Usage:
-    ih-setup [global flags...] install
-
- Subcommands:
-    help              Show this help
-
- Setup Steps:
-    ${WITH_HELP}
-
-$(ih::private::global-flags)
 Version:
     $(cat "${IH_CORE_BIN_DIR}/VERSION")
 
