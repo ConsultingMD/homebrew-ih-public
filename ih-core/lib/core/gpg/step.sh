@@ -11,7 +11,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::gpg::help() {
+function ih::setup::core.gpg::help() {
   echo 'Create and publish a GPG key
 
     This step will:
@@ -22,7 +22,7 @@ function ih::setup::gpg::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::gpg::test() {
+function ih::setup::core.gpg::test() {
 
   # TODO: Check whether key is expired?
 
@@ -37,12 +37,11 @@ function ih::setup::gpg::test() {
   return 0
 }
 
-# Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::gpg::deps() {
-  echo "shell"
+function ih::setup::core.gpg::deps() {
+  echo "core.shell"
 }
 
-function ih::setup::gpg::disabled-install() {
+function ih::setup::core.gpg::disabled-install() {
 
   # TODO: Update key if it exists but is expired?
 
@@ -56,8 +55,8 @@ function ih::setup::gpg::disabled-install() {
   echo ""
 
   if [[ "$PASSWORD1" != "$PASSWORD2" || -z $PASSWORD1 ]]; then
-    if ih::private::retry-cancel "Passwords didn't match."; then
-      ih::setup::gpg::install
+    if ih::ask::retry-cancel "Passwords didn't match."; then
+      ih::setup::core.gpg::install
       return
     else
       return 1
@@ -91,7 +90,7 @@ EOF
 
   echo "Key ID: $KEY_ID"
 
-  if ih::private::confirm "About to upload public key to key server"; then
+  if ih::ask::confirm "About to upload public key to key server"; then
     gpg --send-keys "$KEY_ID"
   fi
 }

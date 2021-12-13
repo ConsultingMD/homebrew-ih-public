@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function ih::setup::ssh::help() {
+function ih::setup::core.ssh::help() {
   local SSH_CONFIG_PATH=$HOME/.ssh/config
 
   echo "Configure SSH settings
@@ -9,7 +9,7 @@ function ih::setup::ssh::help() {
     - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"
 }
 
-function ih::setup::ssh::test() {
+function ih::setup::core.ssh::test() {
 
   if [[ ! -f $HOME/.ssh/config ]]; then
     ih::log::debug "No SSH config found"
@@ -32,19 +32,23 @@ function ih::setup::ssh::test() {
   fi
 }
 
-function ih::setup::ssh::deps() {
-  # echo "other steps"
-  echo "shell"
+function ih::setup::core.ssh::tags() {
+  echo "core"
 }
 
-function ih::setup::ssh::install() {
+function ih::setup::core.ssh::deps() {
+  # echo "other steps"
+  echo "core.shell"
+}
+
+function ih::setup::core.ssh::install() {
 
   local SSH_CONFIG_PATH=$HOME/.ssh/config
 
   mkdir -p "$HOME"/.ssh
 
   set -e
-  cp -n "${IH_CORE_LIB_DIR}/steps/ssh/sshconfig" "${SSH_CONFIG_PATH}" || :
+  cp -n "${IH_CORE_LIB_DIR}/core/ssh/sshconfig" "${SSH_CONFIG_PATH}" || :
   set +e
 
   eval "$(ssh-agent -s)"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function ih::setup::github::help() {
+function ih::setup::core.github::help() {
   echo "Configure github settings
 
     This step will:
@@ -8,7 +8,7 @@ function ih::setup::github::help() {
     - Configure your GitHub account to support authenticating with your SSH key"
 }
 
-function ih::setup::github::test() {
+function ih::setup::core.github::test() {
 
   local SSH_RESULT
   SSH_RESULT=$(ssh git@github.com 2>&1)
@@ -20,12 +20,12 @@ function ih::setup::github::test() {
   return 1
 }
 
-function ih::setup::github::deps() {
+function ih::setup::core.github::deps() {
   # echo "other steps"
-  echo "shell git ssh"
+  echo "core.shell core.git core.ssh"
 }
 
-function ih::setup::github::install() {
+function ih::setup::core.github::install() {
 
   # make sure gh is installed
   command -v gh >/dev/null 2>&1 || brew install gh
@@ -44,7 +44,7 @@ function ih::setup::github::install() {
     gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
   fi
 
-  if ih::setup::github::test; then
+  if ih::setup::core.github::test; then
     echo "GitHub configuration complete"
     return 0
   fi

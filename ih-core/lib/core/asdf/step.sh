@@ -2,23 +2,30 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/steps/asdf/default/90_asdf.sh"
+ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/default/90_asdf.sh"
 ASDF_SH_PATH="$IH_DEFAULT_DIR/90_asdf.sh"
-TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/steps/asdf/.tool-versions"
+TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
 
-function ih::setup::asdf::help() {
-  echo 'Install common asdf plugins and wire into shell
+function ih::setup::core.asdf::help() {
+  echo "Install common asdf plugins and wire into shell
 
     This step will:
+        - Install asdf by cloning into $HOME/.asdf (if it isn't installed)
         - Wire asdf shims into the shell
         - Install asdf plugins for commonly used apps
         - Install default versions for commonly used apps
-    '
+    "
 }
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::asdf::test() {
+function ih::setup::core.asdf::test() {
+
+  if ! command -v asdf; then
+    ih::log::debug "asdf command is not available"
+    return 1
+  fi
+
   if [[ ! -f "$ASDF_SH_PATH" ]]; then
     ih::log::debug "asdf augment file not found at $ASDF_SH_PATH"
     return 1
@@ -38,12 +45,15 @@ function ih::setup::asdf::test() {
 }
 
 # Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::asdf::deps() {
-  # echo "step1 step2"
-  echo "shell"
+function ih::setup::core.asdf::tags() {
+  echo "core"
 }
 
-function ih::setup::asdf::install() {
+function ih::setup::core.asdf::deps() {
+  echo "core.shell core.git"
+}
+
+function ih::setup::core.asdf::install() {
 
   local CURRENT_PLUGINS
   CURRENT_PLUGINS=$(asdf plugin list)
@@ -75,10 +85,8 @@ function ih::setup::asdf::install() {
     fi
   done <<<"$DESIRED_PLUGINS"
 
-  set +e
   ih::log::info "Copying augment file for shell"
   cp -f "$ASDF_SH_TEMPLATE_PATH" "$ASDF_SH_PATH"
-  set -e
 
   export IH_WANT_RE_SOURCE=1
 }

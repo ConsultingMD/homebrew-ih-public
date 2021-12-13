@@ -37,7 +37,7 @@ trap ih::private::clean-up EXIT
 # Source utility functions
 for f in "$IH_CORE_LIB_DIR"/utils/*; do
   # shellcheck source=/dev/null
-  if grep "#!/" "$f"; then
+  if grep "#!/" "$f" >/dev/null; then
     . "$f"
   fi
 done
@@ -64,11 +64,13 @@ function ih::private::step-install() {
   return
 }
 
+# Echoes the tags for the step in $1
 function ih::private::step-tags() {
-  if command -v "ih::setup::$STEP::tags" >/dev/null; then
-    "ih::setup::$STEP::tags"
+  if command -v "ih::setup::$1::tags" >/dev/null; then
+    "ih::setup::$1::tags"
     return
   else
+    ih::log::info "tags for $1"
     echo ""
   fi
 }
@@ -101,7 +103,7 @@ function ih::private::list-steps() {
   local STEP
   local DAG
 
-  STEPS=$(compgen -A function | grep -E '^ih::setup::[A-z0-9_-]+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
+  STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
 
   for STEP in $STEPS; do
 
@@ -127,13 +129,13 @@ $DEP $STEP"
   echo "$DAG" | tsort | tr '\n' ' '
 }
 
-# Loads the steps by scanning for files under IH_CORE_LIB_DIR
+# Loads the steps by scanning for files under $1
 # containing ih::setup::*::install functions, then sources those files.
 function ih::private::load-steps() {
   local STEP_FILES
   local STEP_FILE
 
-  STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_-]+::install' "$IH_CORE_LIB_DIR")
+  STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_.-]+::install' "$1")
 
   for STEP_FILE in $STEP_FILES; do
     ih::log::debug "Steps found in $STEP_FILE"
@@ -142,18 +144,49 @@ function ih::private::load-steps() {
   done
 }
 
-# Applies command $1 to the steps listed in the rest of the arguments.
-# If there are no steps listed then the command will be applied to
-# all the known steps.
+# Applies command $1 to the tags or steps which match the rest of the arguments.
+# If there is only one additional argument it will be treated as a prefix.
+# Otherwise all arguments must match a step exactly.
+# Usage: ih::private::apply-to-steps $COMMAND $STEP
+# If there are no steps listed then the command will be error.
 function ih::private::apply-to-steps() {
   local COMMAND=$1
   shift
-  STEPS=$*
-  if [[ -z $STEPS ]]; then
-    STEPS=$(ih::private::list-steps)
-  fi
-  for STEP in $STEPS; do
-    "ih::private::$COMMAND" "$STEP"
+  local -a ALLSTEPS
+  read -r -a ALLSTEPS <<<"$(ih::private::list-steps)"
+  local -a STEPS
+
+  case ${#} in
+    0)
+      STEPS=("${ALLSTEPS[@]}")
+      ;;
+    1)
+      if [[ $1 =~ \. ]]; then
+        for STEP in "${ALLSTEPS[@]}"; do
+          if [[ "$STEP" =~ ${1} ]]; then
+            STEPS+=("$STEP")
+          fi
+        done
+      else
+        STEPS+=("$1")
+      fi
+      ;;
+    *)
+      # $@ is an array
+      # shellcheck disable=SC2206
+      STEPS=($@)
+      ;;
+  esac
+
+  for STEP in "${STEPS[@]}"; do
+    # We want to look for the step with spaces on each side, which is annoying to quote
+    # shellcheck disable=SC2027
+    if [[ " ${ALLSTEPS[*]} " =~ " "${STEP}" " ]]; then
+      # whatever you want to do when array contains value
+      "ih::private::$COMMAND" "$STEP"
+    else
+      ih::log::warn "Step '${STEP}' not found in step list '${ALLSTEPS[*]}'"
+    fi
   done
 }
 
@@ -253,7 +286,7 @@ function ih::private::install-step() {
       CONFIRM_TEXT="About to install step $STEP"
     fi
 
-    ih::private::confirm "$CONFIRM_TEXT"
+    ih::ask::confirm "$CONFIRM_TEXT"
     local CONFIRMED_STEP=$?
     if [[ $CONFIRMED_STEP -ne 0 ]]; then
       yellow "Skipping step $STEP\n"
@@ -274,7 +307,7 @@ function ih::private::install-step() {
 
 ih::help() {
   local SUBCOMMANDS
-  SUBCOMMANDS=$(ih::private::list-steps | tr '\n' ' ')
+  SUBCOMMANDS=$(ih::private::list-steps | tr ' ' '\n' | sort | tr '\n' ' ')
 
   local WITH_HELP=""
   for SUBCOMMAND in $SUBCOMMANDS; do
@@ -312,6 +345,32 @@ Version:
 USAGE
 }
 
+function ih::private::global-flags() {
+  echo " Global flags:
+    -f    Force command even if heuristics indicate it's not needed
+    -y    Don't prompt for confirmation
+    -v    Verbose logging
+"
+}
+
+function ih::install::help() {
+  cat <<USAGE
+ Usage:
+    ih-setup [global flags...] install
+
+ Subcommands:
+    help              Show this help
+
+ Setup Steps:
+    ${WITH_HELP}
+
+$(ih::private::global-flags)
+Version:
+    $(cat "${IH_CORE_BIN_DIR}/VERSION")
+
+USAGE
+}
+
 function main() {
 
   if [[ $# -eq 0 ]]; then
@@ -342,27 +401,29 @@ function main() {
   case "${command}" in
     help) ;;
     install)
-      ih::private::apply-to-steps install-step "$*"
+      ih::private::apply-to-steps install-step "${@}"
       return
       ;;
     describe)
-      ih::private::apply-to-steps describe-step "$*"
+      ih::private::apply-to-steps describe-step "${@}"
       return
       ;;
     check)
-      ih::private::apply-to-steps test-step "$*"
+      ih::private::apply-to-steps test-step "${@}"
       return
       ;;
     private::*)
       : # Assume the caller knows what they're doing
       ;;
-    *) ;;
-
+    *)
+      ih::log::error "Unrecognized command ${command}"
+      return 1
+      ;;
   esac
 
   ih::${command} "${@}"
 }
 
-ih::private::load-steps
+ih::private::load-steps "$IH_CORE_LIB_DIR"
 
 main "${@}"

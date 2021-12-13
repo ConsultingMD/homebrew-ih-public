@@ -8,7 +8,6 @@ class IhCore < Formula
   url "https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/0.0.1-beta4.tar.gz"
   head "https://github.com/ConsultingMD/homebrew-ih-public", :using => :git
 
-  depends_on "asdf"
   depends_on "python@3.9"
   depends_on "awscli"
   depends_on "nano"

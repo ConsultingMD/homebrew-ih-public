@@ -2,7 +2,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::jira::help() {
+function ih::setup::core.jira::help() {
   echo 'Configure JIRA API token for story automation
 
     This step will:
@@ -13,7 +13,7 @@ function ih::setup::jira::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::jira::test() {
+function ih::setup::core.jira::test() {
   local JIRA_FILE="$HOME/.ih/default/09_jira.sh"
 
   if [[ ! -f "$JIRA_FILE" ]]; then
@@ -22,18 +22,19 @@ function ih::setup::jira::test() {
   fi
 }
 
-# Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::jira::deps() {
-  echo "shell"
+function ih::setup::core.jira::deps() {
+  echo "core.shell"
 }
 
-function ih::setup::jira::install() {
+function ih::setup::core.jira::install() {
   local JIRA_FILE="$HOME/.ih/default/10_jira.sh"
   local KEYCHAIN_NAME=${TEST_KEYCHAIN:-default}
 
-  ih::ask::confirm "You will need to log in to JIRA and
-create an API token. Your JIRA login is $JIRA_USERNAME. When
-you press Y I will open a browser to https://id.atlassian.com/manage/api-tokens.
+  ih::ask::confirm "You will need to log in to JIRA and create an API token.
+Your JIRA login is $JIRA_USERNAME.
+
+When you press Y I will open a browser to https://id.atlassian.com/manage/api-tokens.
+
 Please log in to JIRA (if you haven't already), create an API token
 with a label like 'jira-cli', and copy the token to your clipboard.
 If you don't want to do this now, press n.
@@ -53,11 +54,11 @@ Is that correct?"
     return 2
   elif [[ $YNR -eq 1 ]]; then
     # Let them try again or give up
-    ih::setup::jira::install
+    ih::setup::core.jira::install
     return $?
   fi
 
   security add-generic-password -a "$JIRA_USERNAME" -s "jira-api" -w "$TOKEN" -j "API Token for JIRA" "$KEYCHAIN_NAME"
 
-  cp -f "$IH_CORE_LIB_DIR/steps/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
+  cp -f "$IH_CORE_LIB_DIR/core/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
 }

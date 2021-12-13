@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function ih::setup::git::help() {
+function ih::setup::core.git::help() {
   echo "Configure git settings
 
     This step will:
@@ -9,7 +9,7 @@ function ih::setup::git::help() {
     - create a default global .gitignore if one doesn't exist"
 }
 
-function ih::setup::git::test() {
+function ih::setup::core.git::test() {
   if [[ ! -f $HOME/.ih/augment.sh ]]; then
     ih::log::debug ".gitignore_global not found in $HOME"
     return 1
@@ -30,14 +30,14 @@ function ih::setup::git::test() {
   return 0
 }
 
-function ih::setup::git::deps() {
+function ih::setup::core.git::deps() {
   # echo "other steps"
-  echo "shell"
+  echo "core.shell"
 }
 
-function ih::setup::git::install() {
+function ih::setup::core.git::install() {
   # Profile must be valid before we can setup git
-  ih::setup::shell::private::configure-profile
+  ih::setup::core.shell::private::configure-profile
 
   git config --global user.name "${GITHUB_USER}"
   git config --global user.email "${EMAIL_ADDRESS}"
@@ -50,7 +50,7 @@ function ih::setup::git::install() {
   [[ -n ${GR_HOME} ]] && mkdir -p "${GR_HOME}"
 
   # Copy the gitignore template into global if there isn't already a global.
-  cp -n "${IH_CORE_LIB_DIR}/steps/git/gitignore" "${HOME}/.gitignore_global" || :
+  cp -n "${IH_CORE_LIB_DIR}/core/git/gitignore" "${HOME}/.gitignore_global" || :
 
   echo "Updated git global config as follows:"
   git -P config --global --list

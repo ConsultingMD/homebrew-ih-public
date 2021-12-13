@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function ih::setup::shell::help() {
+function ih::setup::core.shell::help() {
   echo "Augment shell with Included Health components
 
     This step will:
@@ -13,7 +13,7 @@ function ih::setup::shell::help() {
       with your personal information (if you haven't done this yet)."
 }
 
-function ih::setup::shell::test() {
+function ih::setup::core.shell::test() {
 
   ih::log::debug "Checking for shell augment files and variables..."
   if [[ -f "${IH_DIR}/augment.sh" ]]; then
@@ -23,7 +23,7 @@ function ih::setup::shell::test() {
       source "${IH_DIR}/augment.sh"
       return 0
     else
-      ih::setup::shell::private::validate-profile
+      ih::setup::core.shell::private::validate-profile
       return $?
     fi
   else
@@ -33,14 +33,14 @@ function ih::setup::shell::test() {
 
 }
 
-function ih::setup::shell::deps() {
+function ih::setup::core.shell::deps() {
   # echo "other steps"
   echo ""
 }
 
-function ih::setup::shell::install() {
+function ih::setup::core.shell::install() {
 
-  local THIS_DIR="$IH_CORE_LIB_DIR/steps/shell"
+  local THIS_DIR="$IH_CORE_LIB_DIR/core/shell"
 
   echo "Copying shell augmentation templates to ${IH_DIR}"
 
@@ -49,12 +49,12 @@ function ih::setup::shell::install() {
   cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
-  ih::setup::shell::private::configure-profile
+  ih::setup::core.shell::private::configure-profile
 
   echo "Configuring shells to source IH shell configs"
 
-  ih::setup::shell::private::configure-bashrc
-  ih::setup::shell::private::configure-zshrc
+  ih::setup::core.shell::private::configure-bashrc
+  ih::setup::core.shell::private::configure-zshrc
 
   echo ""
 
@@ -71,7 +71,7 @@ BOOTSTRAP_SOURCE_LINE='
 '
 
 # Create bashrc if it doesn't exist, if it does, append standard template
-function ih::setup::shell::private::configure-bashrc() {
+function ih::setup::core.shell::private::configure-bashrc() {
   if [[ ! -e "${HOME}/.bashrc" ]]; then
     echo "Creating new ~/.bashrc file"
     touch "${HOME}/.bashrc"
@@ -94,7 +94,7 @@ If you want to source IH scripts earlier, adjust your .bashrc"
 }
 
 # Create zshrc if it doesn't exist, if it does, append standard template
-function ih::setup::shell::private::configure-zshrc() {
+function ih::setup::core.shell::private::configure-zshrc() {
   if [[ ! -e "${HOME}/.zshrc" ]]; then
     echo "Creating new ~/.zshrc file"
     touch "${HOME}/.zshrc"
@@ -114,16 +114,16 @@ If you want to source IH scripts earlier, adjust your .zshrc"
   fi
 }
 
-function ih::setup::shell::private::configure-profile() {
+function ih::setup::core.shell::private::configure-profile() {
 
   re_source
 
-  ih::setup::shell::private::validate-profile
+  ih::setup::core.shell::private::validate-profile
   local PROFILE_VALID=$?
   local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
 
   if [[ $PROFILE_VALID -ne 0 ]]; then
-    ih::private::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
+    ih::ask::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
     confirm_edit=$?
     if [[ ${confirm_edit} -ne 0 ]]; then
       # shellcheck disable=SC2263
@@ -135,7 +135,7 @@ function ih::setup::shell::private::configure-profile() {
 
     ${EDITOR:-nano} "$PROFILE_FILE"
 
-    ih::setup::shell::private::configure-profile
+    ih::setup::core.shell::private::configure-profile
   fi
 
   re_source
@@ -156,10 +156,10 @@ function re_source() {
   exec 1>&4
 }
 
-function ih::setup::shell::private::validate-profile() {
+function ih::setup::core.shell::private::validate-profile() {
 
   local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
-  local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/steps/shell/custom/00_env.sh"
+  local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/core/shell/custom/00_env.sh"
 
   if [[ ! -f $PROFILE_FILE ]]; then
     return 1
