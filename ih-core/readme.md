@@ -12,7 +12,7 @@ You can invoke it using this command in the terminal:
 You can also install the components using brew:
 
 ```
-brew tap ConsultingMD/homebrew-ih-public git@github.com:ConsultingMD/homebrew-ih-public.git
+brew tap ConsultingMD/homebrew-ih-public https://github.com/ConsultingMD/homebrew-ih-public.git
 brew install ih-core
 ```
 
