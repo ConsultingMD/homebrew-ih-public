@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function ih::private::confirm() {
+function ih::ask::confirm() {
   local action="${1}"
   local response
   echo "${action}"
@@ -26,7 +26,7 @@ function ih::private::confirm() {
 # If the user chooses yes, returns 0
 # If the user chooses retry, returns 1
 # If the user chooses no, returns 2
-function ih::private::yes-no-retry() {
+function ih::ask::yes-no-retry() {
   local action="${1}"
   local response
   echo "${action}"
@@ -49,7 +49,7 @@ function ih::private::yes-no-retry() {
 # user to choose retry or cancel.
 # If the user chooses cancel, returns 1
 # Otherwise, returns 0
-function ih::private::retry-cancel() {
+function ih::ask::retry-cancel() {
   local action="${1}"
   local response
   echo "${action}"

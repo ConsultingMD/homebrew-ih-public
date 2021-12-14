@@ -7,6 +7,9 @@ automate workflows.
 
 - [./meta](./meta) Contains scripts and tools for managing working on this repo itself.
   This will be refactored to be the template for how we want to standardize repo init/build/test commands.
+    - [add-step](./meta/add-step) Add a new setup step; use `./meta/add-step {folder} {name}`
+    - [test-setup](./meta/test-setup) Spawn a new shell in a temporary directory where you can test the install script with $HOME set to the temp directory. Use `./meta/test-setup reset` to delete the directory and recreate it.
+    - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo. Use `./meta/release x.y.z` to create the release.
 - [./ih-core](./ih-core) Contains the core tools used by all teams, and the bootstrapping scripts for initial onboarding/setup.
   See the readme in this folder for details on how to install the ih-core components.
 - [./formula](./formula) Contains the brew formula implemented in this repo.

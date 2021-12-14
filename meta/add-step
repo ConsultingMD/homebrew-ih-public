@@ -1,11 +1,27 @@
 #!/bin/bash
 
-STEP=${1:?"You must provide a name for your new step"}
+function usage() {
+  cat <<USAGE
+add-step TAG STEP
+
+Creates a new step named STEP in the TAG folder.
+USAGE
+  exit 1
+}
+
+if [[ $# -lt 2 ]]; then
+  usage
+fi
+
+TAG=${1}
+STEP=${2}
 
 THIS_DIR=$(dirname "$(realpath "$0")")
-STEPS_DIR="$THIS_DIR/../ih-core/lib/steps"
+TAG_DIR="$THIS_DIR/../ih-core/lib/$TAG"
 
-STEP_DIR="$STEPS_DIR/$STEP"
+mkdir -p "$TAG_DIR"
+
+STEP_DIR="$TAG_DIR/$STEP"
 
 if [[ -d $STEP_DIR ]]; then
   echo "A step named $STEP already exists"
