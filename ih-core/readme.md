@@ -6,7 +6,7 @@ This folder contains the core setup scripts, starting at bootstrap.sh.
 You can invoke it using this command in the terminal:
 
 ```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ConsultingMD/homebrew-ih-public/master/ih-core/bootstrap)"`
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ConsultingMD/homebrew-ih-public/master/ih-core/bootstrap)"
 ```
 
 You can also install the components using brew:
