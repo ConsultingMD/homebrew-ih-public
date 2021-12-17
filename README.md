@@ -56,10 +56,11 @@ If you run `ih-setup check` it will tell you which steps are installed.
 - [meta/](./meta) Contains scripts and tools for managing working on this repo itself.
   This will be refactored to be the template for how we want to standardize repo init/build/test commands.
     - [add-step](./meta/add-step) Add a new setup step; use `./meta/add-step {folder} {name}`
+    - [bump](./meta/bump) Bumps the version of the formula. If called with no arg it shows the current version.
     - [test](./meta/test) Spawn a new shell with the current ih-setup from this repo in the path.
        This can be destructive, so be careful!
     - [test-isolated](./meta/test-setup) Spawn a new shell in a temporary directory where you can test the install script with $HOME set to the temp directory. Use `./meta/test-setup reset` to delete the directory and recreate it.
-    - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo. Use `./meta/release x.y.z` to create the release.
+    - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo. 
 - [bootstrap](./bootstrap) is the script that kicks off bootstrapping.
 
 ### Brew
@@ -70,6 +71,11 @@ and links ih-setup into /usr/local/bin.
 ### Testing
 
 To test out the setup script without affecting your actual setup, run the script
-at `./meta/test-setup`. It will create a fake home directory where you can
-experiment with the `ih-setup` command. Run `./meta/test-setup reset` to
+at `./meta/test-isolated`. It will create a fake home directory where you can
+experiment with the `ih-setup` command. Run `./meta/test-isolated reset` to
 purge the fake directory and create a new one.
+
+You can test the setup script against your actual $HOME by running `./meta/test zsh`
+or `./meta/test bash`. This will start a new shell of the specified type without loading
+your existing .\*rc files. Be careful, as running steps in this mode will update your
+real $HOME directory with things.
