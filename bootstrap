@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#shellcheck disable=SC2034
+
+if ! command -v brew &>/dev/null; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
+
+echo "Installing ih-core formula..."
+echo "Sometimes the dependency downloads fail, possibly due to the VPN, so \
+I will retry installing a couple times if it fails."
+
+if [[ $1 == "local" ]]; then
+  THIS_DIR=$(dirname "$(realpath "$0")")
+
+  for i in 1 2 3; do brew install --formula -s "$THIS_DIR/formula/ih-core.rb" && break; done
+
+elif [[ ${#} -eq 1 ]]; then
+  VERSION=$1
+  echo "Installing version $VERSION"
+  TMP_DIR=$(mktemp -d)
+  FORMULA_PATH="$TMP_DIR/ih-core.rb"
+  curl -L -o "$FORMULA_PATH" "https://github.com/ConsultingMD/homebrew-ih-public/releases/download/$VERSION/ih-core.rb"
+
+  for i in 1 2 3; do brew install --formula -s "$FORMULA_PATH" && break; done
+  rm -rf "$TMP_DIR"
+else
+  brew update
+  brew tap ConsultingMD/homebrew-ih-public https://github.com/ConsultingMD/homebrew-ih-public.git
+  for i in 1 2 3; do brew install ih-core && break; done
+fi
+
+if command -v ih-setup; then
+  ih-setup install
+else
+  echo "ih-setup is not available in your PATH. Check the logs above to see if there was a fatal error,
+and make sure that /usr/local/bin is in your PATH"
+  exit 1
+fi

@@ -7,33 +7,80 @@
 # It will cause a commit with the new version updates
 
 THIS_DIR=$(dirname "$(realpath "$0")")
+ROOT_DIR=$(dirname "$THIS_DIR")
 
-VERSION=${1:?"You must provide a version for the release"}
+function usage() {
+  cat <<USAGE
+release
+
+Publishes a release. Must be run on the master branch,
+unless the '-p' flag is set.
+
+Flags
+
+  -p     Create a pre-release version
+USAGE
+  exit 1
+}
+
+PRERELEASE=""
+
+while getopts "p" arg; do
+  case $arg in
+    p) PRERELEASE="-p" ;;
+    *)
+      ih::help
+      exit 1
+      ;;
+  esac
+done
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [[ $BRANCH != "master" && -z $PRERELEASE ]]; then
+  usage
+fi
 
 if [[ $(git status --short) != '' ]]; then
-  echo 'Working directory is dirty, commit and push everything before making release.'
+  echo 'Working directory is dirty, are you missing something?'
   exit 1
 fi
+
+VERSION=$(cat "$ROOT_DIR/VERSION")
+
+if gh release list | cut -f1 | grep -q "$VERSION"; then
+  echo "A release already exists for version $VERSION"
+  exit 1
+fi
+
+echo "Creating a release for version $VERSION"
 
 # We want to abort if any of the following commands fail
 set -e
 
-# Update the formula and the version file with the new version
-URL="https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/$VERSION.tar.gz"
-sed -i '' "s/^  url.*/  url \"${URL//\//\\/}\""/ "$THIS_DIR/../formula/ih-core.rb"
-echo "$VERSION" >"$THIS_DIR/../ih-core/bin/VERSION"
+git pull
 
-# If updating the files caused a change then commit that change.
-if [[ $(git status --short) != '' ]]; then
-  git add "$THIS_DIR/../formula/ih-core.rb"
-  git add "$THIS_DIR/../ih-core/bin/VERSION"
-  git commit -m "Bump version to $VERSION"
+if [[ $(git tag --list) =~ ^$VERSION$ ]]; then
+  echo "Tag for $VERSION already exists..."
+  if [[ $(git rev-parse "$VERSION") == $(git rev-parse HEAD) ]]; then
+    echo "Tag for $VERSION already points to HEAD, not re-tagging."
+  else
+    echo "Tag for $VERSION points to something other than HEAD, create a new version using the ./meta/bump script."
+    return 1
+  fi
+else
+  git tag -a "$VERSION" -m "Release version $VERSION"
+
+  git push --tags
 fi
-git tag -a "$VERSION" -m "Release version $VERSION"
-git push
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-gh release create "$VERSION" -t "$VERSION" --notes "Release version $VERSION" --target "$BRANCH" ./ih-core/bootstrap
+gh release create \
+  "$VERSION" \
+  $PRERELEASE \
+  -t "$VERSION" \
+  --notes "Release version $VERSION" \
+  --target "$BRANCH" \
+  ./bootstrap \
+  ./formula/ih-core.rb
 
 set +e
