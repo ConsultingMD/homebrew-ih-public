@@ -29,7 +29,7 @@ echo "Using $HOME as home"
 
 mkdir -p /tmp/ih-core-test
 
-BIN_DIR="$THIS_DIR/../ih-core/bin"
+BIN_DIR="$THIS_DIR/../bin"
 
 cd "$HOME" || exit
 
