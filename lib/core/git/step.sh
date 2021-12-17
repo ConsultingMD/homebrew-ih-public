@@ -40,7 +40,7 @@ function ih::setup::core.git::install() {
   ih::setup::core.shell::private::configure-profile
 
   git config --global user.name "${GITHUB_USER}"
-  git config --global user.email "${EMAIL_ADDRESS}"
+  git config --global user.email "${GITHUB_EMAIL_ADDRESS}"
   git config --global color.ui true
   git config --global core.excludesfile "${HOME}/.gitignore_global"
   git config --global push.default simple

@@ -14,11 +14,18 @@ export GR_HOME="$HOME/src/github.com/ConsultingMD"
 # which are currently located in the doctorondemand org.
 export DOD_HOME="$HOME/src/github.com/doctorondemand"
 
+# Your Included Health email address
+export EMAIL_ADDRESS=
+
 # Your GitHub username
 export GITHUB_USER=
 
-# Your email address
-export EMAIL_ADDRESS=
+# The email address you want to associate with commits.
+# If you want to keep your email address private, or have configured
+# your email address to be protected in GitHub, follow the guidance
+# at https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-user-account/managing-email-preferences/setting-your-commit-email-address
+# and put the no-reply email address here. Otherwise you can leave this as is.
+export GITHUB_EMAIL_ADDRESS="$EMAIL_ADDRESS"
 
 # Your 3 character initials
 export INITIALS=
