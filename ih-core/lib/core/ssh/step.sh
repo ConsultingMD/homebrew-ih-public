@@ -32,10 +32,6 @@ function ih::setup::core.ssh::test() {
   fi
 }
 
-function ih::setup::core.ssh::tags() {
-  echo "core"
-}
-
 function ih::setup::core.ssh::deps() {
   # echo "other steps"
   echo "core.shell"

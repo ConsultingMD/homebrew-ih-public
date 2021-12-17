@@ -44,11 +44,6 @@ function ih::setup::core.asdf::test() {
   return 0
 }
 
-# Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::core.asdf::tags() {
-  echo "core"
-}
-
 function ih::setup::core.asdf::deps() {
   echo "core.shell core.git"
 }

@@ -19,12 +19,6 @@ function ih::setup::cds.jdk::test() {
   return 1
 }
 
-# Echo a space-delimited list of tags to apply to this step
-# Tags are used to filter and group steps
-function ih::setup::cds.jdk::tags() {
-  echo "cds"
-}
-
 # Echo a space-delimited list of steps which must be installed before this one can be.
 function ih::setup::cds.jdk::deps() {
   # echo "step1 step2"

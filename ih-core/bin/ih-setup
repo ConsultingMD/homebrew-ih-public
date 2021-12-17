@@ -64,17 +64,6 @@ function ih::private::step-install() {
   return
 }
 
-# Echoes the tags for the step in $1
-function ih::private::step-tags() {
-  if command -v "ih::setup::$1::tags" >/dev/null; then
-    "ih::setup::$1::tags"
-    return
-  else
-    ih::log::info "tags for $1"
-    echo ""
-  fi
-}
-
 # Tries to invoke a step command $2 on a step $1.
 # If it can't be invoked because it doesn't exist,
 # this will log an error and return 1. Otherwise
