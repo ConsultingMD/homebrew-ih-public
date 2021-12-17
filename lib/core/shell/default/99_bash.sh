@@ -69,8 +69,12 @@ _awsenv() {
   fi
 }
 
-# Set command prompt to include branch names & Status when in a git folder
-PS1="\[\$(_git_color)\]\$(_parse_git_branch)\[$NO_COLOR\]\[\$(_awscolor)\]\$(_awsenv)\[$NO_COLOR\] \w\$ "
+if [[ "$PS1" = "\\s-\\v\\\$ " ]]; then
+  # Set prompt if they don't already have a non-trivial PS1
+
+  # Set command prompt to include branch names & Status when in a git folder
+  PS1="\[\$(_git_color)\]\$(_parse_git_branch)\[$NO_COLOR\]\[\$(_awscolor)\]\$(_awsenv)\[$NO_COLOR\] \w\$ "
+fi
 
 # Open SSL management
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
@@ -118,3 +122,4 @@ fi
 # ██████╔╝╚██████╔╝    ██║ ╚████║╚██████╔╝   ██║       ███████╗██████╔╝██║   ██║
 # ╚═════╝  ╚═════╝     ╚═╝  ╚═══╝ ╚═════╝    ╚═╝       ╚══════╝╚═════╝ ╚═╝   ╚═╝
 # Changes will be overwritten if you update the ih-core formula
+# Instead, update the corresponding file in ../custom, which will be sourced after this.

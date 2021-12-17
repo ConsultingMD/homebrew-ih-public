@@ -27,7 +27,7 @@ ih::private::clean-up() {
   local ARG=$?
   if [ -n "$IH_WANT_RE_SOURCE" ]; then
     yellow "One or more steps have modified your shell configuration.
-You should source .zshrc or .bashrc to activate those changes in your current shell.
+You should source $HOME/.zshrc or $HOME/.bashrc to activate those changes in your current shell.
 "
   fi
   exit $ARG
@@ -62,6 +62,20 @@ function ih::private::step-deps() {
 function ih::private::step-install() {
   ih::setup::"$1"::install
   return
+}
+
+# Echoes the content of the file where step $1 is defined
+function ih::private::step-show() {
+  local STEP_PATH OK
+  STEP_PATH=$(grep -R "ih::setup::$1::install" "$IH_CORE_LIB_DIR" | cut -d: -f1)
+  OK=$?
+  if [[ $OK -eq 0 ]]; then
+    cat "$STEP_PATH"
+    return
+  else
+    ih::log::warn "No file found for step $1"
+    return 1
+  fi
 }
 
 # Tries to invoke a step command $2 on a step $1.
@@ -172,7 +186,10 @@ function ih::private::apply-to-steps() {
     # shellcheck disable=SC2027
     if [[ " ${ALLSTEPS[*]} " =~ " "${STEP}" " ]]; then
       # whatever you want to do when array contains value
-      "ih::private::$COMMAND" "$STEP"
+      if ! "ih::private::$COMMAND" "$STEP"; then
+        ih::log::error "Command $COMMAND failed for step $STEP"
+        exit 1
+      fi
     else
       ih::log::warn "Step '${STEP}' not found in step list '${ALLSTEPS[*]}'"
     fi
@@ -328,6 +345,8 @@ $SUBCOMMAND"
 
     describe [step...]  Shows details about the step(s)
 
+    show {step}      Prints the content of the step file
+
     install [step...]   Install setup steps. If no steps are provided as arguments
                         then all steps not currently installed will be installed,
                         in dependency order.
@@ -381,6 +400,10 @@ function main() {
       ;;
     describe)
       ih::private::apply-to-steps describe-step "${@}"
+      return
+      ;;
+    show)
+      ih::private::step-show "${@}"
       return
       ;;
     check)

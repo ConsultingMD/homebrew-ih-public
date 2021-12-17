@@ -1,9 +1,8 @@
-VERSION="0.0.1-beta6"
 class IhCore < Formula
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
-  url "https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/#{VERSION}.tar.gz"
+  url "https://github.com/ConsultingMD/homebrew-ih-public/archive/refs/tags/0.0.1-beta6.tar.gz"
   head "https://github.com/ConsultingMD/homebrew-ih-public", :using => :git
 
   depends_on "python@3.9"

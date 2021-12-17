@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script tests the ih-setup script be creating
+# This script tests the ih-setup script by creating
 # a temporary home directory and setting $HOME to it,
 # then starting a new shell in that directory.
 # It also adds the bin directory of ih-core to the

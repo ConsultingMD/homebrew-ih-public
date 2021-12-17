@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# This script tests the current ih-setup script by
+# creating a new shell with the PATH set to include
+# the ./bin directory.
+# This can be destructive.
+
+THIS_DIR=$(dirname "$(realpath "$0")")
+BIN_DIR="$THIS_DIR/../bin"
+
+function usage() {
+  cat <<USAGE
+test SHELL
+
+Creates a new instance of SHELL (zsh or bash) with the
+current ih-setup script in the PATH.
+USAGE
+  exit 1
+}
+
+if [[ ${#} -eq 0 ]]; then
+  usage
+fi
+
+read -p "This command can damage your HOME or tools, are you sure? (y/N)" -n 1 -r
+echo # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  exit 0
+fi
+
+export PATH="$BIN_DIR:$PATH"
+
+case $1 in
+  zsh)
+    zsh --nohashcmds --norcs
+    ;;
+  bash)
+    bash -norc
+    ;;
+  *)
+    usage
+    ;;
+esac

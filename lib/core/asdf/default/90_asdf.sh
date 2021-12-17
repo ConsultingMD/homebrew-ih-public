@@ -11,7 +11,7 @@ if [ -f "$(brew --prefix asdf)/libexec/asdf.sh" ]; then
 elif [ -f "$HOME/.asdf/asdf.sh" ]; then
   . "$HOME/.asdf/asdf.sh"
   # Source bash completions
-  if [[ ! $SHELL =~ "bash" ]]; then
+  if [[ $SHELL =~ "bash" ]]; then
     . "$HOME/.asdf/completions/asdf.bash"
   fi
 fi

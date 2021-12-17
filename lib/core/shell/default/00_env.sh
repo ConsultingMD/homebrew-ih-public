@@ -14,6 +14,3 @@
 
 # Signals that IH shell augments have been sourced
 export IH_AUGMENT_SOURCED=yes
-
-# Set the editor to something user-friendly if unset
-export EDITOR="${EDITOR:-nano}"

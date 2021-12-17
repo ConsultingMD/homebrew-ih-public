@@ -7,13 +7,18 @@ ASDF_SH_PATH="$IH_DEFAULT_DIR/90_asdf.sh"
 TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
 
 function ih::setup::core.asdf::help() {
+
+  local CURRENT_VERSIONS
+  CURRENT_VERSIONS=$(awk "{ print '        $1' }" <"$TOOL_VERSIONS_TEMPLATE_PATH")
+
   echo "Install common asdf plugins and wire into shell
 
     This step will:
         - Install asdf by cloning into $HOME/.asdf (if it isn't installed)
         - Wire asdf shims into the shell
         - Install asdf plugins for commonly used apps
-        - Install default versions for commonly used apps
+        - Install default versions for commonly used apps:
+${CURRENT_VERSIONS}
     "
 }
 

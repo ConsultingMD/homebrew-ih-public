@@ -16,21 +16,25 @@ function ih::setup::core.shell::help() {
 function ih::setup::core.shell::test() {
 
   ih::log::debug "Checking for shell augment files and variables..."
+  if ! ih::setup::core.shell::private::validate-profile; then
+    ih::log::debug "Profile is not valid"
+    return 1
+  fi
+
   if [[ -f "${IH_DIR}/augment.sh" ]]; then
     ih::log::debug "Found augment.sh"
     if [[ -z $IH_AUGMENT_SOURCED ]]; then
       ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
       source "${IH_DIR}/augment.sh"
-      return 0
-    else
-      ih::setup::core.shell::private::validate-profile
-      return $?
     fi
+
+    return 0
   else
     ih::log::debug "Augment file not found"
     return 1
   fi
 
+  return 0
 }
 
 function ih::setup::core.shell::deps() {
@@ -67,7 +71,7 @@ function ih::setup::core.shell::install() {
 # shellcheck disable=SC2016
 BOOTSTRAP_SOURCE_LINE='
 # This loads the Included Health shell augmentations into your interactive shell
-. $HOME/.ih/augment.sh
+. "$HOME/.ih/augment.sh"
 '
 
 # Create bashrc if it doesn't exist, if it does, append standard template
@@ -101,7 +105,7 @@ function ih::setup::core.shell::private::configure-zshrc() {
   fi
 
   # shellcheck disable=SC2016
-  if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.zshrc"; then
+  if grep -qF '. \"$HOME/.ih/augment.sh\"' "${HOME}/.zshrc"; then
     echo "Included Health shell augmentation already sourced in .zshrc"
   else
     echo "Appending Included Health config to .zshrc"
@@ -133,7 +137,14 @@ function ih::setup::core.shell::private::configure-profile() {
       exit 1
     fi
 
-    ${EDITOR:-nano} "$PROFILE_FILE"
+    if [ -z "$EDITOR" ]; then
+      read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
+      export EDITOR
+      echo "
+export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
+    fi
+
+    ${EDITOR} "$PROFILE_FILE"
 
     ih::setup::core.shell::private::configure-profile
   fi
@@ -146,8 +157,6 @@ function re_source() {
   exec 3>/dev/stderr 2>/dev/null
   exec 4>/dev/stdout 1>/dev/null
 
-  echo "Sourcing recently updated files."
-
   local BOOTSTRAP_FILE="$IH_DIR"/augment.sh
   # shellcheck disable=SC1090
   source "$BOOTSTRAP_FILE"
@@ -158,12 +167,16 @@ function re_source() {
 
 function ih::setup::core.shell::private::validate-profile() {
 
+  re_source
+
   local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
   local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/core/shell/custom/00_env.sh"
 
   if [[ ! -f $PROFILE_FILE ]]; then
+    ih::log::debug "Profile file not found at $PROFILE_FILE"
     return 1
   fi
+  ih::log::debug "Profile file found at $PROFILE_FILE"
 
   set -e
   local VARS

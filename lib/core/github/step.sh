@@ -30,6 +30,14 @@ function ih::setup::core.github::install() {
   # make sure gh is installed
   command -v gh >/dev/null 2>&1 || brew install gh
 
+  echo "You are about to walk through the gh CLI tool auth process.
+Please choose:
+ authenticate to github.com
+ use SSH as preferred protocol
+ upload your SSH key
+ authenticate with a web browser
+ "
+
   # log in with scopes we need to update keys
   gh auth login --scopes repo,read:org,admin:public_key,user
 

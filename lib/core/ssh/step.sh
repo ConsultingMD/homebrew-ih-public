@@ -64,8 +64,8 @@ function ih::setup::core.ssh::install() {
       eval "$(ssh-agent -s)"
       ssh-add -K "$HOME/.ssh/id_rsa"
     else
-      echo "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
-      echo "Contact an adult for help in resolving this."
+      ih::log::warn "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
+      ih::log::warn "Contact an adult for help in resolving this."
     fi
   fi
   echo ""

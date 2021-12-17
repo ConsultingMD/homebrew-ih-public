@@ -56,7 +56,9 @@ If you run `ih-setup check` it will tell you which steps are installed.
 - [meta/](./meta) Contains scripts and tools for managing working on this repo itself.
   This will be refactored to be the template for how we want to standardize repo init/build/test commands.
     - [add-step](./meta/add-step) Add a new setup step; use `./meta/add-step {folder} {name}`
-    - [test-setup](./meta/test-setup) Spawn a new shell in a temporary directory where you can test the install script with $HOME set to the temp directory. Use `./meta/test-setup reset` to delete the directory and recreate it.
+    - [test](./meta/test) Spawn a new shell with the current ih-setup from this repo in the path.
+       This can be destructive, so be careful!
+    - [test-isolated](./meta/test-setup) Spawn a new shell in a temporary directory where you can test the install script with $HOME set to the temp directory. Use `./meta/test-setup reset` to delete the directory and recreate it.
     - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo. Use `./meta/release x.y.z` to create the release.
 - [bootstrap](./bootstrap) is the script that kicks off bootstrapping.
 

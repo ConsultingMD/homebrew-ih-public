@@ -35,8 +35,14 @@ _awsenv() {
 }
 
 setopt PROMPT_SUBST
-#shellcheck disable=SC2016
-export PROMPT='%9c%{%F{green}%}$(_parse_git_branch)%{%F{none}%} $(_awsenv) $ '
+
+if [[ ${#PROMPT} -lt 10 ]]; then
+
+  # Set prompt if they don't already have a non-trivial PROMPT
+
+  #shellcheck disable=SC2016
+  export PROMPT='%9c%{%F{green}%}$(_parse_git_branch)%{%F{none}%} $(_awsenv) $ '
+fi
 
 # Open SSL management
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
