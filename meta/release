@@ -57,7 +57,7 @@ git pull
 
 git tag -a "$VERSION" -m "Release version $VERSION"
 
-git push -t
+git push --tags
 
 gh release create \
   "$VERSION" \
