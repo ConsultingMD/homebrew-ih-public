@@ -55,9 +55,19 @@ set -e
 
 git pull
 
-git tag -a "$VERSION" -m "Release version $VERSION"
+if [[ $(git tag --list) =~ ^$VERSION$ ]]; then
+  echo "Tag for $VERSION already exists..."
+  if [[ $(git rev-parse "$VERSION") == $(git rev-parse HEAD) ]]; then
+    echo "Tag for $VERSION already points to HEAD, not re-tagging."
+  else
+    echo "Tag for $VERSION points to something other than HEAD, create a new version using the ./meta/bump script."
+    return 1
+  fi
+else
+  git tag -a "$VERSION" -m "Release version $VERSION"
 
-git push --tags
+  git push --tags
+fi
 
 gh release create \
   "$VERSION" \
