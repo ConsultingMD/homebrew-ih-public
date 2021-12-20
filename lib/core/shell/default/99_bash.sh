@@ -94,10 +94,10 @@ function find_function {
 }
 
 # Open .bashrc in an editor and then source it when you're done.
-alias edit-bashrc="\$EDITOR \$HOME/.bashrc && source \$HOME/.bashrc"
+alias edit-bashrc='$EDITOR $HOME/.bashrc && source $HOME/.bashrc'
 # Open your default bash aliases file in an editor and then source it when you're done.
-alias edit-aliases="\$EDITOR \$HOME/.ih.d/custom/bash.sh && source \$HOME/.ih.d/custom/bash.sh"
-alias edit-env="\$EDITOR \$HOME/.ih/custom/00_env.sh && source \$HOME/.ih/custom/00_env.sh"
+alias edit-aliases='$EDITOR $HOME/.ih.d/custom/bash.sh && source $HOME/.ih.d/custom/bash.sh'
+alias edit-env='$EDITOR $HOME/.ih/custom/00_env.sh && source $HOME/.ih/custom/00_env.sh'
 
 # Wire up completions for things installed using brew
 if type brew &>/dev/null; then
