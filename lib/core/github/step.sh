@@ -54,6 +54,15 @@ Please choose:
 
   if ih::setup::core.github::test; then
     echo "GitHub configuration complete"
+
+    ih::log::warn "To clone repos from the doctorondemand organization you will need to manually authorize your SSH key"
+
+    ih::ask::confirm "Do you need to authorize your SSH key to clone doctorondemand repos?"
+    local CONFIRMED=$?
+    if [ $CONFIRMED ]; then
+      open "https://github.com/settings/keys"
+    fi
+
     return 0
   fi
 
