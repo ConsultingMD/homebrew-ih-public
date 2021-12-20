@@ -84,53 +84,62 @@ function ih::setup::core.certificates::private::java-certs() {
   local JAVA_HOME JAVA_EXISTS JAVA_CERT_DIR
   JAVA_HOME=$(/usr/libexec/java_home)
   JAVA_EXISTS=$?
-  if [[ $JAVA_EXISTS -eq 0 ]]; then
-    for JAVA_CERT_DIR_CANDIDATE in "/lib/security/cacerts" "/jre/lib/security/cacerts"; do
-      JAVA_CERT_DIR="${JAVA_HOME}${JAVA_CERT_DIR_CANDIDATE}"
-      ih::log::debug "Looking for java install with certs at ${JAVA_CERT_DIR}..."
+  if [[ $JAVA_EXISTS -ne 0 ]]; then
+    return 0
+  fi
 
-      if [ -f "$JAVA_CERT_DIR" ]; then
-        ih::log::debug "Found java install with certs at $JAVA_CERT_DIR..."
+  for JAVA_CERT_DIR_CANDIDATE in "/lib/security/cacerts" "/jre/lib/security/cacerts"; do
+    JAVA_CERT_DIR="${JAVA_HOME}${JAVA_CERT_DIR_CANDIDATE}"
+    ih::log::debug "Looking for java install with certs at ${JAVA_CERT_DIR}..."
 
-        if keytool -list -v -storepass changeit -keystore "$JAVA_CERT_DIR" | grep -q "Grand Rounds"; then
-          break
-        else
-          if [[ "$1" != "install" ]]; then
-            # Not installing, just checking, so we should return 1
-            # to indicate that the certs have not been installed.
-            return 1
-          fi
-        fi
+    if [ -f "$JAVA_CERT_DIR" ]; then
+      ih::log::debug "Found java install with certs at $JAVA_CERT_DIR..."
 
-        local CERT_CHAIN ONE_CERT ONE_CERT_PATH
-        local -i CERT_COUNT=1
-        CERT_CHAIN=$(cat "$CA_PATH")
-        ih::log::info "Cert chain: $CERT_CHAIN"
-        until [[ -z $CERT_CHAIN ]]; do
-          ih::log::info "Adding cert $CERT_COUNT to $JAVA_CERT_DIR..."
-          ONE_CERT=$(echo "$CERT_CHAIN" | sed -n '1,/-----END CERTIFICATE-----/p')
-          ONE_CERT_PATH=$(mktemp)
-
-          ih::log::info "Placing cert in $ONE_CERT_PATH temporarily..."
-          echo "$ONE_CERT" >"$ONE_CERT_PATH"
-
-          ih::log::info "Adding cert to Java-usable keystore (needs sudo access)"
-          sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "gr_cert_$CERT_COUNT" -file "$ONE_CERT_PATH" -keystore "$JAVA_CERT_DIR"
-          CERT_CHAIN=$(echo "$CERT_CHAIN" | sed '1,/-----END CERTIFICATE-----/d')
-
-          CERT_COUNT+=1
-          # rm "$ONE_CERT_PATH"
-        done
-
-        local BAZEL_RC="startup --host_jvm_args=\"-Djavax.net.ssl.trustStore=$JAVA_CERT_DIR\" --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
-
-        if ! ih::file::add-if-not-matched "$HOME/.bazelrc" "startup" "$BAZEL_RC"; then
-          ih::log::error "Could not add startup command to $HOME/.bazelrc, bazel may not work correctly until you update it"
-          ih::log::error "Add this line to $HOME/.bazelrc (or update the existing startup to set the trustStore):"
-          ih::log::error "$BAZEL_RC"
+      if keytool -list -v -storepass changeit -keystore "$JAVA_CERT_DIR" | grep -q "Grand Rounds"; then
+        ih::log::debug "Cert store already contains GR CA cert"
+        break
+      else
+        if [[ "$1" != "install" ]]; then
+          # Not installing, just checking, so we should return 1
+          # to indicate that the certs have not been installed.
+          return 1
         fi
       fi
-    done
+
+      ih::log::debug "Installing certs in store"
+
+      local CERT_CHAIN ONE_CERT ONE_CERT_PATH
+      local -i CERT_COUNT=1
+      CERT_CHAIN=$(cat "$CA_PATH")
+      ih::log::info "Cert chain: $CERT_CHAIN"
+      until [[ -z $CERT_CHAIN ]]; do
+        ih::log::info "Adding cert $CERT_COUNT to $JAVA_CERT_DIR..."
+        ONE_CERT=$(echo "$CERT_CHAIN" | sed -n '1,/-----END CERTIFICATE-----/p')
+        ONE_CERT_PATH=$(mktemp)
+
+        ih::log::info "Placing cert in $ONE_CERT_PATH temporarily..."
+        echo "$ONE_CERT" >"$ONE_CERT_PATH"
+
+        ih::log::info "Adding cert to Java-usable keystore (needs sudo access)"
+        sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "gr_cert_$CERT_COUNT" -file "$ONE_CERT_PATH" -keystore "$JAVA_CERT_DIR"
+        CERT_CHAIN=$(echo "$CERT_CHAIN" | sed '1,/-----END CERTIFICATE-----/d')
+
+        CERT_COUNT+=1
+        # rm "$ONE_CERT_PATH"
+      done
+
+      break
+    fi
+  done
+
+  # JAVA_CERT_DIR will be set to the store where the cert was installed
+
+  local BAZEL_RC="startup --host_jvm_args=\"-Djavax.net.ssl.trustStore=$JAVA_CERT_DIR\" --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
+
+  if ! ih::file::add-if-not-matched "$HOME/.bazelrc" "startup" "$BAZEL_RC"; then
+    ih::log::error "Could not add startup command to $HOME/.bazelrc, bazel may not work correctly until you update it"
+    ih::log::error "Add this line to $HOME/.bazelrc (or update the existing startup to set the trustStore):"
+    ih::log::error "$BAZEL_RC"
   fi
 
 }
