@@ -34,6 +34,22 @@ function ih::setup::core.shell::test() {
     return 1
   fi
 
+  local DEFAULT_SRC_DIR="${IH_CORE_LIB_DIR}/core/shell/default"
+  local DEFAULT_DST_DIR="${IH_HOME}/default"
+
+  for DEFAULT_SRC in "$DEFAULT_SRC_DIR"/*; do
+    local DEFAULT_DST="$DEFAULT_DST_DIR/${DEFAULT_SRC/$DEFAULT_SRC_DIR/}"
+    if [ -f "$DEFAULT_DST" ]; then
+      ih::log::debug "File $DEFAULT_DST not found."
+      return 1
+    fi
+
+    if [[ $(diff -q "$DEFAULT_DST" "$DEFAULT_SRC" >/dev/null) -ne 0 ]]; then
+      ih::log::debug "File $DEFAULT_DST does not match source"
+      return 1
+    fi
+  done
+
   return 0
 }
 
@@ -81,7 +97,7 @@ function ih::setup::core.shell::private::configure-bashrc() {
     touch "${HOME}/.bashrc"
   fi
   # shellcheck disable=SC2016
-  if grep -qF '. $HOME/.ih/augment.sh' "${HOME}/.bashrc"; then
+  if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.bashrc"; then
     echo "Included Health shell augmentation already sourced in .bashrc"
   else
     echo "Appending Included Health config to .bashrc"
@@ -105,7 +121,7 @@ function ih::setup::core.shell::private::configure-zshrc() {
   fi
 
   # shellcheck disable=SC2016
-  if grep -qF '. \"$HOME/.ih/augment.sh\"' "${HOME}/.zshrc"; then
+  if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.zshrc"; then
     echo "Included Health shell augmentation already sourced in .zshrc"
   else
     echo "Appending Included Health config to .zshrc"
