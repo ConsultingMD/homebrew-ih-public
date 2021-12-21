@@ -83,9 +83,6 @@ export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
 export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
 ##########################################################
 
-#Make sure home ~/bin is in the path
-[[ ! "$PATH" =~ ${HOME}/bin ]] && export PATH="${HOME}/bin:${PATH}"
-
 #Determine where a shell function is defined / declared
 function find_function {
   shopt -s extdebug
