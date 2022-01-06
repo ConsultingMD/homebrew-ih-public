@@ -1,5 +1,5 @@
 class IhCore < Formula
-  VERSION="0.0.1-beta9"
+  VERSION="0.0.1"
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
@@ -15,6 +15,7 @@ class IhCore < Formula
   depends_on "jq"
   depends_on "go-jira"
   depends_on "virtualenv"
+  depends_on "envconsul"
 
   def install
     lib.install Dir["lib/*"]

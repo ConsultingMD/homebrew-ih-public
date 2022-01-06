@@ -15,6 +15,8 @@ test SHELL
 Creates a new instance of SHELL (zsh or bash) with the
 current ih-setup script in the PATH.
 USAGE
+
+  printf "\e[31m%b\e[0m" "Not starting a new shell."
   exit 1
 }
 

@@ -6,11 +6,14 @@ function ih::setup::core.certificates::help() {
   echo 'Trust the certificates used by the VPN DLP
 
     The GlobalProtect VPN uses self-signed certs to
-    intercept and inspect SSL traffic. The CA used to sign
-    the certs it uses is trusted by the OS, but some tools
-    do not use the OS trust store.
+    intercept and inspect SSL traffic. This is called the
+    Data Loss Prevention or DLP system in various documents
+    The CA used to sign the certs it uses is trusted by the OS,
+    but some tools do not use the OS trust store. This step
+    configures those tools to work correctly.
 
     This step will:
+        - Place the CA file for the
         - Update the OpenSSL used by Homebrew
         - Tell node about the CA using NODE_EXTRA_CA_CERTS
         - Tell npm/yarn about CA certs
@@ -134,12 +137,19 @@ function ih::setup::core.certificates::private::java-certs() {
 
   # JAVA_CERT_DIR will be set to the store where the cert was installed
 
-  local BAZEL_RC="startup --host_jvm_args=\"-Djavax.net.ssl.trustStore=$JAVA_CERT_DIR\" --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
+  local BAZEL_RC="startup --host_jvm_args=\"-Djavax.net.ssl.trustStore=$JAVA_CERT_DIR\"
+startup --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
 
-  if ! ih::file::add-if-not-matched "$HOME/.bazelrc" "startup" "$BAZEL_RC"; then
-    ih::log::error "Could not add startup command to $HOME/.bazelrc, bazel may not work correctly until you update it"
-    ih::log::error "Add this line to $HOME/.bazelrc (or update the existing startup to set the trustStore):"
-    ih::log::error "$BAZEL_RC"
+  if ! grep -q "$JAVA_CERT_DIR" "$HOME/.bazelrc"; then
+    if [[ "$1" != "install" ]]; then
+      return 1
+    fi
+    ih::log::info "Configuring bazel to use custom trust store..."
+    if ! ih::file::add-if-not-matched "$HOME/.bazelrc" "startup" "$BAZEL_RC"; then
+      ih::log::error "Could not add startup command to $HOME/.bazelrc, bazel may not work correctly until you update it"
+      ih::log::error "Add these lines to $HOME/.bazelrc (or update the existing startup to set the trustStore):"
+      ih::log::error "$BAZEL_RC"
+    fi
   fi
 
 }
