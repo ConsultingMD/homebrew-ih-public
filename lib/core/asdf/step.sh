@@ -9,8 +9,7 @@ TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
 function ih::setup::core.asdf::help() {
 
   local CURRENT_VERSIONS
-  CURRENT_VERSIONS=$(awk '{ print "        $1" }' <"$TOOL_VERSIONS_TEMPLATE_PATH")
-
+  CURRENT_VERSIONS=$(awk -v fmt="           %s %s\n" '{ printf fmt, $1, $2}' <"$TOOL_VERSIONS_TEMPLATE_PATH")
   echo "Install common asdf plugins and wire into shell
 
     This step will:
@@ -54,6 +53,13 @@ function ih::setup::core.asdf::deps() {
 }
 
 function ih::setup::core.asdf::install() {
+
+  if ! command -v asdf; then
+    ih::log::info "Cloning asdf into $HOME/.asdf"
+    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.9.0
+    # shellcheck disable=SC1091
+    . "$HOME/.asdf/completions/asdf.bash"
+  fi
 
   local CURRENT_PLUGINS
   CURRENT_PLUGINS=$(asdf plugin list)

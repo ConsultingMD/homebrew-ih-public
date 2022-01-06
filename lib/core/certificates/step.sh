@@ -3,6 +3,7 @@
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
 function ih::setup::core.certificates::help() {
+  # shellcheck disable=SC2016
   echo 'Trust the certificates used by the VPN DLP
 
     The GlobalProtect VPN uses self-signed certs to
@@ -13,7 +14,7 @@ function ih::setup::core.certificates::help() {
     configures those tools to work correctly.
 
     This step will:
-        - Place the CA file for the
+        - Place the CA files in $HOME/.ih/certs
         - Update the OpenSSL used by Homebrew
         - Tell node about the CA using NODE_EXTRA_CA_CERTS
         - Tell npm/yarn about CA certs
@@ -45,19 +46,10 @@ function ih::setup::core.certificates::deps() {
 function ih::setup::core.certificates::install() {
 
   local CA_DIR="$HOME/.ih/certs"
-  local CA_PATH="$CA_DIR/ga_root_ca.pem"
-  mkdir -p "$CA_DIR" >/dev/null
+  ih::log::info "Copying internal CA certs into $CA_DIR"
+  cp -f "$IH_CORE_LIB_DIR"/core/certificates/certs/* "$CA_DIR"
 
-  ih::log::info "Copying internal CA cert into $CA_PATH"
-
-  # Get the MITM'd cert chain from stackoverflow
-  # and pull out the signing certificate chain and put it in a file.
-  # We skip the first cert because it's the fake stackoverflow cert,
-  # and we don't need it for anything.
-  openssl s_client -showcerts -connect stackoverflow.com:443 </dev/null 2>/dev/null \
-    | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
-    | sed '1,/-----END CERTIFICATE-----/d' > \
-      "$CA_PATH"
+  local CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
 
   local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
   OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
@@ -84,6 +76,7 @@ function ih::setup::core.certificates::install() {
 # If $1 is set to "install" then this installs the certificates in the java cacerts store.
 # Otherwise this returns 0 if the certificates are already installed, 1 if they are not.
 function ih::setup::core.certificates::private::java-certs() {
+  local CA_DIR="$HOME/.ih/certs"
   local JAVA_HOME JAVA_EXISTS JAVA_CERT_DIR
   JAVA_HOME=$(/usr/libexec/java_home)
   JAVA_EXISTS=$?
@@ -98,37 +91,35 @@ function ih::setup::core.certificates::private::java-certs() {
     if [ -f "$JAVA_CERT_DIR" ]; then
       ih::log::debug "Found java install with certs at $JAVA_CERT_DIR..."
 
-      if keytool -list -v -storepass changeit -keystore "$JAVA_CERT_DIR" | grep -q "Grand Rounds"; then
-        ih::log::debug "Cert store already contains GR CA cert"
-        break
-      else
-        if [[ "$1" != "install" ]]; then
-          # Not installing, just checking, so we should return 1
-          # to indicate that the certs have not been installed.
-          return 1
-        fi
-      fi
-
       ih::log::debug "Installing certs in store"
 
-      local CERT_CHAIN ONE_CERT ONE_CERT_PATH
-      local -i CERT_COUNT=1
-      CERT_CHAIN=$(cat "$CA_PATH")
-      ih::log::info "Cert chain: $CERT_CHAIN"
-      until [[ -z $CERT_CHAIN ]]; do
-        ih::log::info "Adding cert $CERT_COUNT to $JAVA_CERT_DIR..."
-        ONE_CERT=$(echo "$CERT_CHAIN" | sed -n '1,/-----END CERTIFICATE-----/p')
-        ONE_CERT_PATH=$(mktemp)
+      local -a CA_PATHS=(
+        "$CA_DIR/grand_rounds_dlp_ca.pem"
+        "$CA_DIR/grand_rounds_root_ca.pem"
+      )
 
-        ih::log::info "Placing cert in $ONE_CERT_PATH temporarily..."
-        echo "$ONE_CERT" >"$ONE_CERT_PATH"
+      for CA_PATH in "${CA_PATHS[@]}"; do
+        local FINGERPRINT
+        FINGERPRINT=$(openssl x509 -in "$CA_PATH" -noout -fingerprint | cut -d"=" -f2)
+
+        if keytool -list -v -storepass changeit -keystore "$JAVA_CERT_DIR" | grep -q "$FINGERPRINT"; then
+          ih::log::debug "Cert store already contains GR CA cert from $CA_PATH"
+          continue
+        else
+          if [[ "$1" != "install" ]]; then
+            # Not installing, just checking, so we should return 1
+            # to indicate that the certs have not been installed.
+            ih::log::debug "Cert from path $CA_PATH not found in store"
+            return 1
+          fi
+        fi
+
+        ih::log::info "Adding cert $CA_PATH to $JAVA_CERT_DIR..."
+        local CA_NAME
+        CA_NAME=$(basename "$CA_PATH")
 
         ih::log::info "Adding cert to Java-usable keystore (needs sudo access)"
-        sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "gr_cert_$CERT_COUNT" -file "$ONE_CERT_PATH" -keystore "$JAVA_CERT_DIR"
-        CERT_CHAIN=$(echo "$CERT_CHAIN" | sed '1,/-----END CERTIFICATE-----/d')
-
-        CERT_COUNT+=1
-        # rm "$ONE_CERT_PATH"
+        sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "${CA_NAME%%.*}" -file "$CA_PATH" -keystore "$JAVA_CERT_DIR"
       done
 
       break
