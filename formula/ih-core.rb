@@ -16,6 +16,7 @@ class IhCore < Formula
   depends_on "go-jira"
   depends_on "virtualenv"
   depends_on "envconsul"
+  depends_on "openssl@3"
 
   def install
     lib.install Dir["lib/*"]
