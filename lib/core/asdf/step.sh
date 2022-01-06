@@ -9,7 +9,7 @@ TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
 function ih::setup::core.asdf::help() {
 
   local CURRENT_VERSIONS
-  CURRENT_VERSIONS=$(awk "{ print '        $1' }" <"$TOOL_VERSIONS_TEMPLATE_PATH")
+  CURRENT_VERSIONS=$(awk '{ print "        $1" }' <"$TOOL_VERSIONS_TEMPLATE_PATH")
 
   echo "Install common asdf plugins and wire into shell
 
