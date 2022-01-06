@@ -24,6 +24,20 @@ You can run `ih-setup help` for help running the setup steps.
 >
 > If you have an M1, please reach out to Steve Ruble on Slack or Zulip.
 
+### What will the onboarding script (ih-setup) do to my machine?
+
+The  script will start by creating an `.ih` folder in your `$HOME` and adding a line to `.zshrc` and `.bashrc`
+to source the `.ih/augment.sh` file into your shell. This is the entry point for all IH modifications of your
+shell; if you want to disable those modifications just remove that line.
+
+`augment.sh` will source some additional files, first from `.ih/default` and then `.ih/custom`. The files in
+`.ih/default` wire up various functions and tools which are needed in IH engineering workflows, and also
+set some sane defaults for your shell. You shouldn't edit those files; they will be overwritten whenever
+the ih-core formula is updated. The files in `.ih/custom` folder are initialized with some environment variables
+but you can modify them to suit your needs. If you don't already have a pattern for organizing your shell
+customizations consider using the `.ih/custom` folder as a place for them. In particular, if you don't like
+the effects of the `.ih/default` scripts, `.ih/custom` is a good place to override them.
+
 ## Working in this repo
 
 ## Overview
@@ -60,7 +74,7 @@ If you run `ih-setup check` it will tell you which steps are installed.
     - [test](./meta/test) Spawn a new shell with the current ih-setup from this repo in the path.
        This can be destructive, so be careful!
     - [test-isolated](./meta/test-setup) Spawn a new shell in a temporary directory where you can test the install script with $HOME set to the temp directory. Use `./meta/test-setup reset` to delete the directory and recreate it.
-    - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo. 
+    - [release](./meta/release) Create a new release of the formula. Must be run on the main branch with a clean repo.
 - [bootstrap](./bootstrap) is the script that kicks off bootstrapping.
 
 ### Brew
