@@ -122,6 +122,9 @@ function ih::setup::core.shell::private::configure-zshrc() {
     touch "${HOME}/.zshrc"
   fi
 
+  # apply fix to support brew completions in zsh: https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh
+  chmod -R go-w "$(brew --prefix)/share"
+
   # shellcheck disable=SC2016
   if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.zshrc"; then
     echo "Included Health shell augmentation already sourced in .zshrc"
