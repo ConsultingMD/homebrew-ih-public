@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o pipefail
+
 # The directory where ih-core has been installed
 export IH_CORE_DIR
 IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
@@ -22,6 +24,13 @@ export IH_DEFAULT_DIR="$IH_DIR/default"
 # write out a warning to the user that they should
 # source their .rcs when the script is done.
 export IH_WANT_RE_SOURCE=""
+
+if [ -e "${IH_CORE_BIN_DIR}"/VERSION ]; then
+  VERSION=$(cat "${IH_CORE_BIN_DIR}"/VERSION)
+else
+  # If version not in the right place, we're probably running from the repo
+  VERSION=$(cat "${IH_CORE_BIN_DIR}"/../VERSION)
+fi
 
 ih::private::clean-up() {
   local ARG=$?
@@ -345,7 +354,7 @@ $SUBCOMMAND"
 
     describe [step...]  Shows details about the step(s)
 
-    show {step}      Prints the content of the step file
+    show {step}         Prints the content of the step file
 
     install [step...]   Install setup steps. If no steps are provided as arguments
                         then all steps not currently installed will be installed,
@@ -360,7 +369,12 @@ $SUBCOMMAND"
     -v    Verbose logging
 
 Version:
-    $(cat "${IH_CORE_BIN_DIR}/VERSION")
+    ${VERSION}
+
+For troubleshooting help:
+  - See if there are tips at https://doctorondemand.atlassian.net/wiki/spaces/ENG/pages/2227077212/ih-setup+Troubleshooting
+  - Visit the #developer-platform-support stream in Zulip
+  - Ask a question in the #dept-eng_infra topic in Slack
 
 USAGE
 }

@@ -66,7 +66,9 @@ function ih::setup::core.shell::install() {
 
   mkdir -p "$IH_DIR"
   cp -rn "${THIS_DIR}/custom/" "${IH_DIR}/custom" || :
+  chmod 0600 -R "${IH_DIR}/custom"
   cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
+  chmod 0400 -R "${IH_DIR}/default"
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
   ih::setup::core.shell::private::configure-profile
@@ -119,6 +121,9 @@ function ih::setup::core.shell::private::configure-zshrc() {
     echo "Creating new ~/.zshrc file"
     touch "${HOME}/.zshrc"
   fi
+
+  # apply fix to support brew completions in zsh: https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh
+  chmod -R go-w "$(brew --prefix)/share"
 
   # shellcheck disable=SC2016
   if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.zshrc"; then

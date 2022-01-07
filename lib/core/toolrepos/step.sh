@@ -12,13 +12,8 @@ function ih::setup::core.toolrepos::help() {
 }
 
 function ih::setup::core.toolrepos::test() {
-  if [ ! -d "${GR_HOME}/engineering" ]; then
-    return 1
-  fi
 
-  if [ ! -d "${GR_HOME}/image-builder" ]; then
-    return 1
-  fi
+  ih::setup::core.toolrepos::test-or-install "test"
 
   return 0
 }
@@ -30,16 +25,42 @@ function ih::setup::core.toolrepos::deps() {
 
 function ih::setup::core.toolrepos::install() {
 
-  mkdir -p "${GR_HOME}"
+  ih::setup::core.toolrepos::test-or-install "install"
+
+}
+
+# If $1 is "test", this will check if install is needed and return 1 if it is.
+# Otherwise, this will install the repos.
+function ih::setup::core.toolrepos::test-or-install() {
+
+  mkdir -pq "${GR_HOME}"
 
   if [ ! -d "${GR_HOME}/engineering" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
     ih::log::info "Cloning engineering repo..."
     git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/engineering" || return
   fi
 
   if [ ! -d "${GR_HOME}/image-builder" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
     ih::log::info "Cloning image-builder repo.."
     git clone git@github.com:ConsultingMD/image-builder.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/image-builder" || return
+  fi
+
+  if [ ! -d "${GR_HOME}/kore" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
+    ih::log::info "Cloning kore repo.."
+    git clone git@github.com:ConsultingMD/kore.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/kore" || return
+  fi
+
+  if [ "$1" = "test" ]; then
+    return 0
   fi
 
   export IH_WANT_RE_SOURCE=1
