@@ -1,12 +1,22 @@
 #!/bin/bash
 
 set -o pipefail
+set +o hashall
 
 # The directory where ih-core has been installed
 export IH_CORE_DIR
 IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
+
+export IH_ACTIVE_DOMAINS=${IH_ACTIVE_DOMAINS:-"core"}
+export IH_SETUP_LIB_DIRS=${IH_CORE_LIB_DIRS:-$IH_CORE_LIB_DIR}
+
+declare -a IH_SETUP_STEPS
+declare -a IH_SETUP_DOMAINS
+
+IFS=: read -r -d '' -a IH_SETUP_LIB_DIRS_ARRAY < <(printf '%s:\0' "$IH_SETUP_LIB_DIRS")
+IFS=: read -r -d '' -a IH_ACTIVE_DOMAINS_ARRAY < <(printf '%s:\0' "$IH_ACTIVE_DOMAINS")
 
 # The directory where IH shell augments are to be installed
 export IH_DIR="$HOME/.ih"
@@ -108,99 +118,59 @@ function ih::private::try-invoke() {
   fi
 }
 
-# Echos a list of steps discovered by ih::private::load-steps
-# sorted in dependency order.
-function ih::private::list-steps() {
-  local STEPS
-  local STEP
-  local DAG
-
-  STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
-
-  for STEP in $STEPS; do
-
-    for COMMAND in "install" "test" "help" "deps"; do
-      if ! command -v ih::setup::"$STEP"::"$COMMAND" >/dev/null; then
-        ih::log::warn "Step $STEP does not provide a function named ih::setup::$STEP::$COMMAND, it will be ignored"
-        break 1
-      fi
-    done
-
-    DEPS=$(ih::private::step-deps "$STEP")
-    if [[ -z $DEPS ]]; then
-      DAG="$DAG
-$STEP $STEP"
-    else
-      for DEP in $DEPS; do
-        DAG="$DAG
-$DEP $STEP"
-      done
-    fi
-  done
-
-  echo "$DAG" | tsort | tr '\n' ' '
+# Attempts to return help for the domain passed as $1
+function ih::private::domain-help() {
+  if command -v "ih::setup::$1" >/dev/null; then
+    "ih::setup::$1"
+  fi
 }
 
-# Loads the steps by scanning for files under $1
-# containing ih::setup::*::install functions, then sources those files.
-function ih::private::load-steps() {
-  local STEP_FILES
-  local STEP_FILE
-
-  STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_.-]+::install' "$1")
-
-  for STEP_FILE in $STEP_FILES; do
-    ih::log::debug "Steps found in $STEP_FILE"
-    # shellcheck disable=SC1090
-    . "$STEP_FILE"
-  done
-}
-
-# Applies command $1 to the tags or steps which match the rest of the arguments.
-# If there is only one additional argument it will be treated as a prefix.
-# Otherwise all arguments must match a step exactly.
-# Usage: ih::private::apply-to-steps $COMMAND $STEP
+# Applies command $1 to steps.
+# Usage: ih::private::apply-to-steps $COMMAND [$DOMAIN] [$STEP...]
+# $COMMAND is required
+# If $DOMAIN is not provided or is empty then $IH_ACTIVE_DOMAINS will be used and all steps from those domains will be used.
+# If $STEP is not provided then all steps from the domain will be used.
 # If there are no steps listed then the command will be error.
 function ih::private::apply-to-steps() {
   local COMMAND=$1
   shift
-  local -a ALLSTEPS
-  read -r -a ALLSTEPS <<<"$(ih::private::list-steps)"
   local -a STEPS
+  local -a DOMAINS
+  local STEP DOMAIN
 
-  case ${#} in
-    0)
-      STEPS=("${ALLSTEPS[@]}")
-      ;;
-    1)
-      if [[ $1 =~ [\.|\+|\*] ]]; then
-        for STEP in "${ALLSTEPS[@]}"; do
-          if [[ "$STEP" =~ ${1} ]]; then
-            STEPS+=("$STEP")
-          fi
-        done
-      else
-        STEPS+=("$1")
-      fi
-      ;;
-    *)
-      # $@ is an array
-      # shellcheck disable=SC2206
-      STEPS=($@)
-      ;;
-  esac
+  if [[ ${#} -eq 0 ]]; then
+    # include active domains and all the steps (they will be filtered below)
+    DOMAINS=("${IH_ACTIVE_DOMAINS_ARRAY[@]}")
+    STEPS=("${IH_SETUP_STEPS[@]}")
+  elif [[ ${#} -eq 1 ]]; then
+    # one requested domain and all the steps (they will be filtered below)
+    DOMAINS=("$1")
+    STEPS=("${IH_SETUP_STEPS[@]}")
+  else
+    # prefix the requested steps with the domain so we can filter in a consistent way.
+    DOMAIN="$1"
+    DOMAINS=("$DOMAIN")
+    shift
+    for STEP in "$@"; do
+      STEPS=("${DOMAIN}.${STEP}")
+    done
+  fi
 
   for STEP in "${STEPS[@]}"; do
+    # This will be filtering the steps down to only those which are in domain
+    DOMAIN=${STEP%.*}
     # We want to look for the step with spaces on each side, which is annoying to quote
     # shellcheck disable=SC2027
-    if [[ " ${ALLSTEPS[*]} " =~ " "${STEP}" " ]]; then
-      # whatever you want to do when array contains value
-      if ! "ih::private::$COMMAND" "$STEP"; then
-        ih::log::error "Command $COMMAND failed for step $STEP"
-        exit 1
+    if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
+      if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
+        if ! "ih::private::$COMMAND" "$STEP"; then
+          ih::log::error "Command $COMMAND failed for step $STEP"
+          exit 1
+        fi
+      else
+        ih::log::error "No step found with name '$STEP'"
+
       fi
-    else
-      ih::log::warn "Step '${STEP}' not found in step list '${ALLSTEPS[*]}'"
     fi
   done
 }
@@ -321,47 +291,50 @@ function ih::private::install-step() {
 }
 
 ih::help() {
-  local SUBCOMMANDS
-  SUBCOMMANDS=$(ih::private::list-steps | tr ' ' '\n' | sort | tr '\n' ' ')
 
   local WITH_HELP=""
-  for SUBCOMMAND in $SUBCOMMANDS; do
-    SUBCOMMAND=$(printf "    %-25s %s" "$SUBCOMMAND" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
+  for DOMAIN in "${IH_SETUP_DOMAINS[@]}"; do
+    DOMAIN_LABEL=$(printf "    %-10s %s" "$DOMAIN" "$(ih::private::domain-help "$DOMAIN" | head -n 1)")
     WITH_HELP="$WITH_HELP
-$SUBCOMMAND"
+
+    $DOMAIN_LABEL"
+    for SUBCOMMAND in "${IH_SETUP_STEPS[@]}"; do
+      if [[ $SUBCOMMAND =~ ^${DOMAIN}\. ]]; then
+        SUBCOMMAND=$(printf "      %-15s %s" "${SUBCOMMAND#"$DOMAIN".}" "$(ih::private::step-help "$SUBCOMMAND" | head -n 1)")
+        WITH_HELP="$WITH_HELP
+    $SUBCOMMAND"
+      fi
+    done
   done
 
   cat <<USAGE
  Usage:
     ih-setup [flags...] {SUBCOMMAND} [arguments]
 
- When you provide a "step" argument you can pass a single step by name,
- multiple steps by name, or you can provide a prefix ending in a "."
- (like "core.") to apply the command to all steps with that prefix.
-
- Most likely you want to use the "core." prefix for all commands.
- When you install a bunch of steps using a prefix they will be installed
- in dependency order, so it's safe to run any time.
-
- By default steps will not be installed if they apper install if they appear
+ By default steps will not be installed if they appear
  to have been installed already. Steps are intended to be idempotent and running
  them with the -f flag to force them to be installed should be safe.
 
  Subcommands:
-    help                Show this help
 
-    check [step...]     Check if steps are installed
+    help
+        Show this help
 
-    describe [step...]  Shows details about the step(s)
+    install [domain [step...]]
+        Install setup steps. If no domain is provided it will install
+        the domains listed in \$IH_ACTIVE_DOMAINS.
+        Current active domains: $(green "${IH_ACTIVE_DOMAINS}")
 
-    show {step}         Prints the content of the step file
+    check [domain [step...]]
+        Check if steps are installed
 
-    install [step...]   Install setup steps. If no steps are provided as arguments
-                        then all steps not currently installed will be installed,
-                        in dependency order.
+    describe [domain [step...]]
+        Shows details about the step(s)
 
- Setup Steps:
-    ${WITH_HELP}
+    show {domain} {step}
+        Prints the content of the step file
+
+ Setup Steps:${WITH_HELP}
 
  Global flags:
     -f    Force command even if heuristics indicate it's not needed
@@ -377,13 +350,73 @@ For troubleshooting help:
   - Ask a question in the #dept-eng_infra topic in Slack
 
 USAGE
+
+  exit 0
+}
+
+function ih::setup::private::init() {
+  local STEP_FILES
+  local STEP_FILE
+
+  local STEPS
+  local STEP
+  local DAG DEPS SORTED_STEPS
+  local DOMAIN
+
+  for IH_SETUP_LIB_DIR in "${IH_SETUP_LIB_DIRS_ARRAY[@]}"; do
+    STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_.-]+' "$IH_SETUP_LIB_DIR")
+    for STEP_FILE in $STEP_FILES; do
+      ih::log::debug "Steps found in $STEP_FILE"
+      # shellcheck disable=SC1090
+      . "$STEP_FILE"
+    done
+  done
+
+  STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
+
+  for STEP in $STEPS; do
+
+    for COMMAND in "install" "test" "help" "deps"; do
+      if ! command -v ih::setup::"$STEP"::"$COMMAND" >/dev/null; then
+        ih::log::warn "Step $STEP does not provide a function named ih::setup::$STEP::$COMMAND, it will be ignored"
+        break 1
+      fi
+    done
+
+    DEPS=$(ih::private::step-deps "$STEP")
+    if [[ -z $DEPS ]]; then
+      DAG="$DAG
+$STEP $STEP"
+    else
+      for DEP in $DEPS; do
+        DAG="$DAG
+$DEP $STEP"
+      done
+    fi
+  done
+
+  SORTED_STEPS=$(echo "$DAG" | tsort | tr '\n' ' ')
+
+  for STEP in $SORTED_STEPS; do
+    IH_SETUP_STEPS+=("$STEP")
+    DOMAIN=${STEP%.*}
+    if [[ ! " ${IH_SETUP_DOMAINS[*]} " =~ $DOMAIN ]]; then
+      IH_SETUP_DOMAINS+=("$DOMAIN")
+    fi
+
+  done
+
+  ih::log::debug "Steps: ${IH_SETUP_STEPS[*]}"
+  ih::log::debug "Domains: ${IH_SETUP_DOMAINS[*]}"
+
 }
 
 function main() {
 
+  ih::setup::private::init
+
   if [[ $# -eq 0 ]]; then
     ih::help
-    exit 0
   fi
 
   while getopts "yfv" arg; do
@@ -435,7 +468,5 @@ function main() {
 
   ih::${command} "${@}"
 }
-
-ih::private::load-steps "$IH_CORE_LIB_DIR"
 
 main "${@}"

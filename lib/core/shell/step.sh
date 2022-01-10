@@ -67,10 +67,10 @@ function ih::setup::core.shell::install() {
   mkdir -p "$IH_DIR"
   cp -rn "${THIS_DIR}/custom/" "${IH_DIR}/custom" || :
   chmod 0700 "${IH_DIR}/custom"
-  chmod 0600 -R "${IH_DIR}"/custom/*
+  chmod 0600 "${IH_DIR}"/custom/*
   cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
   chmod 0700 "${IH_DIR}/default"
-  chmod 0400 -R "${IH_DIR}/default"/*
+  chmod 0600 "${IH_DIR}/default"/*
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
   ih::setup::core.shell::private::configure-profile

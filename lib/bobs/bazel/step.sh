@@ -2,7 +2,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::cds.bazel::help() {
+function ih::setup::bobs.bazel::help() {
   echo 'Installs bazelisk for bazel management
 
     This step will:
@@ -13,7 +13,7 @@ function ih::setup::cds.bazel::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::cds.bazel::test() {
+function ih::setup::bobs.bazel::test() {
   if type bazelisk >/dev/null; then
     if type bazel >/dev/null; then
       return 0
@@ -23,12 +23,12 @@ function ih::setup::cds.bazel::test() {
 }
 
 # Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::cds.bazel::deps() {
+function ih::setup::bobs.bazel::deps() {
   # echo "step1 step2"
   echo ""
 }
 
-function ih::setup::cds.bazel::install() {
+function ih::setup::bobs.bazel::install() {
 
   set -e
   ih::log::info "Installing bazelisk using brew..."

@@ -2,7 +2,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::cds.jdk::help() {
+function ih::setup::bobs.jdk::help() {
   echo 'Installs the JDK version used by CDS
 
     This step will:
@@ -12,7 +12,7 @@ function ih::setup::cds.jdk::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::cds.jdk::test() {
+function ih::setup::bobs.jdk::test() {
   if brew list --cask adoptopenjdk8 >/dev/null; then
     return 0
   fi
@@ -20,12 +20,12 @@ function ih::setup::cds.jdk::test() {
 }
 
 # Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::cds.jdk::deps() {
+function ih::setup::bobs.jdk::deps() {
   # echo "step1 step2"
   echo ""
 }
 
-function ih::setup::cds.jdk::install() {
+function ih::setup::bobs.jdk::install() {
 
   ih::log::info "Tapping adoptopenjdk/openjdk"
   brew tap adoptopenjdk/openjdk
