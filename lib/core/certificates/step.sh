@@ -2,7 +2,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::core.certificates::help() {
+function ih::setup::core.certificate::help() {
   # shellcheck disable=SC2016
   echo 'Trust the certificates used by the VPN DLP
 
@@ -24,13 +24,17 @@ function ih::setup::core.certificates::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::core.certificates::test() {
+function ih::setup::core.certificate::test() {
 
   if [ ! -f "$IH_DEFAULT_DIR/11_certificates.sh" ]; then
     return 1
   fi
 
-  if ! ih::setup::core.certificates::private::java-certs; then
+  if [ ! -d "$HOME/.ih/certs" ]; then
+    return 1
+  fi
+
+  if ! ih::setup::core.certificate::private::java-certs; then
     ih::log::debug "DLP certs not installed in Java keystore"
     return 1
   fi
@@ -39,14 +43,16 @@ function ih::setup::core.certificates::test() {
 }
 
 # Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::core.certificates::deps() {
+function ih::setup::core.certificate::deps() {
   echo "core.shell"
 }
 
-function ih::setup::core.certificates::install() {
+function ih::setup::core.certificate::install() {
 
   local CA_DIR="$HOME/.ih/certs"
+  mkdir -p "$CA_DIR"
   ih::log::info "Copying internal CA certs into $CA_DIR"
+
   cp -f "$IH_CORE_LIB_DIR"/core/certificates/certs/* "$CA_DIR"
 
   local CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
@@ -64,7 +70,7 @@ function ih::setup::core.certificates::install() {
   ih::log::info "Rehashing brew OpenSSL certs..."
   "$(brew --prefix)"/opt/openssl/bin/c_rehash
 
-  ih::setup::core.certificates::private::java-certs "install"
+  ih::setup::core.certificate::private::java-certs "install"
 
   ih::file::add-if-not-present "$HOME/.npmrc" "cafile=\"$CA_PATH\""
   ih::file::add-if-not-present "$HOME/.yarnrc" "cafile=\"$CA_PATH\""
@@ -75,7 +81,7 @@ function ih::setup::core.certificates::install() {
 
 # If $1 is set to "install" then this installs the certificates in the java cacerts store.
 # Otherwise this returns 0 if the certificates are already installed, 1 if they are not.
-function ih::setup::core.certificates::private::java-certs() {
+function ih::setup::core.certificate::private::java-certs() {
   local CA_DIR="$HOME/.ih/certs"
   local JAVA_HOME JAVA_EXISTS JAVA_CERT_DIR
   JAVA_HOME=$(/usr/libexec/java_home)
@@ -99,8 +105,12 @@ function ih::setup::core.certificates::private::java-certs() {
       )
 
       for CA_PATH in "${CA_PATHS[@]}"; do
-        local FINGERPRINT
+        local FINGERPRINT FINGERPRINT_OK
         FINGERPRINT=$(openssl x509 -in "$CA_PATH" -noout -fingerprint | cut -d"=" -f2)
+        FINGERPRINT_OK=$?
+        if [ ! $FINGERPRINT_OK ]; then
+          return 1
+        fi
 
         if keytool -list -v -storepass changeit -keystore "$JAVA_CERT_DIR" | grep -q "$FINGERPRINT"; then
           ih::log::debug "Cert store already contains GR CA cert from $CA_PATH"
@@ -119,7 +129,7 @@ function ih::setup::core.certificates::private::java-certs() {
         CA_NAME=$(basename "$CA_PATH")
 
         ih::log::info "Adding cert to Java-usable keystore (needs sudo access)"
-        sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "${CA_NAME%%.*}" -file "$CA_PATH" -keystore "$JAVA_CERT_DIR"
+        sudo keytool -import -noprompt -storepass changeit -trustcacerts -alias "${CA_NAME%%.*}" -file "$CA_PATH" -keystore "$JAVA_CERT_DIR" || return 1
       done
 
       break
@@ -130,7 +140,9 @@ function ih::setup::core.certificates::private::java-certs() {
 
   local BAZEL_RC="startup --host_jvm_args=\"-Djavax.net.ssl.trustStore=$JAVA_CERT_DIR\"
 startup --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
-
+  if [[ "$1" == "install" ]]; then
+    touch "$HOME/.bazelrc"
+  fi
   if ! grep -q "$JAVA_CERT_DIR" "$HOME/.bazelrc"; then
     if [[ "$1" != "install" ]]; then
       return 1

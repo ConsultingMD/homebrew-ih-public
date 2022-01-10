@@ -33,7 +33,9 @@ function ih::setup::core.toolrepos::install() {
 # Otherwise, this will install the repos.
 function ih::setup::core.toolrepos::test-or-install() {
 
-  mkdir -pq "${GR_HOME}"
+  if [ "$1" == "install" ]; then
+    mkdir -p "${GR_HOME}"
+  fi
 
   if [ ! -d "${GR_HOME}/engineering" ]; then
     if [ "$1" == "test" ]; then
