@@ -66,9 +66,11 @@ function ih::setup::core.shell::install() {
 
   mkdir -p "$IH_DIR"
   cp -rn "${THIS_DIR}/custom/" "${IH_DIR}/custom" || :
-  chmod 0600 -R "${IH_DIR}/custom"
+  chmod 0700 "${IH_DIR}/custom"
+  chmod 0600 -R "${IH_DIR}"/custom/*
   cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
-  chmod 0400 -R "${IH_DIR}/default"
+  chmod 0700 "${IH_DIR}/default"
+  chmod 0400 -R "${IH_DIR}/default"/*
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
   ih::setup::core.shell::private::configure-profile
@@ -165,7 +167,12 @@ function ih::setup::core.shell::private::configure-profile() {
 export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
     fi
 
-    ${EDITOR} "$PROFILE_FILE"
+    if ! ${EDITOR} "$PROFILE_FILE"; then
+      ih::log::error "It looks like your edit failed, you may want to exit and fix any errors you see above."
+      if ih::ask::confirm "Do you want to cancel install"; then
+        exit 0
+      fi
+    fi
 
     ih::setup::core.shell::private::configure-profile
   fi
