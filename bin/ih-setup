@@ -30,7 +30,6 @@ declare -a IH_SETUP_STEPS
 # The directory where IH shell augments are to be installed
 export IH_DIR="$HOME/.ih"
 
-IH_SETUP_LIBS_FILE="$IH_DIR"/libs
 IH_SETUP_DOMAINS_DIR="$IH_DIR"/domains
 
 if [ ! -d "$IH_DIR" ]; then
@@ -549,14 +548,9 @@ $DEP $STEP"
 
 function main() {
 
-  # Load the list of libs directories
-  if [ ! -f "$IH_SETUP_LIBS_FILE" ]; then
-    IH_SETUP_LIBS=("$IH_CORE_LIB_DIR")
-    ih::file::write-array-to-file IH_SETUP_LIBS "$IH_SETUP_LIBS_FILE"
-  else
-    . "$IH_SETUP_LIBS_FILE"
-  fi
-
+  # these array modifications happen here
+  # because they seem to get lost if they are
+  # done in ih;;
   for REPO in "$GR_HOME"/*; do
     if [ -d "$REPO"/.ih ]; then
       IH_SETUP_LIBS+=("$REPO"/.ih)
