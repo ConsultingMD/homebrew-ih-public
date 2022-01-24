@@ -65,3 +65,19 @@ function ih::file::add-if-not-matched() {
 
   echo "$CONTENT" >>"$FILE"
 }
+
+# Writes an array to file that can be sourced to populate a variable with the array.
+# $1 is the name of the array
+# $2 is the file name
+function ih::file::write-array-to-file() {
+  local NAME=$1
+  local FILE=$2
+  local ARR=("${!NAME}")
+  chmod u+w "$FILE"
+  echo "#!/usr/bin/env bash" >"$FILE"
+  echo "export -a ${NAME}=(" >>"$FILE"
+  for ITEM in "${ARR[@]}"; do
+    echo "  \"${ITEM}\"" >>"$FILE"
+  done
+  echo ")" >>"$FILE"
+}

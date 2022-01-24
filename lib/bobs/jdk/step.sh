@@ -13,7 +13,7 @@ function ih::setup::bobs.jdk::help() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::bobs.jdk::test() {
-  if brew list --cask adoptopenjdk8 >/dev/null; then
+  if brew list --cask adoptopenjdk8 >/dev/null 2>&1; then
     return 0
   fi
   return 1

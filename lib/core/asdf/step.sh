@@ -24,8 +24,7 @@ ${CURRENT_VERSIONS}
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.asdf::test() {
-
-  if ! command -v asdf; then
+  if ! command -v asdf >/dev/null; then
     ih::log::debug "asdf command is not available"
     return 1
   fi
@@ -40,7 +39,11 @@ function ih::setup::core.asdf::test() {
   local DESIRED_PLUGINS
   DESIRED_PLUGINS=$(awk '{print $1}' "$TOOL_VERSIONS_TEMPLATE_PATH" | sort)
 
-  if [ "$CURRENT_PLUGINS" != "$DESIRED_PLUGINS" ]; then
+  local DIFF
+  DIFF=$(diff <(echo "$CURRENT_PLUGINS") <(echo "$DESIRED_PLUGINS"))
+
+  # check if desired had lines not present in current
+  if [[ "$DIFF" =~ ">" ]]; then
     ih::log::debug "Some plugins are not installed"
     return 1
   fi

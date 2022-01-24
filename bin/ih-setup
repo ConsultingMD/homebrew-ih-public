@@ -1,6 +1,15 @@
 #!/bin/bash
 
+# This script handles installing and checking the setup steps.
+# It's intended to be run as a script, not sourced.
+# For details on how it works, see the readme for the repo.
+
+# shellcheck disable=SC1090
+
 set -o pipefail
+# We're doing a lot of sourcing and PATH changes in these scripts,
+# so we disable path and command resolution hashing so that we always
+# get the latest version of the command we want.
 set +o hashall
 
 # The directory where ih-core has been installed
@@ -8,18 +17,32 @@ export IH_CORE_DIR
 IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
-
-export IH_ACTIVE_DOMAINS=${IH_ACTIVE_DOMAINS:-"core"}
-export IH_SETUP_LIB_DIRS=${IH_CORE_LIB_DIRS:-$IH_CORE_LIB_DIR}
+# Source utility functions
+for f in "$IH_CORE_LIB_DIR"/utils/*; do
+  # shellcheck source=/dev/null
+  if grep "#!/" "$f" >/dev/null; then
+    . "$f"
+  fi
+done
 
 declare -a IH_SETUP_STEPS
-declare -a IH_SETUP_DOMAINS
-
-IFS=: read -r -d '' -a IH_SETUP_LIB_DIRS_ARRAY < <(printf '%s:\0' "$IH_SETUP_LIB_DIRS")
-IFS=: read -r -d '' -a IH_ACTIVE_DOMAINS_ARRAY < <(printf '%s:\0' "$IH_ACTIVE_DOMAINS")
 
 # The directory where IH shell augments are to be installed
 export IH_DIR="$HOME/.ih"
+
+IH_SETUP_LIBS_FILE="$IH_DIR"/libs
+IH_SETUP_DOMAINS_FILE="$IH_DIR"/domains
+
+if [ ! -d "$IH_DIR" ]; then
+  mkdir "$IH_DIR"
+fi
+
+declare -a IH_SETUP_LIBS
+declare -a IH_SETUP_DOMAINS
+
+# List of domains which are active for the current user.
+# This is populated in the ih::setup::private::init function
+# declare -a IH_SETUP_ACTIVE_DOMAINS
 
 # The directory where IH shell custom files are to be installed
 # These are files that shall not be overwritten during an upgrade,
@@ -52,14 +75,6 @@ You should source $HOME/.zshrc or $HOME/.bashrc to activate those changes in you
   exit $ARG
 }
 trap ih::private::clean-up EXIT
-
-# Source utility functions
-for f in "$IH_CORE_LIB_DIR"/utils/*; do
-  # shellcheck source=/dev/null
-  if grep "#!/" "$f" >/dev/null; then
-    . "$f"
-  fi
-done
 
 # Attempts to return help for the step passed as an argument
 function ih::private::step-help() {
@@ -128,7 +143,7 @@ function ih::private::domain-help() {
 # Applies command $1 to steps.
 # Usage: ih::private::apply-to-steps $COMMAND [$DOMAIN] [$STEP...]
 # $COMMAND is required
-# If $DOMAIN is not provided or is empty then $IH_ACTIVE_DOMAINS will be used and all steps from those domains will be used.
+# If $DOMAIN is not provided or is empty then $IH_SETUP_ACTIVE_DOMAINS will be used and all steps from those domains will be used.
 # If $STEP is not provided then all steps from the domain will be used.
 # If there are no steps listed then the command will be error.
 function ih::private::apply-to-steps() {
@@ -140,7 +155,7 @@ function ih::private::apply-to-steps() {
 
   if [[ ${#} -eq 0 ]]; then
     # include active domains and all the steps (they will be filtered below)
-    DOMAINS=("${IH_ACTIVE_DOMAINS_ARRAY[@]}")
+    DOMAINS=("${IH_SETUP_ACTIVE_DOMAINS[@]}")
     STEPS=("${IH_SETUP_STEPS[@]}")
   elif [[ ${#} -eq 1 ]]; then
     # one requested domain and all the steps (they will be filtered below)
@@ -167,9 +182,16 @@ function ih::private::apply-to-steps() {
           ih::log::error "Command $COMMAND failed for step $STEP"
           exit 1
         fi
+
+        if [[ ! " ${IH_SETUP_ACTIVE_DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
+          # User manually installed another domain, so add it to the active list.
+          echo "Previous Active domains: ${IH_SETUP_ACTIVE_DOMAINS[*]}"
+          IH_SETUP_ACTIVE_DOMAINS+=("$DOMAIN")
+          echo "Active domains: ${IH_SETUP_ACTIVE_DOMAINS[*]}"
+          ih::file::write-array-to-file IH_SETUP_ACTIVE_DOMAINS "$IH_SETUP_DOMAINS_FILE"
+        fi
       else
         ih::log::error "No step found with name '$STEP'"
-
       fi
     fi
   done
@@ -232,6 +254,60 @@ function ih::private::test-deps() {
     return 1
   fi
   return 0
+
+}
+
+# Adds step with domain $1 and name $2 to the
+# .ih folder in the current directory, or the
+# current directory if it's already .ih.
+function ih::private::add-step() {
+  local DOMAIN="${1:?domain is required}"
+  local NAME="${2:?domain is required}"
+  local DIR="${DOMAIN}/${NAME}"
+
+  if [[ ! ${PWD} =~ .ih$ ]]; then
+    if [ -d "./.ih" ]; then
+      mkdir ./.ih
+    fi
+    DIR=".ih/${DIR}"
+  fi
+
+  mkdir -p "${DIR}" >/dev/null
+
+  function step-template() {
+    cat <<END >"${DIR}/step.sh}"
+#!/bin/bash
+
+# IH_CORE_DIR will be set to the directory containing the bin and lib directories.
+
+function ih::setup::$STEP::help(){
+    echo 'Summary line about this step
+
+    This step will:
+        - detail
+        - detail
+    '
+}
+
+# Check if the step has been installed and return 0 if it has.
+# Otherwise return 1.
+function ih::setup::$STEP::test(){
+    echo "Step installed"
+    return 0
+}
+
+# Echo a space-delimited list of steps which must be installed before this one can be.
+# Refer to steps by domain.name
+function ih::setup::$STEP::deps(){
+    # echo "step1 step2"
+    echo ""
+}
+
+function ih::setup::$STEP::install(){
+    echo 'Installing...'
+}
+END
+  }
 
 }
 
@@ -322,8 +398,8 @@ ih::help() {
 
     install [domain [step...]]
         Install setup steps. If no domain is provided it will install
-        the domains listed in \$IH_ACTIVE_DOMAINS.
-        Current active domains: $(green "${IH_ACTIVE_DOMAINS}")
+        the domains listed in \$IH_SETUP_ACTIVE_DOMAINS.
+        Current active domains: $(green "${IH_SETUP_ACTIVE_DOMAINS[*]}")
 
     check [domain [step...]]
         Check if steps are installed
@@ -333,6 +409,10 @@ ih::help() {
 
     show {domain} {step}
         Prints the content of the step file
+
+    add-step {domain} {step}
+        Adds a step under the current directory. Should be run in the root
+        of a repo when you want to add a setup step to that repo.
 
  Setup Steps:${WITH_HELP}
 
@@ -354,6 +434,10 @@ USAGE
   exit 0
 }
 
+# This function is responsible for scanning all of the lib directories
+# for step functions and sourcing those files. After this function is invoked,
+# the following variables are populated:
+
 function ih::setup::private::init() {
   local STEP_FILES
   local STEP_FILE
@@ -363,13 +447,16 @@ function ih::setup::private::init() {
   local DAG DEPS SORTED_STEPS
   local DOMAIN
 
-  for IH_SETUP_LIB_DIR in "${IH_SETUP_LIB_DIRS_ARRAY[@]}"; do
-    STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_.-]+' "$IH_SETUP_LIB_DIR")
-    for STEP_FILE in $STEP_FILES; do
-      ih::log::debug "Steps found in $STEP_FILE"
-      # shellcheck disable=SC1090
-      . "$STEP_FILE"
-    done
+  # Scan the libs directories for files containing ih::setup functions and source those files.
+  for IH_SETUP_LIB_DIR in "${IH_SETUP_LIBS[@]}"; do
+    if [[ -d "$IH_SETUP_LIB_DIR" || -f "$IH_SETUP_LIB_DIR" ]]; then
+      STEP_FILES=$(grep -rlE 'function ih::setup::[A-z0-9_.-]+' "$IH_SETUP_LIB_DIR")
+      for STEP_FILE in $STEP_FILES; do
+        ih::log::debug "Steps found in $STEP_FILE"
+        # shellcheck disable=SC1090
+        . "$STEP_FILE"
+      done
+    fi
   done
 
   STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
@@ -413,6 +500,30 @@ $DEP $STEP"
 
 function main() {
 
+  # Load the list of libs directories
+  if [ ! -f "$IH_SETUP_LIBS_FILE" ]; then
+    IH_SETUP_LIBS=("$IH_CORE_LIB_DIR")
+    ih::file::write-array-to-file IH_SETUP_LIBS "$IH_SETUP_LIBS_FILE"
+  else
+    . "$IH_SETUP_LIBS_FILE"
+  fi
+
+  for REPO in $GR_HOME; do
+    if [ -d "$REPO"/.ih ]; then
+      IH_SETUP_LIBS+=("$REPO"/.ih)
+    fi
+  done
+
+  # Load the list of domains
+  if [ ! -f "$IH_SETUP_DOMAINS_FILE" ]; then
+    IH_SETUP_ACTIVE_DOMAINS=("core")
+    echo "IH_SETUP_ACTIVE_DOMAINS=${IH_SETUP_ACTIVE_DOMAINS[*]}"
+    ih::file::write-array-to-file IH_SETUP_ACTIVE_DOMAINS "$IH_SETUP_DOMAINS_FILE"
+  else
+    . "$IH_SETUP_DOMAINS_FILE"
+    echo "from file: IH_SETUP_ACTIVE_DOMAINS=${IH_SETUP_ACTIVE_DOMAINS[*]}"
+  fi
+
   ih::setup::private::init
 
   if [[ $# -eq 0 ]]; then
@@ -446,15 +557,23 @@ function main() {
       return
       ;;
     describe)
-      ih::private::apply-to-steps describe-step "${@}"
+      if [[ $# -eq 1 ]]; then
+        ih::private::domain-help "$1"
+      else
+        ih::private::apply-to-steps describe-step "${@}"
+      fi
       return
       ;;
     show)
       ih::private::step-show "${@}"
       return
       ;;
-    check)
+    check | test)
       ih::private::apply-to-steps test-step "${@}"
+      return
+      ;;
+    add-step)
+      ih::private::add-step "${@}"
       return
       ;;
     private::*)
