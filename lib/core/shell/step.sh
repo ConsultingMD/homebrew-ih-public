@@ -70,7 +70,7 @@ function ih::setup::core.shell::install() {
   chmod 0600 "${IH_DIR}"/custom/*
   cp -r "${THIS_DIR}/default/" "${IH_DIR}/default"
   chmod 0700 "${IH_DIR}/default"
-  chmod 0600 "${IH_DIR}/default"/*
+  chmod 0600 "${IH_DIR}"/default/*
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
 
   ih::setup::core.shell::private::configure-profile
@@ -84,7 +84,7 @@ function ih::setup::core.shell::install() {
 
   re_source
 
-  echo "Shell configuration complete. When you start a new shell you'll have all the Included Health scripts available."
+  green "Shell configuration complete. When you start a new shell you'll have all the Included Health scripts available."
 
 }
 
