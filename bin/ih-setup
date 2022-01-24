@@ -256,10 +256,7 @@ function ih::private::test-deps() {
 
 # returns 0 if the domain in $1 has been activated
 function ih::private::state::is-domain-active() {
-  if [ -d "${IH_SETUP_DOMAINS_DIR}/${1}" ]; then
-    return 0
-  fi
-  return 1
+  ! [ -d "${IH_SETUP_DOMAINS_DIR}/${1}" ]
 }
 
 # Returns 0 if the step is installed; 1 otherwise.
@@ -270,10 +267,7 @@ function ih::private::state::is-step-installed() {
   DOMAIN=${1:?}
   STEP=${2:?}
 
-  if [ -f "${IH_SETUP_DOMAINS_DIR}/${DOMAIN}/${STEP}" ]; then
-    return 0
-  fi
-  return 1
+  ! [ -f "${IH_SETUP_DOMAINS_DIR}/${DOMAIN}/${STEP}" ]
 }
 
 function ih::private::state::make-step-installed() {
@@ -485,7 +479,8 @@ USAGE
 # This function is responsible for scanning all of the lib directories
 # for step functions and sourcing those files. After this function is invoked,
 # the following variables are populated:
-
+# IH_SETUP_STEPS
+# IH_SETUP_DOMAINS
 function ih::setup::private::init() {
   local STEP_FILES
   local STEP_FILE
