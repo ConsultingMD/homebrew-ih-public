@@ -29,7 +29,6 @@ declare -a IH_SETUP_STEPS
 
 # The directory where IH shell augments are to be installed
 export IH_DIR="$HOME/.ih"
-
 IH_SETUP_DOMAINS_DIR="$IH_DIR"/domains
 
 if [ ! -d "$IH_DIR" ]; then
@@ -41,7 +40,7 @@ if [ ! -d "$IH_SETUP_DOMAINS_DIR" ]; then
   mkdir "$IH_SETUP_DOMAINS_DIR"
 fi
 
-declare -a IH_SETUP_LIBS
+declare -a IH_SETUP_LIBS=("$IH_CORE_LIB_DIR")
 declare -a IH_SETUP_DOMAINS
 
 # List of domains which are active for the current user.
@@ -543,9 +542,21 @@ $DEP $STEP"
 
 function main() {
 
+  while getopts "yfv" arg; do
+    case $arg in
+      y) export IH_NO_CONFIRM=1 ;;
+      f) export IH_FORCE=1 ;;
+      v) export IH_DEBUG=1 ;;
+      *)
+        ih::help
+        exit 1
+        ;;
+    esac
+  done
+
   # these array modifications happen here
   # because they seem to get lost if they are
-  # done in ih;;
+  # done in ih::setup::private::init
   for REPO in "$GR_HOME"/*; do
     if [ -d "$REPO"/.ih ]; then
       IH_SETUP_LIBS+=("$REPO"/.ih)
@@ -562,18 +573,6 @@ function main() {
   if [[ $# -eq 0 ]]; then
     ih::help
   fi
-
-  while getopts "yfv" arg; do
-    case $arg in
-      y) export IH_NO_CONFIRM=1 ;;
-      f) export IH_FORCE=1 ;;
-      v) export IH_DEBUG=1 ;;
-      *)
-        ih::help
-        exit 1
-        ;;
-    esac
-  done
 
   shift $((OPTIND - 1))
   local command=${1:?"Run ih-setup help for usage"}
