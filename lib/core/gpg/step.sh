@@ -41,7 +41,7 @@ function ih::setup::core.gpg::deps() {
   echo "core.shell"
 }
 
-function ih::setup::core.gpg::disabled-install() {
+function ih::setup::core.gpg::install() {
 
   # TODO: Update key if it exists but is expired?
 

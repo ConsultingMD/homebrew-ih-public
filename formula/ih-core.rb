@@ -17,6 +17,7 @@ class IhCore < Formula
   depends_on "virtualenv"
   depends_on "envconsul"
   depends_on "openssl@3"
+  depends_on "coreutils"
 
   def install
     lib.install Dir["lib/*"]
