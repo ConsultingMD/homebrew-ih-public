@@ -2,6 +2,22 @@
 
 #shellcheck disable=SC2034
 
+if [[ $(uname -m) == 'arm64' ]]; then
+  echo '-----------------------------------
+You have an M1 chip and you are not
+running in a Rosetta-flavored shell.
+There may be a day when all our tools
+work correctly on M1, but until that day
+you will need to install them in x86
+compatibility mode.
+
+Start a new shell using the command below,
+then run the bootstrap command again.
+
+arch -x86_64 zsh
+'
+fi
+
 if ! command -v brew &>/dev/null; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
