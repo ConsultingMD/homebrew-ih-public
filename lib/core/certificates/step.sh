@@ -64,7 +64,6 @@ function ih::setup::core.certificate::install() {
   ih::log::info "Rehashing brew OpenSSL certs..."
   "$(brew --prefix)"/opt/openssl/bin/c_rehash
 
-
   ih::file::add-if-not-present "$HOME/.npmrc" "cafile=\"$CA_PATH\""
   ih::file::add-if-not-present "$HOME/.yarnrc" "cafile=\"$CA_PATH\""
 
