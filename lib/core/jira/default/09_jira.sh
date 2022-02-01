@@ -2,7 +2,6 @@
 
 # This script decrypts the JIRA creds file
 # and evals it to load the JIRA token
-set +xe
 if [ -z "$JIRA_USERNAME" ]; then
   # Back compat for people who already encrypted their JIRA creds
   if [ -f "$HOME/.jira/creds.gpg" ]; then
