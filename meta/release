@@ -50,7 +50,7 @@ VERSION=$(cat "$ROOT_DIR/VERSION")
 
 if gh release list | cut -f1 | grep -q "$VERSION"; then
   echo "A release already exists for version $VERSION"
-  exit 1
+  exit 0
 fi
 
 echo "Creating a release for version $VERSION"
