@@ -27,24 +27,22 @@ function ih::setup::core.shell::test() {
       ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
       source "${IH_DIR}/augment.sh"
     fi
-
-    return 0
   else
     ih::log::debug "Augment file not found"
     return 1
   fi
 
   local DEFAULT_SRC_DIR="${IH_CORE_LIB_DIR}/core/shell/default"
-  local DEFAULT_DST_DIR="${IH_HOME}/default"
+  local DEFAULT_DST_DIR="${IH_DIR}/default"
 
   for DEFAULT_SRC in "$DEFAULT_SRC_DIR"/*; do
-    local DEFAULT_DST="$DEFAULT_DST_DIR/${DEFAULT_SRC/$DEFAULT_SRC_DIR/}"
-    if [ -f "$DEFAULT_DST" ]; then
+    local DEFAULT_DST="${DEFAULT_SRC/$DEFAULT_SRC_DIR/$DEFAULT_DST_DIR}"
+    if [ ! -f "$DEFAULT_DST" ]; then
       ih::log::debug "File $DEFAULT_DST not found."
       return 1
     fi
 
-    if [[ $(diff -q "$DEFAULT_DST" "$DEFAULT_SRC" >/dev/null) -ne 0 ]]; then
+    if ! diff -q "$DEFAULT_DST" "$DEFAULT_SRC" >/dev/null; then
       ih::log::debug "File $DEFAULT_DST does not match source"
       return 1
     fi
@@ -72,6 +70,7 @@ function ih::setup::core.shell::install() {
   chmod 0700 "${IH_DIR}/default"
   chmod 0600 "${IH_DIR}"/default/*
   cp "${THIS_DIR}/augment.sh" "${IH_DIR}/augment.sh"
+  chmod 0600 "${IH_DIR}"/augment.sh
 
   ih::setup::core.shell::private::configure-profile
 

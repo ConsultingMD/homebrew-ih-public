@@ -10,13 +10,6 @@ function ih::setup::core.git::help() {
 }
 
 function ih::setup::core.git::test() {
-  if [[ ! -f $HOME/.ih/augment.sh ]]; then
-    ih::log::debug ".gitignore_global not found in $HOME"
-    return 1
-  fi
-
-  ih::private::re-source
-
   if [[ ! -f $HOME/.gitignore_global ]]; then
     ih::log::debug ".gitignore_global not found in $HOME"
     return 1

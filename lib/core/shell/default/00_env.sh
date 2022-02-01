@@ -15,9 +15,12 @@
 # Signals that IH shell augments have been sourced
 export IH_AUGMENT_SOURCED=yes
 
-# Make sure that /usr/local/bin is in the path,
-# so brew will work.
-[[ ! "$PATH" =~ "/usr/local/bin" ]] && PATH="/usr/local/bin:$PATH"
+# Use correct brew and brew path stuff based on shell architecture compatibility
+if [[ "$(uname -m)" == 'arm64' ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
 
 #Make sure home ~/bin is in the path
 [[ ! "$PATH" =~ ${HOME}/bin ]] && export PATH="${HOME}/bin:${PATH}"

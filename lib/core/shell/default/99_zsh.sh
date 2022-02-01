@@ -62,6 +62,10 @@ alias edit-zshrc='eval "$EDITOR $HOME/.zshrc" && source $HOME/.zshrc'
 alias edit-aliases='eval "$EDITOR $HOME/.ih/custom/99_zsh.sh" && source $HOME/.ih/custom/99_zsh.sh'
 alias edit-env='eval "$EDITOR $HOME/.ih/custom/00_env.sh" && source $HOME/.ih/custom/00_env.sh'
 
+# Aliases to switch compatibility mode in shells
+alias x86='arch -x86_64 zsh'
+alias m1='arch -arm64 zsh'
+
 # Wire up completions for things installed by brew
 if type brew &>/dev/null; then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
