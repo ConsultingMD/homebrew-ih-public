@@ -11,6 +11,6 @@ if [ -z "$JIRA_USERNAME" ]; then
 fi
 
 if [ -z "$JIRA_API_TOKEN" ]; then
-    JIRA_API_TOKEN=$(security find-generic-password -s "jira-api" -w)
-    export JIRA_API_TOKEN
+  JIRA_API_TOKEN=$(security find-generic-password -s "jira-api" -w)
+  export JIRA_API_TOKEN
 fi

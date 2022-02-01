@@ -18,9 +18,9 @@ function ih::setup::bobs.bazel::test() {
   if ! type bazelisk >/dev/null; then
     return 1
   fi
-   
+
   if ! type bazel >/dev/null; then
-      return 1
+    return 1
   fi
 
   if ! ih::setup::bobs.bazel::private::java-certs; then
@@ -50,7 +50,6 @@ function ih::setup::bobs.bazel::install() {
 
   ih::setup::bobs.bazel::private::java-certs "install"
 }
-
 
 # If $1 is set to "install" then this installs the certificates in the java cacerts store.
 # Otherwise this returns 0 if the certificates are already installed, 1 if they are not.
@@ -129,4 +128,3 @@ startup --host_jvm_args=-Djavax.net.ssl.keyStorePassword=changeit"
   fi
 
 }
-
