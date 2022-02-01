@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: git config --global user.email "robot@github.com"
+      - run: git config --global user.name "homebrew-ih-public-action"
       - run: meta/release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
