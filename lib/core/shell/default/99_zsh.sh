@@ -57,10 +57,10 @@ export CLICOLOR=1
 export LSCOLORS=GxFxCxDxBxegedabagaced
 
 # Open .zshrc in an editor and then source it when you're done.
-alias edit-zshrc='$EDITOR $HOME/.zshrc && source $HOME/.zshrc'
+alias edit-zshrc='eval "$EDITOR $HOME/.zshrc" && source $HOME/.zshrc'
 # Open your default zsh aliases file in an editor and then source it when you're done.
-alias edit-aliases='$EDITOR $HOME/.ih/custom/99_zsh.sh && source \$HOME/.ih/custom/99_zsh.sh'
-alias edit-env='$EDITOR $HOME/.ih/custom/00_env.sh && source $HOME/.ih/custom/00_env.sh'
+alias edit-aliases='eval "$EDITOR $HOME/.ih/custom/99_zsh.sh" && source $HOME/.ih/custom/99_zsh.sh'
+alias edit-env='eval "$EDITOR $HOME/.ih/custom/00_env.sh" && source $HOME/.ih/custom/00_env.sh'
 
 # Wire up completions for things installed by brew
 if type brew &>/dev/null; then
