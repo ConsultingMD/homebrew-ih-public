@@ -24,3 +24,6 @@ fi
 
 #Make sure home ~/bin is in the path
 [[ ! "$PATH" =~ ${HOME}/bin ]] && export PATH="${HOME}/bin:${PATH}"
+
+# Allow importing of private repos in GO
+export GOPRIVATE="github.com/ConsultingMD/*"
