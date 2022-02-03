@@ -21,12 +21,16 @@ You can follow those instructions, or just
 make a new shell using "arch -x86_64 zsh"
 and do your brew install from there.
 
+Press any key to continue
   '
+    read -rn 1
     arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   else
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   fi
 fi
+
+eval "$(/usr/local/bin/brew shellenv)"
 
 echo "Installing ih-core formula..."
 echo "Sometimes the dependency downloads fail, possibly due to the VPN, so \
@@ -56,6 +60,6 @@ if command -v ih-setup; then
   ih-setup install
 else
   echo "ih-setup is not available in your PATH. Check the logs above to see if there was a fatal error,
-and make sure that /usr/local/bin is in your PATH"
+and make sure that /usr/local/bin is in your PATH. Then run 'ih-setup install' again."
   exit 1
 fi

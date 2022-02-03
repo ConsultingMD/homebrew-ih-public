@@ -269,6 +269,24 @@ function ih::private::state::is-step-installed() {
   ! [ -f "${IH_SETUP_DOMAINS_DIR}/${DOMAIN}/${STEP}" ]
 }
 
+function ih::private::upgrade() {
+
+  ih::log::info "Checking for updates..."
+
+  local OUTDATED
+  brew update >/dev/null
+  OUTDATED=$(brew outdated ih-core)
+  if [ -z "$OUTDATED" ]; then
+    ih::log::info "ih-setup is up-to-date"
+    return 0
+  fi
+
+  ih::log::info "Upgrading ih-setup"
+
+  brew upgrade ih-core
+  ih-setup install
+}
+
 function ih::private::state::make-step-installed() {
   local DOMAIN STEP
 
@@ -455,6 +473,10 @@ ih::help() {
         Adds a step under the current directory. Should be run in the root
         of a repo when you want to add a setup step to that repo.
 
+    upgrade
+        Updates ih-setup if a newer version is available,
+        and re-installs steps if needed
+
  Setup Steps:${WITH_HELP}
 
  Global flags:
@@ -598,6 +620,10 @@ function main() {
       ;;
     show)
       ih::private::step-show "${@}"
+      return
+      ;;
+    upgrade)
+      ih::private::upgrade
       return
       ;;
     check | test)
