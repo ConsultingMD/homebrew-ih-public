@@ -2,7 +2,7 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-function ih::setup::core.certificate::help() {
+function ih::setup::core.certificates::help() {
   # shellcheck disable=SC2016
   echo 'Trust the certificates used by the VPN DLP
 
@@ -23,7 +23,7 @@ function ih::setup::core.certificate::help() {
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
-function ih::setup::core.certificate::test() {
+function ih::setup::core.certificates::test() {
 
   if [ ! -f "$IH_DEFAULT_DIR/11_certificates.sh" ]; then
     return 1
@@ -37,11 +37,11 @@ function ih::setup::core.certificate::test() {
 }
 
 # Echo a space-delimited list of steps which must be installed before this one can be.
-function ih::setup::core.certificate::deps() {
+function ih::setup::core.certificates::deps() {
   echo "core.shell"
 }
 
-function ih::setup::core.certificate::install() {
+function ih::setup::core.certificates::install() {
 
   local CA_DIR="$HOME/.ih/certs"
   mkdir -p "$CA_DIR"
