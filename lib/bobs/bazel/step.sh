@@ -3,11 +3,11 @@
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
 function ih::setup::bobs.bazel::help() {
-  echo 'Installs bazelisk for bazel management
+  echo 'Installs bazel correctly
 
     This step will:
-        - Install bazelisk
-        - Check that bazel is working
+        - Install bazelisk in x86 mode
+        - symlink bazel to bazelisk
         - Configure bazel keystore to trust DLP certificate
     '
 }
@@ -15,11 +15,12 @@ function ih::setup::bobs.bazel::help() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::bobs.bazel::test() {
-  if ! type bazelisk >/dev/null; then
+
+  if ! type bazelisk >/dev/null 2>&1; then
     return 1
   fi
 
-  if ! type bazel >/dev/null; then
+  if ! type bazel >/dev/null 2>&1; then
     return 1
   fi
 
@@ -40,13 +41,10 @@ function ih::setup::bobs.bazel::deps() {
 function ih::setup::bobs.bazel::install() {
 
   set -e
-  ih::log::info "Installing bazelisk using brew..."
-  brew install bazelisk
-  ih::log::info "Checking bazelisk version..."
-  bazelisk version
 
-  ih::log::info "Checking bazel version..."
-  bazel version
+  ih::arch::ibrew install bazelisk
+
+  ln -s /usr/local/bin/bazelisk /usr/local/bin/bazel
 
   ih::setup::bobs.bazel::private::java-certs "install"
 }

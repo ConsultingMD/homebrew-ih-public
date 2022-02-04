@@ -13,7 +13,7 @@ function ih::setup::bobs.jdk::help() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::bobs.jdk::test() {
-  if brew list --cask adoptopenjdk8 >/dev/null 2>&1; then
+  if ih::arch::ibrew list --cask adoptopenjdk8 >/dev/null 2>&1; then
     return 0
   fi
   return 1
@@ -28,8 +28,8 @@ function ih::setup::bobs.jdk::deps() {
 function ih::setup::bobs.jdk::install() {
 
   ih::log::info "Tapping adoptopenjdk/openjdk"
-  brew tap adoptopenjdk/openjdk
+  ih::arch::ibrew tap adoptopenjdk/openjdk
 
   ih::log::info "Installing adoptopenjdk8"
-  brew install --cask adoptopenjdk8
+  ih::arch::ibrew install --cask adoptopenjdk8
 }

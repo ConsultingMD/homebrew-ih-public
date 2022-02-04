@@ -83,8 +83,7 @@ function ih::setup::core.shell::install() {
 
   re_source
 
-  green "Shell configuration complete. When you start a new shell you'll have all the Included Health scripts available."
-
+  export IH_WANT_RE_SOURCE=1
 }
 
 # shellcheck disable=SC2016

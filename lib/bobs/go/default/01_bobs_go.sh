@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# This file defines the common environment variables
-# which the Platform team has found to be useful.
-# You can override thes values in the env_custom.sh file.
+# This file defines the go environment variables you
+# should have when working on the bobs repo.
+# It was created by `ih-setup install bobs go`
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
@@ -10,16 +10,11 @@
 # ██║  ██║██║   ██║    ██║╚██╗██║██║   ██║   ██║       ██╔══╝  ██║  ██║██║   ██║
 # ██████╔╝╚██████╔╝    ██║ ╚████║╚██████╔╝   ██║       ███████╗██████╔╝██║   ██║
 # ╚═════╝  ╚═════╝     ╚═╝  ╚═══╝ ╚═════╝    ╚═╝       ╚══════╝╚═════╝ ╚═╝   ╚═╝
-# Changes to this file will be overwritten if you update the ih-core formula
+# Changes to this file will be overwritten if you re-install the step
 
-# Signals that IH shell augments have been sourced
-export IH_AUGMENT_SOURCED=yes
-
-# Activate brew paths
-[ -f "/usr/local/bin/brew" ] && eval "$(/usr/local/bin/brew shellenv)"
-
-#Make sure home ~/bin is in the path
-[[ ! "$PATH" =~ ${HOME}/bin ]] && export PATH="${HOME}/bin:${PATH}"
-
-# Allow importing of private repos in GO
-export GOPRIVATE="github.com/ConsultingMD/*"
+export GO111MODULE=on
+export GOPATH="${HOME}/go"
+export GOBIN="${GOPATH}/bin"
+export PATH=$PATH:"${GOBIN}"
+export GOPROXY=direct
+export GOPRIVATE='github.com/ConsultingMD/*'

@@ -1,5 +1,4 @@
 python 3.9.7
-bazel 3.7.2
 buf 0.51.1
 golang 1.16.3
 helm 3.6.1
