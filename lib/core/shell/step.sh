@@ -162,6 +162,8 @@ function ih::setup::core.shell::private::configure-profile() {
       read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
       export EDITOR
       echo "
+# This is the editor that will be used when a command-line tool
+# like git needs you to edit a file.
 export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
     fi
 
