@@ -12,4 +12,4 @@ alias x86='arch -x86_64 $SHELL'
 alias amd64='arch -arm64 $SHELL'
 
 alias ibrew='arch -x86_64 /usr/local/bin/brew'
-alias mbrew='arch -arm74 /opt/homebrew/bin/brew'
+alias mbrew='arch -arm64 /opt/homebrew/bin/brew'
