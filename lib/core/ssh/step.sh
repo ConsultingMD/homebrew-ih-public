@@ -67,7 +67,9 @@ function ih::setup::core.ssh::install() {
       ssh-add -K "$HOME/.ssh/id_rsa"
     else
       ih::log::warn "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
-      if ih::ask::confirm "I want to back up your existing key and create a new one."; then
+      if ih::ask::confirm "I want to back up your existing key and create a new one.
+If you have already configured GitHub to trust this key, and it has a password, you
+can say no. Otherwise, you should say yes and a new key will be created."; then
         mv "$HOME"/.ssh/id_rsa "$HOME"/.ssh/id_rsa.old
         mv "$HOME"/.ssh/id_rsa.pub "$HOME"/.ssh/id_rsa.pub.old
 

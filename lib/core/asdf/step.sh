@@ -61,7 +61,7 @@ function ih::setup::core.asdf::install() {
     ih::log::info "Cloning asdf into $HOME/.asdf"
     git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.9.0
     # shellcheck disable=SC1091
-    . "$HOME/.asdf/completions/asdf.bash"
+    . "$HOME/.asdf/asdf.sh"
   fi
 
   local CURRENT_PLUGINS
