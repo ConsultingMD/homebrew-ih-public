@@ -32,6 +32,16 @@ function ih::setup::core.shell::test() {
     return 1
   fi
 
+  if ! grep -q -e "augment.sh" ~/.bashrc; then
+    ih::log::debug "Augment not sourced in .bashrc"
+    return 1
+  fi
+
+  if ! grep -q -e "augment.sh" ~/.zshrc; then
+    ih::log::debug "Augment not sourced in .zshrc"
+    return 1
+  fi
+
   local DEFAULT_SRC_DIR="${IH_CORE_LIB_DIR}/core/shell/default"
   local DEFAULT_DST_DIR="${IH_DIR}/default"
 
