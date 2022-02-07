@@ -5,6 +5,7 @@ function ih::setup::core.ssh::help() {
 
   echo "Configure SSH settings
 
+    This will not erase your existing SSH key.
     - Check that you have an SSH key and create one if you don't
     - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"
 }
@@ -69,7 +70,9 @@ function ih::setup::core.ssh::install() {
       ih::log::warn "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
       if ih::ask::confirm "I want to back up your existing key and create a new one.
 If you have already configured GitHub to trust this key, and it has a password, you
-can say no. Otherwise, you should say yes and a new key will be created."; then
+can say no, and your existing key will continue to be used.
+Otherwise, you should say yes (ok to proceed) and a new key
+will be created."; then
         mv "$HOME"/.ssh/id_rsa "$HOME"/.ssh/id_rsa.old
         mv "$HOME"/.ssh/id_rsa.pub "$HOME"/.ssh/id_rsa.pub.old
 
