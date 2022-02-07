@@ -13,6 +13,7 @@ function ih::setup::core.git::help() {
 }
 
 function ih::setup::core.git::test() {
+  re_source
   if [[ ! -f $HOME/.gitignore_global ]]; then
     ih::log::debug ".gitignore_global not found in $HOME"
     return 1
