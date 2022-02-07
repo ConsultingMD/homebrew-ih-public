@@ -65,3 +65,50 @@ function ih::file::add-if-not-matched() {
 
   echo "$CONTENT" >>"$FILE"
 }
+
+# Returns 0 if the directory at $2 has all
+# the files from the directory at $1, and
+# the files are all the same. Otherwise returns 1.
+function ih::file::check-dir-in-sync() {
+
+  local SRC_DIR=${1:?"src is required"}
+  local DST_DIR=${2:?"dst is required"}
+
+  for SRC in "$SRC_DIR"/*; do
+    local DST="${SRC/$SRC_DIR/$DST_DIR}"
+    if [ ! -f "$DST" ]; then
+      ih::log::debug "File $DST not found."
+      return 1
+    fi
+
+    if ! diff -q "$DST" "$SRC" >/dev/null; then
+      ih::log::debug "File $DST does not match source"
+      return 1
+    fi
+  done
+}
+
+# Returns 0 if the shell default directory at ~/.ih/default
+# contains exact matches for the files in the directory at $1.
+# Otherwise returns 1.
+function ih::file::check-shell-defaults() {
+
+  local SRC_DIR=${1:?"src is required"}
+  local DST_DIR="$IH_DIR"/default
+
+  ih::file::check-dir-in-sync "$SRC_DIR" "$DST_DIR"
+}
+
+# Copies the files from $1 into the shell default directory at ~/.ih/default
+# and makes them read/write
+function ih::file::sync-shell-defaults() {
+
+  local SRC_DIR=${1:?"src is required"}
+  local DST_DIR="$IH_DIR"/default
+
+  for SRC in "$SRC_DIR"/*; do
+    ih::log::debug "Copying $SRC to $DST_DIR"
+    cp -f "$SRC" "$DST_DIR"
+    chmod 0600 "${DST_DIR}/$(basename "$SRC")"
+  done
+}
