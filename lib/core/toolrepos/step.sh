@@ -12,10 +12,7 @@ function ih::setup::core.toolrepos::help() {
 }
 
 function ih::setup::core.toolrepos::test() {
-
   ih::setup::core.toolrepos::test-or-install "test"
-
-  return 0
 }
 
 function ih::setup::core.toolrepos::deps() {
@@ -24,9 +21,7 @@ function ih::setup::core.toolrepos::deps() {
 }
 
 function ih::setup::core.toolrepos::install() {
-
   ih::setup::core.toolrepos::test-or-install "install"
-
 }
 
 # If $1 is "test", this will check if install is needed and return 1 if it is.
