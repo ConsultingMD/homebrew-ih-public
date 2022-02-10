@@ -1,12 +1,19 @@
 #!/bin/bash
 
+IH_SSH_STEP_SKIP_PATH="${HOME}/.ssh/.ih-skip"
+
 function ih::setup::core.ssh::help() {
   local SSH_CONFIG_PATH=$HOME/.ssh/config
 
   echo "Configure SSH settings
 
+    This will not erase your existing SSH key.
+    This will not overwrite your $SSH_CONFIG_PATH if you
+    already have one.
+    It will:
     - Check that you have an SSH key and create one if you don't
-    - Create a file at $SSH_CONFIG_PATH which will default SSH to using your key"
+    - Create a file at $SSH_CONFIG_PATH which will default SSH
+      to using your key"
 }
 
 function ih::setup::core.ssh::test() {
@@ -15,6 +22,12 @@ function ih::setup::core.ssh::test() {
     ih::log::debug "No SSH config found"
     return 1
   fi
+
+  if [ -f "$IH_SSH_STEP_SKIP_PATH" ]; then
+    ih::log::debug "Found .ih-skip marker, not messing with SSH"
+    return 0
+  fi
+
   ih::log::debug "SSH config found"
   if [[ ! -f "$HOME/.ssh/id_rsa.pub" ]]; then
     ih::log::debug "No SSH default key found (id_rsa.pub)"
@@ -69,7 +82,9 @@ function ih::setup::core.ssh::install() {
       ih::log::warn "Uh-oh. you have an existing ssh key, but it doesn't appear to be a 4k RSA key."
       if ih::ask::confirm "I want to back up your existing key and create a new one.
 If you have already configured GitHub to trust this key, and it has a password, you
-can say no. Otherwise, you should say yes and a new key will be created."; then
+can say no, and your existing key will continue to be used.
+Otherwise, you should say yes (ok to proceed) and a new key
+will be created."; then
         mv "$HOME"/.ssh/id_rsa "$HOME"/.ssh/id_rsa.old
         mv "$HOME"/.ssh/id_rsa.pub "$HOME"/.ssh/id_rsa.pub.old
 
@@ -79,6 +94,7 @@ can say no. Otherwise, you should say yes and a new key will be created."; then
 
       else
         ih::log::warn "Leaving your key alone, you may not be able to authenticate to github correctly."
+        echo "Opted out of creating a 4096 bit key." >"$IH_SSH_STEP_SKIP_PATH"
 
       fi
     fi

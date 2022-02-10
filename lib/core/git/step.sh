@@ -13,14 +13,23 @@ function ih::setup::core.git::help() {
 }
 
 function ih::setup::core.git::test() {
+  re_source
+
   if [[ ! -f $HOME/.gitignore_global ]]; then
     ih::log::debug ".gitignore_global not found in $HOME"
     return 1
   fi
 
-  if [[ $(git config --global user.name) != "$GITHUB_USER" ]]; then
-    ih::log::debug "git config user.name ($(git config --global user.name)) != GITHUB_USER ($GITHUB_USER)"
+  local CONFIGURED_GIT_USER
+  CONFIGURED_GIT_USER=$(git config --global user.name)
+  if [ -z "$CONFIGURED_GIT_USER" ]; then
+    ih::log::debug "git config user.name not set"
     return 1
+  fi
+
+  if [[ $(git config --global user.name) != "$GITHUB_USER" ]]; then
+    ih::log::warn "git config user.name ($(git config --global user.name)) != GITHUB_USER ($GITHUB_USER), some things may not work correctly"
+    return 0
   fi
 
   return 0
