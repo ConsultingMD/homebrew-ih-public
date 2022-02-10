@@ -37,6 +37,23 @@ fi
 
 if command -v ih-setup; then
   ih-setup install
+  SUCCEEDED=$?
+
+  if [ $SUCCEEDED -eq 0 ]; then
+    echo "Install succeeded. You should be able to start a new shell
+and have everything work correctly."
+  else
+    echo "Install failed. Please contact platform support
+in the #developer-platform-support stream in Zulip or the #dept-eng_infra channel
+in Slack. You can also search Confluence for 'Engineer Onboarding Guide' for
+more troubleshooting tips.
+
+You don't need to run the bootstrap script again. You can
+now use 'ih-setup install' to re-try installation, or 'ih-setup check'
+to get more information."
+  fi
+
+  exit $SUCCEEDED
 else
   echo "ih-setup is not available in your PATH. Check the logs above to see if there was a fatal error,
 and make sure that /usr/local/bin is in your PATH"

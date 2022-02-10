@@ -182,7 +182,7 @@ function ih::private::apply-to-steps() {
     if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
         if ! "ih::private::$COMMAND" "$STEP"; then
-          ih::log::error "Command $COMMAND failed for step $STEP"
+          ih::log::error "Command $COMMAND failed for step $STEP. Re-run using 'ih-setup -v install' for more details."
           exit 1
         fi
 
@@ -283,7 +283,7 @@ function ih::private::upgrade() {
 
   ih::log::info "Upgrading ih-setup"
 
-  brew upgrade ih-core
+  brew upgrade ih-core || exit 1
   ih-setup install
 }
 
