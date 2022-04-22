@@ -40,7 +40,13 @@ the effects of the `.ih/default` scripts, `.ih/custom` is a good place to overri
 
 ## Working in this repo
 
-## Overview
+### How to release a new version
+
+Before you submit a PR with your change, run `meta/bump`. This will print off the current version.
+Then run `meta/bump {version you want}`. This will update the version everywhere it needs to be updated.
+When your PR is merged, a new release with the new version will be created.
+
+### Overview
 
 The ih-setup script works by scanning the folders in ./lib for files which contain functions
 which match the pattern `ih::setup::(\w*)::install`. These functions are considered to represent installers
