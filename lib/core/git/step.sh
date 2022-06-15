@@ -51,7 +51,7 @@ function ih::setup::core.git::install() {
   ih::setup::core.git::private::set-if-unset "push.default" "simple"
 
   # make git use ssh for everything
-  git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+  git config --global url.ssh://git@github.com/ConsultingMD/.insteadOf https://github.com/ConsultingMD
 
   # set up pre-commit to automatically be set up for all cloned repos,
   # if the user doesn't have a templateDir already
