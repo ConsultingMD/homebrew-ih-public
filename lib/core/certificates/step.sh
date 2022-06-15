@@ -44,12 +44,21 @@ function ih::setup::core.certificates::deps() {
 function ih::setup::core.certificates::install() {
 
   local CA_DIR="$HOME/.ih/certs"
+  local CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
+  local MOZILLA_PATH="$CA_DIR"/mozilla.pem
   mkdir -p "$CA_DIR"
   ih::log::info "Copying internal CA certs into $CA_DIR"
 
   cp -f "$IH_CORE_LIB_DIR"/core/certificates/certs/* "$CA_DIR"
 
-  local CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
+  ih::log::info "Acquiring cert bundle from Mozilla"
+  curl https://curl.se/ca/cacert.pem >"$MOZILLA_PATH"
+
+  curl https://curl.se/ca/cacert.pem >"$HOME/.ih/certs/mozilla.pem"
+  cat "$HOME/.ih/certs/grand_rounds_chained_ca.pem" >>"$HOME/.ih/certs/mozilla.pem"
+  npm config set cafile "$HOME/.ih/certs/mozilla.pem"
+
+  cat "$CA_PATH" >>"$MOZILLA_PATH"
 
   local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
   OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
@@ -64,8 +73,8 @@ function ih::setup::core.certificates::install() {
   ih::log::info "Rehashing brew OpenSSL certs..."
   "$(brew --prefix)"/opt/openssl/bin/c_rehash
 
-  ih::file::add-if-not-present "$HOME/.npmrc" "cafile=\"$CA_PATH\""
-  ih::file::add-if-not-present "$HOME/.yarnrc" "cafile=\"$CA_PATH\""
+  ih::file::add-if-not-present "$HOME/.npmrc" "cafile=\"$MOZILLA_PATH\""
+  ih::file::add-if-not-present "$HOME/.yarnrc" "cafile=\"$MOZILLA_PATH\""
 
   cp -f "$IH_CORE_LIB_DIR/core/certificates/default/11_certificates.sh" "$IH_DEFAULT_DIR/11_certificates.sh"
 
