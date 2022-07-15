@@ -14,15 +14,9 @@ This will install Homebrew (if needed), tap this repo, install the `ih-setup` sc
 onboarding process. Follow the instructions in the script and you should be ready to go in no time.
 You can also just manually run through the steps in the [bootstrap](./bootstrap) script.
 
-If you run into problems with the script, let the Delivery team know in Zulip [here](https://doctorondemand.zulipchat.com/#narrow/stream/305785-developer-platform/topic/Onboarding.20Questions). If you're not in Zulip
-yet, you can reach out in the `dept-eng_infra` channel in Slack.
+If you run into problems with the script, let the Delivery team know in Slack [here](https://ih-epdd.slack.com/archives/C03GXCDA48Y).
 
 You can run `ih-setup help` for help running the setup steps.
-
-> Important: the script has not been updated to work on M1 MacBooks yet, and will probably put you in
-> a bad state
->
-> If you have an M1, please reach out to Steve Ruble on Slack or Zulip.
 
 ### What will the onboarding script (ih-setup) do to my machine?
 

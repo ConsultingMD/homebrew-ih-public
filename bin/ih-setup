@@ -488,9 +488,8 @@ Version:
     ${VERSION}
 
 For troubleshooting help:
-  - See if there are tips at https://doctorondemand.atlassian.net/wiki/spaces/ENG/pages/2227077212/ih-setup+Troubleshooting
-  - Visit the #developer-platform-support stream in Zulip
-  - Ask a question in the #dept-eng_infra topic in Slack
+  - Search Confluence for "ih-setup troubleshooting"
+  - Ask a question in the #developer-platform-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y)
 
 USAGE
 

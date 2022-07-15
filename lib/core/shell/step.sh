@@ -153,41 +153,53 @@ function ih::setup::core.shell::private::configure-profile() {
 
   re_source
 
-  ih::setup::core.shell::private::validate-profile
-  local PROFILE_VALID=$?
+  if ih::setup::core.shell::private::validate-profile; then
+    return 0
+  fi
+
   local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
+  ih::ask::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
+  confirm_edit=$?
+  if [[ ${confirm_edit} -ne 0 ]]; then
+    # shellcheck disable=SC2263
+    echo "You can't continue bootstrapping until you've updated your environment variables."
+    # shellcheck disable=SC2263
+    echo "You can manually edit ${PROFILE_FILE} and re-run the script."
+    exit 1
+  fi
 
-  if [[ $PROFILE_VALID -ne 0 ]]; then
-    ih::ask::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
-    confirm_edit=$?
-    if [[ ${confirm_edit} -ne 0 ]]; then
-      # shellcheck disable=SC2263
-      echo "You can't continue bootstrapping until you've updated your environment variables."
-      # shellcheck disable=SC2263
-      echo "You can manually edit ${PROFILE_FILE} and re-run the script."
-      exit 1
-    fi
+  if [ -z "$EDITOR" ]; then
+    set-editor
+  fi
 
-    if [ -z "$EDITOR" ]; then
-      read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
-      export EDITOR
-      echo "
-# This is the editor that will be used when a command-line tool
-# like git needs you to edit a file.
-export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
-    fi
-
+  while true; do
     if ! ${EDITOR} "$PROFILE_FILE"; then
       ih::log::error "It looks like your edit failed, you may want to exit and fix any errors you see above."
-      if ih::ask::confirm "Do you want to cancel install"; then
+      if ih::ask::confirm "Do you want to change your editor from '$EDITOR' to something else?"; then
+        set-editor
+      elif ih::ask::confirm "Do you want to cancel install"; then
         exit 0
       fi
     fi
 
-    ih::setup::core.shell::private::configure-profile
-  fi
+    re_source
 
-  re_source
+    if ih::setup::core.shell::private::validate-profile; then
+      return 0
+    fi
+
+    ih::ask::confirm "Your profile is not yet complete. Do you want to edit again?" || exit 0
+  done
+
+}
+
+function set-editor() {
+  read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
+  export EDITOR
+  echo "
+  # This is the editor that will be used when a command-line tool
+  # like git needs you to edit a file.
+  export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
 }
 
 # Source all appropriate files for to refresh the shell
