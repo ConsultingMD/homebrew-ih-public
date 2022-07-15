@@ -29,8 +29,8 @@ done
 
 if [ $SUCCEEDED -eq 1 ]; then
   echo "Install of ih-setup formula failed. Please contact platform support
-in the #developer-platform-support stream in Zulip or the #dept-eng_infra channel
-in Slack. You can also search Confluence for 'Engineer Onboarding Guide' for
+in the #developer-platform-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y).
+You can also search Confluence for 'Engineer Onboarding Guide' for
 more troubleshooting tips."
   exit 1
 fi
@@ -44,8 +44,8 @@ if command -v ih-setup; then
 and have everything work correctly."
   else
     echo "Install failed. Please contact platform support
-in the #developer-platform-support stream in Zulip or the #dept-eng_infra channel
-in Slack. You can also search Confluence for 'Engineer Onboarding Guide' for
+in the #developer-platform-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y).
+You can also search Confluence for 'Engineer Onboarding Guide' for
 more troubleshooting tips.
 
 You don't need to run the bootstrap script again. You can
