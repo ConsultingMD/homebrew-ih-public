@@ -10,11 +10,9 @@
 
 # Directory where you want to clone Legacy Grand Rounds repos,
 # which are currently located in the ConsultingMD org.
-export GR_HOME="$HOME/src/github.com/ConsultingMD"
-
-# Directory where you want to clone Legacy Doctor on Demand repos,
-# which are currently located in the doctorondemand org.
-export DOD_HOME="$HOME/src/github.com/doctorondemand"
+export IH_HOME="$HOME/src/github.com/ConsultingMD"
+# This is exported for compatibility with older scripts
+export GR_HOME="$IH_HOME"
 
 # Your Included Health email address
 export EMAIL_ADDRESS=
@@ -29,22 +27,19 @@ export GITHUB_USER=
 # and put the no-reply email address here. Otherwise you can leave this as is.
 export GITHUB_EMAIL_ADDRESS="$EMAIL_ADDRESS"
 
-# Your 3 character initials
-export INITIALS=
-
 # Your full name, the name you would introduce yourself with.
 export FULL_NAME=""
 
 # Your username, probably firstname.lastname
 export IH_USERNAME=
-# This is copied for legacy compatibility
+# This is exported for compatibility with older scripts
 export GR_USERNAME="$IH_USERNAME"
 
 # The username you have in JIRA.
 # Before 1/15/2022:
 # If you've already logged in to JIRA with an email address,
 # use that. Otherwise, if you're new, use "$GR_USERNAME@grandrounds.com"
-# After 1/15/2022:
+# After 7/17/2022:
 # Use $GR_USERNAME@includedhealth.com
 export JIRA_USERNAME=
 
