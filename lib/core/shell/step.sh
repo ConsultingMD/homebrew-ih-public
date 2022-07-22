@@ -230,7 +230,7 @@ function ih::setup::core.shell::private::validate-profile() {
 
   set -e
   local VARS
-  VARS=$(grep export "$PROFILE_TEMPLATE_FILE" | cut -f 2 -d" " - | cut -f 1 -d"=" -)
+  VARS=$(grep export "$PROFILE_TEMPLATE_FILE" | grep -v "^#" | cut -f 2 -d" " - | cut -f 1 -d"=" -)
 
   # shellcheck disable=SC1090
   source "$PROFILE_FILE"
