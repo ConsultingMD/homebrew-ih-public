@@ -14,8 +14,7 @@
 # Changes to this file will be overwritten if you update the ih-core formula
 
 # Only continue if we're on zsh
-SHELL=$(ps -cp "$$" -o command="")
-if [[ ! $SHELL =~ "zsh" ]]; then
+if [[ ! $(ps -cp "$$" -o command="") =~ "zsh" ]]; then
   return 0
 fi
 

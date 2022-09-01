@@ -6,7 +6,6 @@
 # formula is updated
 
 # Only continue if we're on zsh
-SHELL=$(ps -cp "$$" -o command="")
-if [[ ! $SHELL =~ "zsh" ]]; then
+if [[ ! $(ps -cp "$$" -o command="") =~ "zsh" ]]; then
   return 0
 fi

@@ -13,8 +13,7 @@
 # Changes will be overwritten if you update the ih-core formula
 
 # Only continue if we're on bash
-SHELL=$(ps -cp "$$" -o command="")
-if [[ ! $SHELL =~ "bash" ]]; then
+if [[ ! $(ps -cp "$$" -o command="") =~ "bash" ]]; then
   return 0
 fi
 
