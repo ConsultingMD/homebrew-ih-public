@@ -53,9 +53,10 @@ function ih::setup::core.certificates::install() {
 
   ih::log::info "Acquiring cert bundle from Mozilla"
   curl https://curl.se/ca/cacert.pem >"$MOZILLA_PATH"
-
-  curl https://curl.se/ca/cacert.pem >"$HOME/.ih/certs/mozilla.pem"
+  # Append our DLP cerTs to the mozilla bundle.
   cat "$HOME/.ih/certs/grand_rounds_chained_ca.pem" >>"$HOME/.ih/certs/mozilla.pem"
+
+  # Configure NPM to use the bundle.
   npm config set cafile "$HOME/.ih/certs/mozilla.pem"
 
   cat "$CA_PATH" >>"$MOZILLA_PATH"
