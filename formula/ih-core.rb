@@ -18,6 +18,7 @@ class IhCore < Formula
   depends_on "envconsul"
   depends_on "openssl@3"
   depends_on "coreutils"
+  depends_on "yamllint"
 
   def install
     lib.install Dir["lib/*"]
