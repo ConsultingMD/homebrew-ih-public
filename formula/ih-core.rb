@@ -19,6 +19,7 @@ class IhCore < Formula
   depends_on "openssl@3"
   depends_on "coreutils"
   depends_on "yamllint"
+  depends_on "wget"
 
   def install
     lib.install Dir["lib/*"]
