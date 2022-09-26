@@ -57,7 +57,7 @@ function ih::setup::core.certificates::install() {
   cat "$CA_PATH" >>"$MOZILLA_PATH"
 
   # Configure NPM to use the bundle.
-  npm config set cafile "$HOME/.ih/certs/mozilla.pem"
+  npm config set cafile "$MOZILLA_PATH"
 
   local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
   OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
