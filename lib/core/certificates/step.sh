@@ -53,13 +53,11 @@ function ih::setup::core.certificates::install() {
 
   ih::log::info "Acquiring cert bundle from Mozilla"
   curl https://curl.se/ca/cacert.pem >"$MOZILLA_PATH"
-  # Append our DLP cerTs to the mozilla bundle.
-  cat "$HOME/.ih/certs/grand_rounds_chained_ca.pem" >>"$HOME/.ih/certs/mozilla.pem"
+  # Append our DLP certs to the mozilla bundle.
+  cat "$CA_PATH" >>"$MOZILLA_PATH"
 
   # Configure NPM to use the bundle.
   npm config set cafile "$HOME/.ih/certs/mozilla.pem"
-
-  cat "$CA_PATH" >>"$MOZILLA_PATH"
 
   local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
   OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
