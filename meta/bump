@@ -26,7 +26,7 @@ set -e
 git pull
 
 # Update the formula and the version file with the new version
-sed -i '' "s/VERSION=.*/VERSION=\"$VERSION\""/ "$ROOT_DIR/formula/ih-core.rb"
+sed -i "s/VERSION=.*/VERSION=\"$VERSION\""/ "$ROOT_DIR/formula/ih-core.rb"
 echo "$VERSION" >"$ROOT_DIR/VERSION"
 
 # If updating the files caused a change then commit that change.
