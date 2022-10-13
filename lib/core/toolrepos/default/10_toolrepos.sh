@@ -39,6 +39,8 @@ if [[ -d "${IMAGEBUILDER_BIN}" ]]; then
   if [[ ! "$PATH" =~ ${IMAGEBUILDER_BIN} ]]; then
     export PATH="${IMAGEBUILDER_BIN}:${PATH}"
   fi
+
+  export IMAGE_BUILDER_ROOT="$IMAGEBUILDER_DIR"
 fi
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
