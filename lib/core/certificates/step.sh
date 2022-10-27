@@ -56,8 +56,18 @@ function ih::setup::core.certificates::install() {
   # Append our DLP certs to the mozilla bundle.
   cat "$CA_PATH" >>"$MOZILLA_PATH"
 
+  # Download a CA cert that AWS sometimes uses, which is not
+  # included in the Mozilla bundle. This affects a few people
+  # with no obvious pattern.
+  curl https://www.amazontrust.com/repository/SFSRootCAG2.pem >>"$MOZILLA_PATH"
+
   # Configure NPM to use the bundle.
   npm config set cafile "$MOZILLA_PATH"
+
+  if command -v yarn &>/dev/null; then
+    # Configure yarn to use the bundle.
+    yarn config set cafile "$MOZILLA_PATH"
+  fi
 
   local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
   OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
@@ -72,9 +82,5 @@ function ih::setup::core.certificates::install() {
   ih::log::info "Rehashing brew OpenSSL certs..."
   "$(brew --prefix)"/opt/openssl/bin/c_rehash
 
-  ih::file::add-if-not-present "$HOME/.npmrc" "cafile=\"$MOZILLA_PATH\""
-  ih::file::add-if-not-present "$HOME/.yarnrc" "cafile=\"$MOZILLA_PATH\""
-
   cp -f "$IH_CORE_LIB_DIR/core/certificates/default/11_certificates.sh" "$IH_DEFAULT_DIR/11_certificates.sh"
-
 }
