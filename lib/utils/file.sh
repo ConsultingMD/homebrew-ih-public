@@ -66,6 +66,22 @@ function ih::file::add-if-not-matched() {
   echo "$CONTENT" >>"$FILE"
 }
 
+# Returns 0 if file $2 exists and is the same as file $1. Otherwise returns 1.
+function ih::file::check-file-in-sync() {
+  local SRC=${1:?"src is required"}
+  local DST=${2:?"dst is required"}
+
+  if [ ! -f "$DST" ]; then
+    ih::log::debug "File $DST not found."
+    return 1
+  fi
+
+  if ! diff -q "$DST" "$SRC" >/dev/null; then
+    ih::log::debug "File $DST does not match source"
+    return 1
+  fi
+}
+
 # Returns 0 if the directory at $2 has all
 # the files from the directory at $1, and
 # the files are all the same. Otherwise returns 1.
@@ -76,13 +92,7 @@ function ih::file::check-dir-in-sync() {
 
   for SRC in "$SRC_DIR"/*; do
     local DST="${SRC/$SRC_DIR/$DST_DIR}"
-    if [ ! -f "$DST" ]; then
-      ih::log::debug "File $DST not found."
-      return 1
-    fi
-
-    if ! diff -q "$DST" "$SRC" >/dev/null; then
-      ih::log::debug "File $DST does not match source"
+    if ! ih::file::check-file-in-sync "$SRC" "$DST"; then
       return 1
     fi
   done

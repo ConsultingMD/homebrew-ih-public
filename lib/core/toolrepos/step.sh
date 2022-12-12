@@ -56,11 +56,15 @@ function ih::setup::core.toolrepos::test-or-install() {
     git clone git@github.com:ConsultingMD/kore.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/kore" || return
   fi
 
+  local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
+  local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
+
   if [ "$1" = "test" ]; then
-    return 0
+    ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"
+    return
   fi
 
   export IH_WANT_RE_SOURCE=1
 
-  cp -f "$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh" "$IH_DEFAULT_DIR/10_toolrepos.sh"
+  cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
 }
