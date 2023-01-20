@@ -49,6 +49,9 @@ export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
 export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
 
+# Rancher desktop added to the PATH
+export PATH=$PATH:/Users/$USER/.rd/bin
+
 # Refresh the path hashes since we changed it
 rehash
 
