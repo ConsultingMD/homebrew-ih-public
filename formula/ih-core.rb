@@ -1,5 +1,5 @@
 class IhCore < Formula
-  VERSION="0.1.13"
+  VERSION="0.1.14"
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
@@ -20,7 +20,7 @@ class IhCore < Formula
   depends_on "coreutils"
   depends_on "yamllint"
   depends_on "wget"
-  depends_on "rancher"
+  depends_on "rancher-cli"
 
   def install
     lib.install Dir["lib/*"]
