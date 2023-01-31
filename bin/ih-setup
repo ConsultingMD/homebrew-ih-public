@@ -154,7 +154,7 @@ function ih::private::apply-to-steps() {
   shift
   local -a STEPS
   local -a DOMAINS
-  local STEP DOMAIN ALL_STEPS
+  local STEP DOMAIN
 
   if [[ ${#} -eq 0 ]]; then
     # include active domains and all the steps (they will be filtered below)
@@ -164,7 +164,6 @@ function ih::private::apply-to-steps() {
     # one requested domain and all the steps (they will be filtered below)
     DOMAINS=("$1")
     STEPS=("${IH_SETUP_STEPS[@]}")
-    ALL_STEPS=1
   else
     # prefix the requested steps with the domain so we can filter in a consistent way.
     DOMAIN="$1"
