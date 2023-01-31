@@ -45,4 +45,4 @@ export JIRA_USERNAME=
 
 # This is the default value used to authenticate to AWS resources
 # using the aws-environment script. Most people don't need to change this.
-export AWS_DEFAULT_ROLE=developer
+export AWS_DEFAULT_ROLE=dev
