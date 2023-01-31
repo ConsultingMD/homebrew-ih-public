@@ -154,7 +154,7 @@ function ih::private::apply-to-steps() {
   shift
   local -a STEPS
   local -a DOMAINS
-  local STEP DOMAIN
+  local STEP DOMAIN ALL_STEPS
 
   if [[ ${#} -eq 0 ]]; then
     # include active domains and all the steps (they will be filtered below)
@@ -164,6 +164,7 @@ function ih::private::apply-to-steps() {
     # one requested domain and all the steps (they will be filtered below)
     DOMAINS=("$1")
     STEPS=("${IH_SETUP_STEPS[@]}")
+    ALL_STEPS=1
   else
     # prefix the requested steps with the domain so we can filter in a consistent way.
     DOMAIN="$1"
@@ -174,6 +175,9 @@ function ih::private::apply-to-steps() {
     done
   fi
 
+  local RESULT=0, FAILED_STEP
+
+
   for STEP in "${STEPS[@]}"; do
     # This will be filtering the steps down to only those which are in domain
     DOMAIN=${STEP%.*}
@@ -181,16 +185,28 @@ function ih::private::apply-to-steps() {
     # shellcheck disable=SC2027
     if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
-        if ! "ih::private::$COMMAND" "$STEP"; then
-          ih::log::error "Command $COMMAND failed for step $STEP. Re-run using 'ih-setup -v install' for more details."
-          exit 1
+        "ih::private::$COMMAND" "$STEP"
+        RESULT=$?
+        RESULT=$RESULT || 0
+        if [[ $RESULT -gt 0 ]]; then
+          FAILED_STEP=$STEP
         fi
-
       else
         ih::log::error "No step found with name '$STEP'"
       fi
     fi
   done
+
+  if [[ $RESULT -gt 0 ]]; then
+    if [[ $COMMAND = 'test-step' ]]; then
+      ih::log::error "Command $COMMAND failed. One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
+    else
+      ih::log::error "Command $COMMAND failed for step $FAILED_STEP. Re-run using 'ih-setup -v install' for more details."
+    fi
+    exit 1
+  fi
+
+
 }
 
 # Pretty prints the description of the step in $1
