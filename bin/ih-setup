@@ -174,7 +174,7 @@ function ih::private::apply-to-steps() {
     done
   fi
 
-  local RESULT=0, FAILED_STEP
+  local RESULT=0, STEP_ERROR=0
 
 
   for STEP in "${STEPS[@]}"; do
@@ -185,10 +185,9 @@ function ih::private::apply-to-steps() {
     if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
         "ih::private::$COMMAND" "$STEP"
-        RESULT=$?
-        RESULT=$RESULT || 0
-        if [[ $RESULT -gt 0 ]]; then
-          FAILED_STEP=$STEP
+        if [[ $? -gt 0 ]]; then
+          ih::log::error "Command $COMMAND failed for step $STEP"
+          STEP_ERROR=1
         fi
       else
         ih::log::error "No step found with name '$STEP'"
@@ -196,11 +195,11 @@ function ih::private::apply-to-steps() {
     fi
   done
 
-  if [[ $RESULT -gt 0 ]]; then
+  if [[ $STEP_ERROR -gt 0 ]]; then
     if [[ $COMMAND = 'test-step' ]]; then
-      ih::log::error "Command $COMMAND failed. One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
+      ih::log::error "One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
     else
-      ih::log::error "Command $COMMAND failed for step $FAILED_STEP. Re-run using 'ih-setup -v install' for more details."
+      ih::log::error "Re-run using 'ih-setup -v install' for more details."
     fi
     exit 1
   fi
@@ -233,6 +232,7 @@ function ih::private::test-step() {
     green "$STEP has been installed\n"
   else
     red "$STEP needs to be installed\n"
+    return 1
   fi
 }
 
