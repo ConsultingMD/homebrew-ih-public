@@ -51,8 +51,39 @@ function ih::setup::core.certificates::install() {
 
   cp -f "$IH_CORE_LIB_DIR"/core/certificates/certs/* "$CA_DIR"
 
+  # Our VPN performs an adversary-in-the-middle attack on
+  # many domains so that it can scan traffic in an effort
+  # to improve security. We need our engineering tools
+  # (e.g. pip or npm) to trust the self-signed certificate
+  # the VPN presents when it intercepts this traffic.
+  # Unfortunately some versions of some tools don't trust
+  # the system certificate store or the common OpenSSL store
+  # and instead need to be given a path to CA file containing the
+  # private root cert the VPN uses. Even more unfortunately,
+  # some systems don't fall back to some other CA store when
+  # the path you give them doesn't contain the cert they
+  # are trying to verify, so if you're NOT on the VPN, or
+  # you're hitting a domain which is excluded from the
+  # inspection regime, validation fails because the
+  # cert is NOT signed by our private CA. The solution is
+  # to provide a CA file containing a collection of trusted
+  # CA certs as well as our private CA cert, so that tools
+  # will work in all scenarios. We download a certificate
+  # bundle extracted from Firefox and documented at
+  # https://curl.se/docs/caextract.html.
+  local MOZILLA_BUNDLE_URL="https://curl.se/ca/cacert.pem"
   ih::log::info "Acquiring cert bundle from Mozilla"
-  curl https://curl.se/ca/cacert.pem >"$MOZILLA_PATH"
+  # Since we may be on the VPN and not trust the DLP certificate,
+  # or our certificate bundle may be broken, we need to ignore
+  # security problems when downloading the bundle. This is
+  # obviously a security risk in its own right, but that's how
+  # it goes with the VPN "security" system.
+  curl --insecure "$MOZILLA_BUNDLE_URL" >"$MOZILLA_PATH"
+  RESULT=$?
+  if [ $RESULT -ne 0 ]; then
+    ih::log::error "Could not download certificate bundle from $MOZILLA_BUNDLE_URL"
+    return 1
+  fi
   # Append our DLP certs to the mozilla bundle.
   cat "$CA_PATH" >>"$MOZILLA_PATH"
 
