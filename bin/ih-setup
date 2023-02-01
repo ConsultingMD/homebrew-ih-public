@@ -174,7 +174,7 @@ function ih::private::apply-to-steps() {
     done
   fi
 
-  local RESULT=0, STEP_ERROR=0
+  local STEP_ERROR=0
 
 
   for STEP in "${STEPS[@]}"; do
