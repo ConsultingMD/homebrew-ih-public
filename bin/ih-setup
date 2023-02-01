@@ -174,6 +174,9 @@ function ih::private::apply-to-steps() {
     done
   fi
 
+  local STEP_ERROR=0
+
+
   for STEP in "${STEPS[@]}"; do
     # This will be filtering the steps down to only those which are in domain
     DOMAIN=${STEP%.*}
@@ -181,16 +184,27 @@ function ih::private::apply-to-steps() {
     # shellcheck disable=SC2027
     if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
-        if ! "ih::private::$COMMAND" "$STEP"; then
-          ih::log::error "Command $COMMAND failed for step $STEP. Re-run using 'ih-setup -v install' for more details."
-          exit 1
+        "ih::private::$COMMAND" "$STEP"
+        if [[ $? -gt 0 ]]; then
+          ih::log::error "Command $COMMAND failed for step $STEP"
+          STEP_ERROR=1
         fi
-
       else
         ih::log::error "No step found with name '$STEP'"
       fi
     fi
   done
+
+  if [[ $STEP_ERROR -gt 0 ]]; then
+    if [[ $COMMAND = 'test-step' ]]; then
+      ih::log::error "One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
+    else
+      ih::log::error "Re-run using 'ih-setup -v install' for more details."
+    fi
+    exit 1
+  fi
+
+
 }
 
 # Pretty prints the description of the step in $1
@@ -218,6 +232,7 @@ function ih::private::test-step() {
     green "$STEP has been installed\n"
   else
     red "$STEP needs to be installed\n"
+    return 1
   fi
 }
 
