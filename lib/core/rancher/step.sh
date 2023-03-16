@@ -27,6 +27,7 @@ function ih::setup::core.rancher::deps() {
 
 function ih::setup::core.rancher::install() {
     CASKSUCCEEDED=1
+    # Installation and configuration of Rancher Desktop
     for _ in 1 2 3; do
         brew install ih-rancher 
         CASKSUCCEEDED=$?
@@ -42,8 +43,8 @@ function ih::setup::core.rancher::install() {
                 rdctl set --kubernetes-enabled=false > /dev/null 2>&1
                 PREV=$?
                 if [[ $PREV -eq 0 ]]; then
-                    echo "Setup successull"
-                    exit
+                    echo "Rancher Desktop will use dockerd as the container engine and Kubernetes will be disabled by default"
+                    break
                 fi
                 echo "Rancher still starting up"
             done
@@ -51,4 +52,8 @@ function ih::setup::core.rancher::install() {
             break
         fi
     done
+    echo "In order to continue with the configuration and use this container engine in some IDEs, some symlinks will be created"
+    echo "You may be required to enter your password"
+    sudo ln -s $(which docker) /usr/local/bin/docker
+    sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
 }
