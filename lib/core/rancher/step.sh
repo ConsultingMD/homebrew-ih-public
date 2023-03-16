@@ -33,7 +33,21 @@ function ih::setup::core.rancher::install() {
         if [ $CASKSUCCEEDED -eq 0 ]; then
             # Disable kubernetes by default. 
             # More information: https://docs.rancherdesktop.io/references/rdctl-command-reference/#rdctl-set
-            rdctl set --kubernetes-enabled=false
+            # Rancher Desktop has to be running in order to disable Kubernetes
+            rdctl start --container-engine moby &
+            echo "Starting Rancher"
+            while :
+            do	
+                sleep 5
+                rdctl set --kubernetes-enabled=false > /dev/null 2>&1
+                PREV=$?
+                if [[ $PREV -eq 0 ]]; then
+                    echo "Setup successull"
+                    exit
+                fi
+                echo "Rancher still starting up"
+            done
+
             break
         fi
     done
