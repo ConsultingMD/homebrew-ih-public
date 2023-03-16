@@ -56,4 +56,5 @@ function ih::setup::core.rancher::install() {
     echo "You may be required to enter your password"
     sudo ln -s $(which docker) /usr/local/bin/docker
     sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
+    echo "Rancher Desktop has been installed successfully"
 }
