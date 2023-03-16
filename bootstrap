@@ -35,20 +35,7 @@ more troubleshooting tips."
   exit 1
 fi
 
-CASKSUCCEEDED=1
-for _ in 1 2 3; do
-  brew install ih-rancher 
-  CASKSUCCEEDED=$?
-  if [ $CASKSUCCEEDED -eq 0 ]; then
-    break
-  fi
-done
 
-if [ $CASKSUCCEEDED -eq 1 ]; then
-  echo "Install Casks packages failed. Please contact platform support
-in the #developer-platform-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y)."
-  exit 1
-fi
 
 if command -v ih-setup; then
   ih-setup install
