@@ -52,8 +52,8 @@ function ih::setup::core.rancher::install() {
             break
         fi
     done
-    echo "In order to continue with the configuration and use this container engine in some IDEs, some symlinks will be created"
-    echo "You may be required to enter your password"
+    echo "In order to continue with Rancher configuration and be able to use this engine, in some IDEs remote Python interpreters require the creation of symlinks."
+    echo "Your password is required for the creation of symlink mentioned above"
     sudo ln -s $(which docker) /usr/local/bin/docker
     sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
     echo "Rancher Desktop has been installed successfully"
