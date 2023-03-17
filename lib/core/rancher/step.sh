@@ -29,7 +29,15 @@ function ih::setup::core.rancher::install() {
     CASKSUCCEEDED=1
     # Installation and configuration of Rancher Desktop
     for _ in 1 2 3; do
-        brew install ih-rancher 
+
+        # Detect Rosetta
+        if [[ $(sysctl -n sysctl.proc_translated) -eq 1 ]]; then
+            # Rosetta  Active
+            arch -arm64 -c brew install ih-rancher
+        else
+            brew install ih-rancher
+        fi
+
         CASKSUCCEEDED=$?
         if [ $CASKSUCCEEDED -eq 0 ]; then
             # Disable kubernetes by default. 
