@@ -11,12 +11,22 @@ function ih::setup::core.rancher::help() {
 function ih::setup::core.rancher::test() {
 
     # Check if .rd directory exists as well as rdctl and docker command
-    if command -v rdctl  &&  command -v docker && [ -d "$HOME/.rd/bin" ] ; then
-        ih::log::debug "Rancher Desktop is not available"
-        return 1
-    else
-        return 0
-    fi
+    if command -v rdctl  &&  command -v docker && [ -d "$HOME/.rd/bin" ]  ; then
+
+        # Check for symlinks
+        DOCKERBIN=/usr/local/bin/docker
+        DOCKERCOMPOSEBIN=/usr/local/bin/docker-compose
+        if [ -f "$DOCKERBIN" ] && [  -f "$DOCKERCOMPOSEBIN" ]; then
+            # Check if kubernetes is enabled
+            KUBERNETESENABLED=$(rdctl list-settings | jq  '.kubernetes.enabled')
+            if [ "$KUBERNETESENABLED" = "false" ]; then
+                return 0
+            fi
+        fi
+    fi 
+    
+    ih::log::debug "Rancher Desktop is not available"
+    return 1
 
 }
 
@@ -69,9 +79,9 @@ function ih::setup::core.rancher::install() {
 
         echo "In order to continue with Rancher configuration and be able to use this engine, some IDEs require the creation of symlinks for remote Python interpreters"
         echo "Your password is required for the creation of symlink mentioned above"
-        sudo ln -s $(which docker) /usr/local/bin/docker
+        sudo ln -s $HOME/.rd/bin/docker /usr/local/bin/docker
         if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
-            sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
+            sudo ln -s $HOME/.rd/bin/docker-compose /usr/local/bin/docker-compose
         fi
     fi
     
