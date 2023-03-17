@@ -10,14 +10,14 @@ function ih::setup::core.rancher::help() {
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
 
-    if command -v rdctl; then
-        echo "Rancher Desktop has been installed successfully"
-        return 0
-    else
-        echo "Install Rancher Desktop failed. Please contact platform support
-    in the #developer-platform-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y)."
+    # Check if .rd directory exists as well as rdctl and docker command
+    if command -v rdctl  &&  command -v docker && [ -d "$HOME/.rd/bin" ] ; then
+        ih::log::debug "Rancher Desktop is not available"
         return 1
+    else
+        return 0
     fi
+
 }
 
 function ih::setup::core.rancher::deps() {
@@ -52,9 +52,20 @@ function ih::setup::core.rancher::install() {
             break
         fi
     done
-    echo "In order to continue with Rancher configuration and be able to use this engine, in some IDEs remote Python interpreters require the creation of symlinks."
-    echo "Your password is required for the creation of symlink mentioned above"
-    sudo ln -s $(which docker) /usr/local/bin/docker
-    sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
+
+    # Check for docker binary in /usr/local/bin
+    # Check if /usr/local/bin/docker exists
+    DOCKERBIN=/usr/local/bin/docker
+    DOCKERCOMPOSEBIN=/usr/local/bin/docker-compose
+    if [ ! -f "$DOCKERBIN" ]; then
+
+        echo "In order to continue with Rancher configuration and be able to use this engine, some IDEs require the creation of symlinks for remote Python interpreters"
+        echo "Your password is required for the creation of symlink mentioned above"
+        sudo ln -s $(which docker) /usr/local/bin/docker
+        if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
+            sudo ln -s $(which docker-compose) /usr/local/bin/docker-compose
+        fi
+    fi
+    
     echo "Rancher Desktop has been installed successfully"
 }
