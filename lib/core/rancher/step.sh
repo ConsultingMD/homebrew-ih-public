@@ -24,7 +24,7 @@ function ih::setup::core.rancher::test() {
             fi
         fi
     fi 
-    
+
     ih::log::debug "Rancher Desktop is not available"
     return 1
 
@@ -36,6 +36,7 @@ function ih::setup::core.rancher::deps() {
 
 
 function ih::setup::core.rancher::install() {
+    cp io.rancherdesktop.profile.defaults.plist ~/Library/Preferences/io.rancherdesktop.profile.defaults.plist
     CASKSUCCEEDED=1
     # Installation and configuration of Rancher Desktop
     for _ in 1 2 3; do
@@ -50,27 +51,12 @@ function ih::setup::core.rancher::install() {
 
         CASKSUCCEEDED=$?
         if [ $CASKSUCCEEDED -eq 0 ]; then
-            # Disable kubernetes by default. 
-            # More information: https://docs.rancherdesktop.io/references/rdctl-command-reference/#rdctl-set
-            # Rancher Desktop has to be running in order to disable Kubernetes
-            rdctl start --container-engine moby &
-            echo "Starting Rancher"
-            while :
-            do	
-                sleep 5
-                rdctl set --kubernetes-enabled=false > /dev/null 2>&1
-                PREV=$?
-                if [[ $PREV -eq 0 ]]; then
-                    echo "Rancher Desktop will use dockerd as the container engine and Kubernetes will be disabled by default"
-                    break
-                fi
-                echo "Rancher still starting up"
-            done
-
             break
         fi
     done
 
+    rm -rf ~/.rd
+    rdctl start
     # Check for docker binary in /usr/local/bin
     # Check if /usr/local/bin/docker exists
     DOCKERBIN=/usr/local/bin/docker
