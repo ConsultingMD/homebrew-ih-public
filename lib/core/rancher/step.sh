@@ -10,24 +10,16 @@ function ih::setup::core.rancher::help() {
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
 
-    # Check if .rd directory exists as well as rdctl and docker command
-    if command -v rdctl  &&  command -v docker && [ -d "$HOME/.rd/bin" ]  ; then
 
-        # Check for symlinks
-        DOCKERBIN=/usr/local/bin/docker
-        DOCKERCOMPOSEBIN=/usr/local/bin/docker-compose
-        if [ -f "$DOCKERBIN" ] && [  -f "$DOCKERCOMPOSEBIN" ]; then
-            # Check if kubernetes is enabled
-            KUBERNETESENABLED=$(rdctl list-settings | jq  '.kubernetes.enabled')
-            if [ "$KUBERNETESENABLED" = "false" ]; then
-                return 0
-            fi
-        fi
-    fi 
+    # Check for PLIST FILE
+    PLISTFILE="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
+    if [ -f "$PLISTFILE" ]; then
+        return 0
+    fi
+     
 
     ih::log::debug "Rancher Desktop is not available"
     return 1
-
 }
 
 function ih::setup::core.rancher::deps() {
@@ -36,7 +28,12 @@ function ih::setup::core.rancher::deps() {
 
 
 function ih::setup::core.rancher::install() {
-    cp io.rancherdesktop.profile.defaults.plist ~/Library/Preferences/io.rancherdesktop.profile.defaults.plist
+    local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
+
+    cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
+
+
+
     CASKSUCCEEDED=1
     # Installation and configuration of Rancher Desktop
     for _ in 1 2 3; do
@@ -44,9 +41,9 @@ function ih::setup::core.rancher::install() {
         # Detect Rosetta
         if [[ $(sysctl -n sysctl.proc_translated) -eq 1 ]]; then
             # Rosetta  Active
-            arch -arm64 -c brew install ih-rancher
+            arch -arm64 -c brew reinstall ih-rancher
         else
-            brew install ih-rancher
+            brew reinstall ih-rancher
         fi
 
         CASKSUCCEEDED=$?
@@ -55,8 +52,9 @@ function ih::setup::core.rancher::install() {
         fi
     done
 
+    # EL rm despues del start
     rm -rf ~/.rd
-    rdctl start
+    $(~/../../Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl start)
     # Check for docker binary in /usr/local/bin
     # Check if /usr/local/bin/docker exists
     DOCKERBIN=/usr/local/bin/docker
