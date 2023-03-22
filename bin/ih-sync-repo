@@ -41,7 +41,7 @@ function parse_params() {
         ;;
       -v | --verbose) set -x ;;
       -r | --repo)
-        repo_name=${2:?"--repo-dir must have a value"}
+        repo_name=${2:?"--repo must have a value"}
         repo_dir="${IH_HOME}/${repo_name}"
         shift
         ;;
@@ -54,6 +54,8 @@ function parse_params() {
     esac
     shift
   done
+
+  [ -n "$repo_name" ] || die "--repo flag must be provided"
 }
 
 parse_params "$@"
