@@ -32,6 +32,10 @@ function ih::setup::core.rancher::install() {
 
     cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
+    # If rancher is already installed we have to shut it down to avoid any issue
+    if command -v rdctl; then
+        $(rdctl shutdown)
+    fi
 
 
     CASKSUCCEEDED=1
