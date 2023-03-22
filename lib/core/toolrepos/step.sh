@@ -67,4 +67,24 @@ function ih::setup::core.toolrepos::test-or-install() {
   export IH_WANT_RE_SOURCE=1
 
   cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
+
+  ih::setup::core.toolrepos::set-auto-update-repositories-job
+
+}
+
+function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
+
+  local THIS_DIR="$IH_CORE_LIB_DIR/core/toolrepos/autoupdate"
+
+  PLIST_FILE="com.includedhealth.auto-update-repositories"
+  LAUNCH_AGENTS_PATH="${HOME}/Library/LaunchAgents/${PLIST_FILE}.plist"
+  
+  sed "s/\$IH_HOME/${GR_HOME}/g" "${THIS_DIR}/${PLIST_FILE}.plist" > "${LAUNCH_AGENTS_PATH}"
+
+  if launchctl list | grep -q ${PLIST_FILE} ; then
+    launchctl unload "${LAUNCH_AGENTS_PATH}"
+  fi
+
+  launchctl load "${LAUNCH_AGENTS_PATH}"
+
 }
