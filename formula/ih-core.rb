@@ -13,6 +13,7 @@ class IhCore < Formula
   depends_on "git"
   depends_on "gnu-getopt"
   depends_on "jq"
+  depends_on "yq"
   depends_on "go-jira"
   depends_on "virtualenv"
   depends_on "envconsul"
@@ -30,7 +31,7 @@ class IhCore < Formula
 
   def caveat
 
-    "Run `ih-setup install` to install IH compontents"
+    "Run `ih-setup install` to install IH components"
 
   end
 
