@@ -1,82 +1,85 @@
 #!/usr/bin/env bash
 
 set -e
-
-function usage() {
-  cat <<EOF
-Usage: ih-sync-repo -r|-repo {repo name} [-max-age {max age in seconds}]
-
-Syncs a repository from GitHub by pulling the default branch
-if it hasn't been pulled recently, where recently is
-the value of the --max-age flag, which defaults to zero.
-
-This script has no effect if a branch other than the default branch
-is currently checked out.
-
-This script is managed by ih-setup.
-EOF
-  exit 0
-}
-
-msg() {
-  echo >&2 -e "${1-}"
-}
-
-die() {
-  local msg=$1
-  local code=${2-1} # default exit status 1
-  msg "$msg"
-  exit "$code"
-}
-
-function parse_params() {
-  repo_name=""
-  repo_dir=""
-  max_age=0
-
-  while :; do
-    case "${1-}" in
-      -h | --help)
-        usage
-        ;;
-      -v | --verbose) set -x ;;
-      -r | --repo)
-        repo_name=${2:?"--repo must have a value"}
-        repo_dir="${IH_HOME}/${repo_name}"
-        shift
-        ;;
-      --max-age)
-        max_age="${2:?"--max-age must have a value"}"
-        shift
-        ;;
-      -?*) die "Unknown option: $1" ;;
-      *) break ;;
-    esac
-    shift
-  done
-
-  [ -n "$repo_name" ] || die "--repo flag must be provided"
-}
-
-parse_params "$@"
-
-if [ ! -d "$repo_dir" ]; then
-  git clone "git@github.com:ConsultingMD/${repo_name}.git" "$repo_dir"
-fi
-
-default_branch=$(git -C "${repo_dir}" branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev)
-current_branch=$(git -C "${repo_dir}" branch --show-current)
-if [ "$default_branch" != "$current_branch" ]; then
-  msg "Repo $repo_name has default branch '$default_branch', but '$current_branch' checked out, cannot sync automatically."
-  return 0
-fi
-
-last_fetch_epoch=$(stat -f %m "${repo_dir}/.git/FETCH_HEAD")
-current_epoch=$(date +%s)
-last_fetch_age=$((current_epoch - last_fetch_epoch))
-if [[ $last_fetch_age -gt $max_age ]]; then
-  git -C "${repo_dir}" pull
-  msg "Pulled the latest on the '$default_branch' branch in repo $repo_name"
-else
-  msg "$repo_name repo is up to date (last pulled $last_fetch_age seconds ago)."
-fi
+#
+#function usage() {
+#  cat <<EOF
+#Usage: ih-sync-repo -r|-repo {repo name} [-max-age {max age in seconds}]
+#
+#Syncs a repository from GitHub by pulling the default branch
+#if it hasn't been pulled recently, where recently is
+#the value of the --max-age flag, which defaults to zero.
+#
+#This script has no effect if a branch other than the default branch
+#is currently checked out.
+#
+#This script is managed by ih-setup.
+#EOF
+#  exit 0
+#}
+#
+#msg() {
+#  echo >&2 -e "${1-}"
+#}
+#
+#die() {
+#  local msg=$1
+#  local code=${2-1} # default exit status 1
+#  msg "$msg"
+#  exit "$code"
+#}
+#
+#function parse_params() {
+#  repo_name=""
+#  repo_dir=""
+#  max_age=0
+#
+#  while :; do
+#    case "${1-}" in
+#      -h | --help)
+#        usage
+#        ;;
+#      -v | --verbose) set -x ;;
+#      -r | --repo)
+#        repo_name=${2:?"--repo must have a value"}
+#        repo_dir="${IH_HOME}/${repo_name}"
+#        shift
+#        ;;
+#      --max-age)
+#        max_age="${2:?"--max-age must have a value"}"
+#        shift
+#        ;;
+#      -?*) die "Unknown option: $1" ;;
+#      *) break ;;
+#    esac
+#    shift
+#  done
+#
+#  [ -n "$repo_name" ] || die "--repo flag must be provided"
+#}
+#
+#function run() {
+#  if [ ! -d "$repo_dir" ]; then
+#    git clone "git@github.com:ConsultingMD/${repo_name}.git" "$repo_dir"
+#  fi
+#
+#  default_branch=$(git -C "${repo_dir}" branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev)
+#  current_branch=$(git -C "${repo_dir}" branch --show-current)
+#  if [ "$default_branch" != "$current_branch" ]; then
+#    msg "Repo $repo_name has default branch '$default_branch', but '$current_branch' checked out, cannot sync automatically."
+#    return 0
+#  fi
+#
+#  last_fetch_epoch=$(stat -f %m "${repo_dir}/.git/FETCH_HEAD")
+#  current_epoch=$(date +%s)
+#  last_fetch_age=$((current_epoch - last_fetch_epoch))
+#  if [[ $last_fetch_age -gt $max_age ]]; then
+#    git -C "${repo_dir}" pull
+#    msg "Pulled the latest on the '$default_branch' branch in repo $repo_name"
+#  else
+#    msg "$repo_name repo is up to date (last pulled $last_fetch_age seconds ago)."
+#  fi
+#}
+#
+#parse_params "$@"
+#run
