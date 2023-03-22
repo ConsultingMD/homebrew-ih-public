@@ -22,6 +22,7 @@ class IhCore < Formula
   depends_on "yamllint"
   depends_on "wget"
   depends_on "rancher-cli"
+  depends_on "ripgrep"
 
   def install
     lib.install Dir["lib/*"]
