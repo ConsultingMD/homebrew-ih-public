@@ -53,7 +53,7 @@ function ih::setup::core.rancher::install() {
     done
 
     rm -rf ~/.rd
-    $(~/../../Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl start)
+    $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl start)
     # Check for docker binary in /usr/local/bin
     # Check if /usr/local/bin/docker exists
     DOCKERBIN=/usr/local/bin/docker
