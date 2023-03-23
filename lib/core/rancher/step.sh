@@ -38,7 +38,7 @@ function ih::setup::core.rancher::install() {
         $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset)
     fi
     
-    # Valid if Rancher was installed manually with brew
+    # Check if Rancher was installed manually with brew
     if [ -d "/opt/homebrew/Caskroom/rancher" ] 
     then
         echo "Rancher Desktop was installed previously with brew command. In order to avoid any conflicts this script will uninstall that package".
