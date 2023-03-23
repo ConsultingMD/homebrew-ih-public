@@ -4,7 +4,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.includedhealth.auto-update-repositories.plist</string>
+    <string>com.includedhealth.auto-update-repositories</string>
     <key>Program</key>
     <string>$IH_HOME/homebrew-ih-public/lib/core/toolrepos/autoupdate/ih_auto_update_repositories.sh</string>
     <key>EnvironmentVariables</key>
