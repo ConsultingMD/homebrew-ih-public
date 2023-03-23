@@ -32,24 +32,28 @@ function ih::setup::core.rancher::install() {
 
     cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
-    # If rancher is already installed  reset to factory
-    if [ -d "/opt/homebrew/Caskroom/rancher" ] || [ -d "/opt/homebrew/Caskroom/ih-rancher" ] 
+    # Check if Rancher was installed manually
+    brew list rancher > /dev/null 2>&1
+    RANCHERINSTALLED=$?
+
+    #Check if IH Rancher is already installed
+    brew list ih-rancher > /dev/null 2>&1
+    IHRANCHERINSTALLED=$?
+
+    # If rancher or ih-rancher is already installed  reset to factory
+    if [ $RANCHERINSTALLED -eq 0 ] || [ $IHRANCHERINSTALLED -eq 0 ] 
     then
         $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset)
     fi
     
     # Check if Rancher was installed manually with brew
-    if [ -d "/opt/homebrew/Caskroom/rancher" ] 
+    if [ $RANCHERINSTALLED -eq 0 ] 
     then
         echo "Rancher Desktop was installed previously with brew command. In order to avoid any conflicts this script will uninstall that package".
         echo "You may be required to enter your password"
         brew uninstall rancher
     fi
 
-    # If Rancher is running we should shutdown to avoid blank page when restarting
-    if command -v rdctl; then      
-        rdctl shutdown
-    fi
 
     CASKSUCCEEDED=1
     # Installation and configuration of Rancher Desktop
