@@ -32,7 +32,9 @@ function ih::setup::core.rancher::install() {
 
     cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
+    
     if command -v rdctl; then
+        rdctl factory-reset
         rdctl shutdown
     fi
 
