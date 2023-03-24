@@ -13,7 +13,6 @@ function ih::setup::core.toolrepos::help() {
 
 function ih::setup::core.toolrepos::test() {
   ih::setup::core.toolrepos::test-or-install "test"
-
 }
 
 # echo "other steps"
@@ -22,7 +21,6 @@ function ih::setup::core.toolrepos::deps() {
 }
 function ih::setup::core.toolrepos::install() {
   ih::setup::core.toolrepos::test-or-install "install"
-
 }
 
 # If $1 is "test", this will check if install is needed and return 1 if it is.
@@ -37,7 +35,8 @@ function ih::setup::core.toolrepos::test-or-install() {
     if [ "$1" == "test" ]; then
       return 1
     fi
-    ih-sync-repo -r engineering
+    ih::log::info "Cloning engineering repo..."
+    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m "${GR_HOME}/engineering" || return
   fi
 
   if [ ! -d "${GR_HOME}/image-builder" ]; then
@@ -45,19 +44,7 @@ function ih::setup::core.toolrepos::test-or-install() {
       return 1
     fi
     ih::log::info "Cloning image-builder repo.."
-    ih-sync-repo -r image-builder
-  fi
-
-  PRE_COMMIT_HOOK_DST="${IH_DIR}/git-template/hooks/pre-commit"
-  if [ ! -f "$PRE_COMMIT_HOOK_DST" ]; then
-    if [ "$1" == "test" ]; then
-      return 1
-    fi
-
-    ih-sync-repo -r image-builder
-    ih::log::info "Installing ih-pre-commit hook everywhere..."
-    export IMAGE_BUILDER_ROOT="${IH_HOME}/image-builder"
-    "$IMAGE_BUILDER_ROOT/bin/ih-pre-commit" install --global
+    git clone git@github.com:ConsultingMD/image-builder.git --filter=blob:limit=1m "${GR_HOME}/image-builder" || return
   fi
 
   if [ ! -d "${GR_HOME}/kore" ]; then
@@ -71,12 +58,35 @@ function ih::setup::core.toolrepos::test-or-install() {
   local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
   local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
 
-  if [ "$1" = "test" ]; then
-    return
-    ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"
+  if ! ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"; then
+    if [ "$1" = "test" ]; then
+      return 1
+    fi
+    cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
+    export IH_WANT_RE_SOURCE=1
   fi
 
-  export IH_WANT_RE_SOURCE=1
+  PRE_COMMIT_HOOK_DST="${IH_DIR}/git-template/hooks/pre-commit"
+  if [ ! -f "$PRE_COMMIT_HOOK_DST" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
 
-  cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
+    export IMAGE_BUILDER_ROOT="${IH_HOME}/image-builder"
+    (
+      cd "$IMAGE_BUILDER_ROOT" || exit
+      CURRENT_BRANCH=$(git branch --show-current)
+      if [ "$CURRENT_BRANCH" != "master" ]; then
+        ih::log::warn "You have a non-master branch of image-builder checked out.
+You will need to check out and pull the master branch and run
+'ih-pre-commit install --global'
+manually in order to have pre-commit configured correctly."
+        return 1
+      else
+        git pull
+        ih::log::info "Installing ih-pre-commit hook everywhere..."
+        "$IMAGE_BUILDER_ROOT/bin/ih-pre-commit" install --global
+      fi
+    )
+  fi
 }
