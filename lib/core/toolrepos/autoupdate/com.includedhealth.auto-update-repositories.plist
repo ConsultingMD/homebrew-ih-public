@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.includedhealth.auto-update-repositories</string>
+    <key>Program</key>
+    <string>$IH_HOME/homebrew-ih-public/lib/core/toolrepos/autoupdate/ih_auto_update_repositories.sh</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>IH_HOME</key>
+        <string>$IH_HOME</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/ih_auto_update_repositories.stdout</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/ih_auto_update_repositories.stderr</string>
+    <key>StartInterval</key>
+    <integer>3600</integer>
+</dict>
+</plist>
