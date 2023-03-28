@@ -10,14 +10,31 @@ function ih::setup::core.rancher::help() {
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
 
+    # Check if Rancher was installed manually
+    brew list rancher > /dev/null 2>&1
+    RANCHERINSTALLED=$?
+
+    if [ $RANCHERINSTALLED -eq 0 ] 
+    then
+        ih::log::debug "Rancher Desktop was installed manually and should be uninstalled"
+        return 1
+    fi
+
 
     # Check for PLIST FILE
     PLISTFILE="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
     if [ -f "$PLISTFILE" ]; then
-        return 0
+
+        # If this file exists, let's check kubernetes is not enabled
+        RESULT=$(rdctl list-settings | jq  '.kubernetes.enabled')
+        if [ "$RESULT"  = "true" ]; then
+            ih::log::debug "Kubernetes is enabled and Rancher Desktop should be reset"
+            return 1
+        else
+            return 0
+        fi
     fi
      
-
     ih::log::debug "Rancher Desktop is not available"
     return 1
 }
@@ -40,6 +57,8 @@ function ih::setup::core.rancher::install() {
     brew list ih-rancher > /dev/null 2>&1
     IHRANCHERINSTALLED=$?
 
+    echo " Rancher installed :" $RANCHERINSTALLED
+    echo " IH Rancher installed :" $RANCHERINSTALLED
     # If rancher or ih-rancher is already installed  reset to factory
     if [ $RANCHERINSTALLED -eq 0 ] || [ $IHRANCHERINSTALLED -eq 0 ] 
     then
