@@ -79,7 +79,7 @@ function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
   PLIST_FILE="com.includedhealth.auto-update-repositories"
   LAUNCH_AGENTS_PATH="${HOME}/Library/LaunchAgents/${PLIST_FILE}.plist"
 
-  GR_HOME_ESC=$(echo $GR_HOME | sed 's_/_\\/_g')
+  GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
 
   sed "s/\$IH_HOME/${GR_HOME_ESC}/g" "${THIS_DIR}/${PLIST_FILE}.plist" > "${LAUNCH_AGENTS_PATH}"
 
