@@ -59,6 +59,14 @@ function ih::setup::core.toolrepos::test-or-install() {
   local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
   local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
 
+  PLIST_FILE="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
+  if [ ! -f "$PLISTFILE" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
+    ih::setup::core.toolrepos::set-auto-update-repositories-job
+  fi
+
   if [ "$1" = "test" ]; then
     ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"
     return
@@ -67,14 +75,6 @@ function ih::setup::core.toolrepos::test-or-install() {
   export IH_WANT_RE_SOURCE=1
 
   cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
-
-  PLIST_FILE="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
-  if [ ! -f "$PLISTFILE" ]; then
-    if [ "$1" == "test" ]; then
-      return 1
-    fi
-    ih::setup::core.toolrepos::set-auto-update-repositories-job
-  fi
 }
 
 function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
