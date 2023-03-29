@@ -12,11 +12,22 @@ function ih::setup::core.rancher::test() {
 
     # Check if Rancher was installed manually
     brew list rancher > /dev/null 2>&1
-    RANCHERINSTALLED=$?
+    RANCHER_INSTALLED=$?
 
-    if [ $RANCHERINSTALLED -eq 0 ] 
+    #Check if IH Rancher is already installed
+    brew list ih-rancher > /dev/null 2>&1
+    IH_RANCHER_INSTALLED=$?
+
+
+    if [ $RANCHER_INSTALLED -eq 0 ] 
     then
         ih::log::debug "Rancher Desktop was installed manually and should be uninstalled"
+        return 1
+    fi
+
+    if [ $IH_RANCHER_INSTALLED -eq 1 ] 
+    then
+        ih::log::debug "IH-Rancher should be listed as a cask"
         return 1
     fi
 
@@ -24,15 +35,7 @@ function ih::setup::core.rancher::test() {
     # Check for PLIST FILE
     PLISTFILE="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
     if [ -f "$PLISTFILE" ]; then
-
-        # If this file exists, let's check kubernetes is not enabled
-        RESULT=$(rdctl list-settings | jq  '.kubernetes.enabled')
-        if [ "$RESULT"  = "true" ]; then
-            ih::log::debug "Kubernetes is enabled and Rancher Desktop should be reset"
-            return 1
-        else
-            return 0
-        fi
+        return 0
     fi
      
     ih::log::debug "Rancher Desktop is not available"
@@ -51,22 +54,21 @@ function ih::setup::core.rancher::install() {
 
     # Check if Rancher was installed manually
     brew list rancher > /dev/null 2>&1
-    RANCHERINSTALLED=$?
+    RANCHER_INSTALLED=$?
 
     #Check if IH Rancher is already installed
     brew list ih-rancher > /dev/null 2>&1
-    IHRANCHERINSTALLED=$?
+    IH_RANCHER_INSTALLED=$?
 
-    echo " Rancher installed :" $RANCHERINSTALLED
-    echo " IH Rancher installed :" $RANCHERINSTALLED
+
     # If rancher or ih-rancher is already installed  reset to factory
-    if [ $RANCHERINSTALLED -eq 0 ] || [ $IHRANCHERINSTALLED -eq 0 ] 
+    if [ $RANCHER_INSTALLED -eq 0 ] || [ $IH_RANCHER_INSTALLED -eq 0 ] 
     then
         $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset)
     fi
     
     # Check if Rancher was installed manually with brew
-    if [ $RANCHERINSTALLED -eq 0 ] 
+    if [ $RANCHER_INSTALLED -eq 0 ] 
     then
         echo "Rancher Desktop was installed previously with brew command. In order to avoid any conflicts this script will uninstall that package".
         echo "You may be required to enter your password"
