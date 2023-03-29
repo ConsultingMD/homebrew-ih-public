@@ -60,7 +60,7 @@ function ih::setup::core.toolrepos::test-or-install() {
   local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
 
   PLIST_FILE="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
-  if [ ! -f "$PLISTFILE" ]; then
+  if [ ! -f "$PLIST_FILE" ]; then
     if [ "$1" == "test" ]; then
       return 1
     fi
