@@ -68,8 +68,13 @@ function ih::setup::core.toolrepos::test-or-install() {
 
   cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
 
-  ih::setup::core.toolrepos::set-auto-update-repositories-job
-
+  PLIST_FILE="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
+  if [ ! -f "$PLISTFILE" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
+    ih::setup::core.toolrepos::set-auto-update-repositories-job
+  fi
 }
 
 function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
