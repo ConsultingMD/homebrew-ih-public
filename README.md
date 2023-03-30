@@ -1,6 +1,10 @@
-**Warning: This Repository is Public**
+# ⚠️ WARNING: This Repository is Public ⚠️
 
 Please be aware that this repository is public, which means that anyone can view its contents (including sensitive information!).
+
+## 🛑 STOP! 🛑
+
+Before pushing changes, please double-check that you're not accidentally revealing any sensitive information.
 
 # homebrew-ih-public
 
