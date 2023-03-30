@@ -1,3 +1,7 @@
+**Warning: This Repository is Public**
+
+Please be aware that this repository is public, which means that anyone can view its contents (including sensitive information!).
+
 # homebrew-ih-public
 
 This repo contains the scripts and brew formulas used to onboard developers and
