@@ -8,7 +8,7 @@ function ih::setup::core.git::help() {
       This will not overwrite any existing settings that you have set.
     - Create $GR_HOME if it doesn't exist.
     - Create a default global .gitignore if one doesn't exist.
-    - Set up pre-commit to install automatically when repos are cloned."
+    - Set up linting pre-commit hook to be installed automatically when repos are cloned."
 
 }
 
@@ -52,17 +52,6 @@ function ih::setup::core.git::install() {
 
   # make git use ssh for everything
   git config --global url.git@github.com:ConsultingMD/.insteadOf https://github.com/ConsultingMD/
-
-  # set up pre-commit to automatically be set up for all cloned repos,
-  # if the user doesn't have a templateDir already
-  if git config --global init.templateDir; then
-    ih::log::warn "Detected existing templateDir, not setting up pre-commit auto-enable."
-  else
-    local GIT_TEMPLATE_DIR="${IH_DIR}/git-template"
-    mkdir "$GIT_TEMPLATE_DIR" 2>/dev/null || :
-    git config --global init.templateDir "$GIT_TEMPLATE_DIR"
-    pre-commit init-templatedir "$GIT_TEMPLATE_DIR"
-  fi
 
   # Make sure the desired src directory exists if GR_HOME is declared
   [[ -n ${GR_HOME} ]] && mkdir -p "${GR_HOME}"

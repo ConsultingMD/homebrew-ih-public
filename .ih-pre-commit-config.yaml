@@ -1,0 +1,10 @@
+languages:
+- markdown
+- pem
+- plist
+- shell
+- text
+- yaml
+ignored_directories:
+  - formula/
+  - Casks/
