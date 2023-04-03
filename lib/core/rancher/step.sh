@@ -84,7 +84,7 @@ function ih::setup::core.rancher::install() {
 
     # Check if we have a Mac M1 and the terminal is running  over x86
     if [[ $(sysctl -n sysctl.proc_translated) -eq 1 ]] && [ $(arch) = "i386" ]; then
-      mbrew reinstall ih-rancher
+      arch -arm64 -c brew reinstall ih-rancher
     else
       brew reinstall ih-rancher
     fi
@@ -115,7 +115,9 @@ function ih::setup::core.rancher::install() {
 
     echo "Rancher Desktop has been installed successfully"
   else
+    ih::log::warn "Could not install Rancher Desktop"
     echo "There was an error with Rancher Desktop Installation. Please contact  support
             in the #developer-tools channel in Slack (https://ih-epdd.slack.com/archives/C04LPMF4YPL)"
+    return 1
   fi
 }
