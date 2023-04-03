@@ -76,10 +76,15 @@ function ih::file::check-file-in-sync() {
     return 1
   fi
 
+  ih::log::debug "Checking for differences between $SRC and $DST ..."
+
   if ! diff -q "$DST" "$SRC" >/dev/null; then
     ih::log::debug "File $DST does not match source"
     return 1
   fi
+
+  ih::log::debug "Files match"
+
 }
 
 # Returns 0 if the directory at $2 has all
