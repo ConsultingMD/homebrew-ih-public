@@ -1,5 +1,5 @@
 class IhCore < Formula
-  VERSION="0.2.0"
+  VERSION="0.1.26"
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
