@@ -65,7 +65,6 @@ function ih::setup::core.toolrepos::test-or-install() {
     ih::setup::core.toolrepos::set-auto-update-repositories-job
   fi
 
-  cp -f "$toolsrepo_src_path" "$toolsrepo_tgt_path"
   if ! ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"; then
     if [ "$1" = "test" ]; then
       return 1
