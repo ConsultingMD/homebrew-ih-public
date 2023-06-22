@@ -111,16 +111,12 @@
 		</dict>
 		<key>port</key>
 		<integer>6443</integer>
-		<key>version</key>
-		<string>1.25.7</string>
 	</dict>
 	<key>portForwarding</key>
 	<dict>
 		<key>includeKubernetesServices</key>
 		<false/>
 	</dict>
-	<key>version</key>
-	<integer>6</integer>
 	<key>virtualMachine</key>
 	<dict>
 		<key>hostResolver</key>
