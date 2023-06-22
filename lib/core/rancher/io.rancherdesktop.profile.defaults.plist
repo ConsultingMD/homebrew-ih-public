@@ -117,8 +117,6 @@
 		<key>includeKubernetesServices</key>
 		<false/>
 	</dict>
-	<key>version</key>
-	<integer>6</integer>
 	<key>virtualMachine</key>
 	<dict>
 		<key>hostResolver</key>
