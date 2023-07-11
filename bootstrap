@@ -28,14 +28,12 @@ for _ in 1 2 3; do
 done
 
 if [ $SUCCEEDED -eq 1 ]; then
-  echo "Install of ih-setup formula failed. Please contact  support
-in the #developer-tools channel in Slack (https://ih-epdd.slack.com/archives/C04LPMF4YPL).
+  echo "Install of ih-setup formula failed. Please contact platform support
+in the #infrastructure-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y).
 You can also search Confluence for 'Engineer Onboarding Guide' for
 more troubleshooting tips."
   exit 1
 fi
-
-
 
 if command -v ih-setup; then
   ih-setup install
@@ -45,8 +43,8 @@ if command -v ih-setup; then
     echo "Install succeeded. You should be able to start a new shell
 and have everything work correctly."
   else
-    echo "Install failed. Please contact  support
-in the #developer-tools channel in Slack (https://ih-epdd.slack.com/archives/C04LPMF4YPL).
+    echo "Install failed. Please contact platform support
+in the #infrastructure-support channel in Slack (https://ih-epdd.slack.com/archives/C03GXCDA48Y).
 You can also search Confluence for 'Engineer Onboarding Guide' for
 more troubleshooting tips.
 
