@@ -80,6 +80,8 @@ function ih::setup::core.toolrepos::test-or-install() {
     fi
 
     export IMAGE_BUILDER_ROOT="${IH_HOME}/image-builder"
+    export PATH="${IMAGE_BUILDER_ROOT}/bin:${PATH}"
+    export PATH="${IH_HOME}/engineering/bin:${PATH}"
     (
       cd "$IMAGE_BUILDER_ROOT" || exit
       CURRENT_BRANCH=$(git branch --show-current)
