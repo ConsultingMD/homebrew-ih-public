@@ -1,5 +1,5 @@
 buf 0.51.1
-golang 1.16.3
+golang 1.21.0
 helm 3.6.1
 mkcert 1.4.4
 nodejs 16.2.0
