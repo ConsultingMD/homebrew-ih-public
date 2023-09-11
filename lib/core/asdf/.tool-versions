@@ -4,7 +4,7 @@ helm 3.6.1
 mkcert 1.4.4
 nodejs 16.2.0
 pre-commit 3.2.2
-protoc 3.17.3
+protoc 24.3
 python 3.9.7
 ruby 2.7.2
 terraform 1.0.3
