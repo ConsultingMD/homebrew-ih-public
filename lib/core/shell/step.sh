@@ -265,3 +265,26 @@ function re_source() {
   exec 2>&3
   exec 1>&4
 }
+
+function ih::setup::core.shell::private::validate-profile() {
+  local EXPECTED_VARS=(
+    "IH_HOME"
+    "EMAIL_ADDRESS"
+    "GITHUB_USER"
+    "GITHUB_EMAIL_ADDRESS"
+    "FULL_NAME"
+    "IH_USERNAME"
+    "GR_USERNAME"
+    "JIRA_USERNAME"
+    "AWS_DEFAULT_ROLE"
+  )
+
+  for name in "${EXPECTED_VARS[@]}"; do
+    value="${!name}"
+    if [[ -z "$value" ]]; then
+      return 1  # Return 1 as soon as an unset variable is found
+    fi
+  done
+
+  return 0  # Return 0 if all variables are set
+}
