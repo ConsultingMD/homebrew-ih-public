@@ -197,15 +197,14 @@ function ih::setup::core.shell::private::configure-profile() {
     "Your username, probably firstname.lastname" \
     ""
   export GR_USERNAME="$IH_USERNAME"
-  local default_jira_username
-  if [[ "$(date +%Y%m%d)" -le 20220115 ]]; then
-      default_jira_username="$GR_USERNAME@grandrounds.com"
-  else
-      default_jira_username="$GR_USERNAME@includedhealth.com"
-  fi
+  local default_jira_username="$GR_USERNAME@includedhealth.com"
   ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
-    "The username you have in JIRA" \
+    "The username you have in JIRA. Before 1/15/2022: If you've already logged in \
+    to JIRA with an email address, use that. Otherwise, if you're new, use \
+    \"$GR_USERNAME@grandrounds.com\". After 7/17/2022: Use \
+    $GR_USERNAME@includedhealth.com" \
     "$default_jira_username"
+
   ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
     "This is the default value used to authenticate to AWS resources" \
     "dev"
