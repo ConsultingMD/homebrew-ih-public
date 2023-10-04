@@ -149,57 +149,108 @@ If you want to source IH scripts earlier, adjust your .zshrc"
   fi
 }
 
-function ih::setup::core.shell::private::configure-profile() {
+function ih::setup::core.shell::private::collect-env-var() {
+  local var_name="$1"
+  local prompt_msg="$2"
+  local default_val="$3"
+  local input_val=""
 
-  re_source
-
-  if ih::setup::core.shell::private::validate-profile; then
-    return 0
-  fi
-
-  local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
-  ih::ask::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
-  confirm_edit=$?
-  if [[ ${confirm_edit} -ne 0 ]]; then
-    # shellcheck disable=SC2263
-    echo "You can't continue bootstrapping until you've updated your environment variables."
-    # shellcheck disable=SC2263
-    echo "You can manually edit ${PROFILE_FILE} and re-run the script."
-    exit 1
-  fi
-
-  if [ -z "$EDITOR" ]; then
-    set-editor
-  fi
-
-  while true; do
-    if ! ${EDITOR} "$PROFILE_FILE"; then
-      ih::log::error "It looks like your edit failed, you may want to exit and fix any errors you see above."
-      if ih::ask::confirm "Do you want to change your editor from '$EDITOR' to something else?"; then
-        set-editor
-      elif ih::ask::confirm "Do you want to cancel install"; then
-        exit 0
+  # If the variable is already set, skip
+  if [[ -z ${!var_name} ]]; then
+    while [[ -z $input_val && -z $default_val ]]; do
+      read -p "$prompt_msg [$default_val]: " input_val
+      # If the input is empty and there's no default, keep looping
+      if [[ -z $input_val && -z $default_val ]]; then
+        echo "This value cannot be left empty. Please provide a value."
       fi
-    fi
-
-    re_source
-
-    if ih::setup::core.shell::private::validate-profile; then
-      return 0
-    fi
-
-    ih::ask::confirm "Your profile is not yet complete. Do you want to edit again?" || exit 0
-  done
-
+    done
+    # Use the default value if the input is empty
+    export $var_name="${input_val:-$default_val}"
+  fi
 }
 
-function set-editor() {
-  read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
-  export EDITOR
-  echo "
-  # This is the editor that will be used when a command-line tool
-  # like git needs you to edit a file.
-  export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
+function ih::setup::core.shell::private::configure-profile() {
+  echo "Please enter the requested information for each prompt."
+
+  ih::setup::core.shell::private::collect-env-var "EDITOR" \
+    "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode)" \
+    ""
+
+  ih::setup::core.shell::private::collect-env-var "IH_HOME" \
+    "Directory where you want to clone Legacy Grand Rounds repos" \
+    "$HOME/src/github.com/ConsultingMD"
+  export GR_HOME="$IH_HOME"
+  ih::setup::core.shell::private::collect-env-var "EMAIL_ADDRESS" \
+    "Your Included Health email address" \
+    ""
+
+  ih::setup::core.shell::private::collect-env-var "GITHUB_USER" \
+    "Your GitHub username" \
+    ""
+  local default_email="$EMAIL_ADDRESS"
+  ih::setup::core.shell::private::collect-env-var "GITHUB_EMAIL_ADDRESS" \
+    "The email address you want to associate with commits. If you want to keep \
+    your email address private, or have configured your email address to be \
+    protected in GitHub, follow the guidance at \
+    https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-user-account/managing-email-preferences/setting-your-commit-email-address \
+    and put the no-reply email address here. Otherwise, you can leave this as is." \
+    "$default_email"
+
+  ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
+    "Your full name, the name you would introduce yourself with" \
+    ""
+  ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
+    "Your username, probably firstname.lastname" \
+    ""
+  export GR_USERNAME="$IH_USERNAME"
+  local default_jira_username="$GR_USERNAME@includedhealth.com"
+  ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
+    "The username you have in JIRA. This is usually the email address you use to log in. \
+    If you're uncertain, you can find it in your JIRA profile settings. When in JIRA, \
+    click on your profile icon (usually in the top right corner), and it should be below your name. \
+    If still in doubt, use: $default_jira_username as a default." \
+    "$default_jira_username"
+
+  ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
+    "This is the default value used to authenticate to AWS resources" \
+    "dev"
+
+  local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
+
+  # Ensure the file exists
+  touch "$PROFILE_FILE"
+
+  # Now, let's write these to the file.
+  cat > "$PROFILE_FILE" <<EOF
+#!/bin/sh
+
+# This file defines the user-specific environment variables
+# which are expected by other engineering scripts,
+# as well as any additional things you want to add.
+
+# This file will be sourced before any files in the default directory.
+
+# This file will not be updated when you update the ih-core brew formula.
+
+# Directory where you want to clone Legacy Grand Rounds repos,
+# which are currently located in the ConsultingMD org.
+export IH_HOME="$IH_HOME"
+export GR_HOME="$IH_HOME"
+export EMAIL_ADDRESS="$EMAIL_ADDRESS"
+export GITHUB_USER="$GITHUB_USER"
+export GITHUB_EMAIL_ADDRESS="$GITHUB_EMAIL_ADDRESS"
+export FULL_NAME="$FULL_NAME"
+export IH_USERNAME="$IH_USERNAME"
+export GR_USERNAME="$IH_USERNAME"
+export JIRA_USERNAME="$JIRA_USERNAME"
+export AWS_DEFAULT_ROLE="$AWS_DEFAULT_ROLE"
+EOF
+
+  # Set the file to be executable
+  chmod +x "$PROFILE_FILE"
+
+  echo "Environment variables have been written to '$PROFILE_FILE'."
+  return 0
 }
 
 # Source all appropriate files for to refresh the shell
@@ -216,39 +267,24 @@ function re_source() {
 }
 
 function ih::setup::core.shell::private::validate-profile() {
+  local EXPECTED_VARS=(
+    "IH_HOME"
+    "EMAIL_ADDRESS"
+    "GITHUB_USER"
+    "GITHUB_EMAIL_ADDRESS"
+    "FULL_NAME"
+    "IH_USERNAME"
+    "GR_USERNAME"
+    "JIRA_USERNAME"
+    "AWS_DEFAULT_ROLE"
+  )
 
-  re_source
-
-  local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
-  local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/core/shell/custom/00_env.sh"
-
-  if [[ ! -f $PROFILE_FILE ]]; then
-    ih::log::debug "Profile file not found at $PROFILE_FILE"
-    return 1
-  fi
-  ih::log::debug "Profile file found at $PROFILE_FILE"
-
-  set -e
-  local VARS
-  VARS=$(grep export "$PROFILE_TEMPLATE_FILE" | grep -v "^#" | cut -f 2 -d" " - | cut -f 1 -d"=" -)
-
-  # shellcheck disable=SC1090
-  source "$PROFILE_FILE"
-
-  set +e
-
-  status=0
-  for name in $VARS; do
+  for name in "${EXPECTED_VARS[@]}"; do
     value="${!name}"
     if [[ -z "$value" ]]; then
-      ih::log::warn "$name environment variable must not be empty"
-      status=1
+      return 1  # Return 1 as soon as an unset variable is found
     fi
   done
 
-  if [[ $status -ne 0 ]]; then
-    ih::log::warn "Set missing vars in $PROFILE_FILE"
-  fi
-
-  return $status
+  return 0  # Return 0 if all variables are set
 }
