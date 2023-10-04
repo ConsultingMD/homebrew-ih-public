@@ -212,6 +212,9 @@ function ih::setup::core.shell::private::configure-profile() {
 
   local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
 
+  # Ensure the file exists
+  touch "$PROFILE_FILE"
+
   # Now, let's write these to the file.
   cat > "$PROFILE_FILE" <<EOF
 #!/bin/sh
@@ -237,6 +240,9 @@ export GR_USERNAME="$IH_USERNAME"
 export JIRA_USERNAME="$JIRA_USERNAME"
 export AWS_DEFAULT_ROLE="$AWS_DEFAULT_ROLE"
 EOF
+
+  # Set the file to be executable
+  chmod +x "$PROFILE_FILE"
 
   echo "Environment variables have been written to '$PROFILE_FILE'."
   return 0
