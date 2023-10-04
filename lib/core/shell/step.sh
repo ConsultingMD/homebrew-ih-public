@@ -172,6 +172,10 @@ function ih::setup::core.shell::private::collect-env-var() {
 function ih::setup::core.shell::private::configure-profile() {
   echo "Please enter the requested information for each prompt."
 
+  ih::setup::core.shell::private::collect-env-var "EDITOR" \
+    "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode)" \
+    ""
+
   ih::setup::core.shell::private::collect-env-var "IH_HOME" \
     "Directory where you want to clone Legacy Grand Rounds repos" \
     "$HOME/src/github.com/ConsultingMD"
@@ -230,15 +234,6 @@ EOF
 
   echo "Environment variables have been written to '$PROFILE_FILE'."
   return 0
-}
-
-function set-editor() {
-  read -r -p "Your EDITOR is unset. What editor do you like to use? (maybe enter vim or nano, or 'code -w' to use VSCode): " EDITOR
-  export EDITOR
-  echo "
-  # This is the editor that will be used when a command-line tool
-  # like git needs you to edit a file.
-  export EDITOR=\"$EDITOR\"" >>"$PROFILE_FILE"
 }
 
 # Source all appropriate files for to refresh the shell
