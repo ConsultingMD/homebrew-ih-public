@@ -150,66 +150,66 @@ If you want to source IH scripts earlier, adjust your .zshrc"
 }
 
 function ih::setup::core.shell::private::collect-env-var() {
-    local var_name="$1"
-    local prompt_msg="$2"
-    local default_val="$3"
-    local input_val=""
+  local var_name="$1"
+  local prompt_msg="$2"
+  local default_val="$3"
+  local input_val=""
 
-    # If the variable is already set, skip
-    if [[ -z ${!var_name} ]]; then
-        while [[ -z $input_val && -z $default_val ]]; do
-            read -p "$prompt_msg [$default_val]: " input_val
-            # If the input is empty and there's no default, keep looping
-            if [[ -z $input_val && -z $default_val ]]; then
-                echo "This value cannot be left empty. Please provide a value."
-            fi
-        done
-        # Use the default value if the input is empty
-        export $var_name="${input_val:-$default_val}"
-    fi
+  # If the variable is already set, skip
+  if [[ -z ${!var_name} ]]; then
+    while [[ -z $input_val && -z $default_val ]]; do
+      read -p "$prompt_msg [$default_val]: " input_val
+      # If the input is empty and there's no default, keep looping
+      if [[ -z $input_val && -z $default_val ]]; then
+        echo "This value cannot be left empty. Please provide a value."
+      fi
+    done
+    # Use the default value if the input is empty
+    export $var_name="${input_val:-$default_val}"
+  fi
 }
 
 function ih::setup::core.shell::private::configure-profile() {
-    echo "Please enter the requested information for each prompt."
+  echo "Please enter the requested information for each prompt."
 
-    ih::setup::core.shell::private::collect-env-var "IH_HOME" \
-      "Directory where you want to clone Legacy Grand Rounds repos" \
-      "$HOME/src/github.com/ConsultingMD"
-    export GR_HOME="$IH_HOME"
-    ih::setup::core.shell::private::collect-env-var "EMAIL_ADDRESS" \
-      "Your Included Health email address" \
-      ""
-    ih::setup::core.shell::private::collect-env-var "GITHUB_USER" \
-      "Your GitHub username" \
-      ""
-    local default_email="$EMAIL_ADDRESS"
-    ih::setup::core.shell::private::collect-env-var "GITHUB_EMAIL_ADDRESS" \
-      "The email address you want to associate with commits" \
-      "$default_email"
-    ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
-      "Your full name, the name you would introduce yourself with" \
-      ""
-    ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
-      "Your username, probably firstname.lastname" \
-      ""
-    export GR_USERNAME="$IH_USERNAME"
-    local default_jira_username
-    if [[ "$(date +%Y%m%d)" -le 20220115 ]]; then
-        default_jira_username="$GR_USERNAME@grandrounds.com"
-    else
-        default_jira_username="$GR_USERNAME@includedhealth.com"
-    fi
-    ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
-      "The username you have in JIRA" \
-      "$default_jira_username"
-    ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
-      "This is the default value used to authenticate to AWS resources" \
-      "dev"
+  ih::setup::core.shell::private::collect-env-var "IH_HOME" \
+    "Directory where you want to clone Legacy Grand Rounds repos" \
+    "$HOME/src/github.com/ConsultingMD"
+  export GR_HOME="$IH_HOME"
+  ih::setup::core.shell::private::collect-env-var "EMAIL_ADDRESS" \
+    "Your Included Health email address" \
+    ""
+  ih::setup::core.shell::private::collect-env-var "GITHUB_USER" \
+    "Your GitHub username" \
+    ""
+  local default_email="$EMAIL_ADDRESS"
+  ih::setup::core.shell::private::collect-env-var "GITHUB_EMAIL_ADDRESS" \
+    "The email address you want to associate with commits" \
+    "$default_email"
+  ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
+    "Your full name, the name you would introduce yourself with" \
+    ""
+  ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
+    "Your username, probably firstname.lastname" \
+    ""
+  export GR_USERNAME="$IH_USERNAME"
+  local default_jira_username
+  if [[ "$(date +%Y%m%d)" -le 20220115 ]]; then
+      default_jira_username="$GR_USERNAME@grandrounds.com"
+  else
+      default_jira_username="$GR_USERNAME@includedhealth.com"
+  fi
+  ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
+    "The username you have in JIRA" \
+    "$default_jira_username"
+  ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
+    "This is the default value used to authenticate to AWS resources" \
+    "dev"
 
-    local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
+  local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
 
-    # Now, let's write these to the file.
-    cat > "$PROFILE_FILE" <<EOF
+  # Now, let's write these to the file.
+  cat > "$PROFILE_FILE" <<EOF
 #!/bin/sh
 
 # This file defines the user-specific environment variables ...
