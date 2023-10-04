@@ -232,9 +232,9 @@ function ih::setup::core.shell::private::configure-profile() {
 
 # This file will not be updated when you update the ih-core brew formula.
 
+export EDITOR="$EDITOR"
 # Directory where you want to clone Legacy Grand Rounds repos,
 # which are currently located in the ConsultingMD org.
-export EDITOR="$EDITOR"
 export IH_HOME="$IH_HOME"
 export GR_HOME="$IH_HOME"
 export EMAIL_ADDRESS="$EMAIL_ADDRESS"
