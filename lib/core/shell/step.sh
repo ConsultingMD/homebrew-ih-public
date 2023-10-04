@@ -183,13 +183,19 @@ function ih::setup::core.shell::private::configure-profile() {
   ih::setup::core.shell::private::collect-env-var "EMAIL_ADDRESS" \
     "Your Included Health email address" \
     ""
+
   ih::setup::core.shell::private::collect-env-var "GITHUB_USER" \
     "Your GitHub username" \
     ""
   local default_email="$EMAIL_ADDRESS"
   ih::setup::core.shell::private::collect-env-var "GITHUB_EMAIL_ADDRESS" \
-    "The email address you want to associate with commits" \
+    "The email address you want to associate with commits. If you want to keep \
+    your email address private, or have configured your email address to be \
+    protected in GitHub, follow the guidance at \
+    https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-user-account/managing-email-preferences/setting-your-commit-email-address \
+    and put the no-reply email address here. Otherwise, you can leave this as is." \
     "$default_email"
+
   ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
     "Your full name, the name you would introduce yourself with" \
     ""
