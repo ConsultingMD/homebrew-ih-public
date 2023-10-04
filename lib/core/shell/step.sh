@@ -216,7 +216,13 @@ function ih::setup::core.shell::private::configure-profile() {
   cat > "$PROFILE_FILE" <<EOF
 #!/bin/sh
 
-# This file defines the user-specific environment variables ...
+# This file defines the user-specific environment variables
+# which are expected by other engineering scripts,
+# as well as any additional things you want to add.
+
+# This file will be sourced before any files in the default directory.
+
+# This file will not be updated when you update the ih-core brew formula.
 
 # Directory where you want to clone Legacy Grand Rounds repos,
 # which are currently located in the ConsultingMD org.
