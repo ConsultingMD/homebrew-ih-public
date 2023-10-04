@@ -149,85 +149,85 @@ If you want to source IH scripts earlier, adjust your .zshrc"
   fi
 }
 
+function ih::setup::core.shell::private::collect-env-var() {
+    local var_name="$1"
+    local prompt_msg="$2"
+    local default_val="$3"
+    local input_val=""
+
+    # If the variable is already set, skip
+    if [[ -z ${!var_name} ]]; then
+        while [[ -z $input_val && -z $default_val ]]; do
+            read -p "$prompt_msg [$default_val]: " input_val
+            # If the input is empty and there's no default, keep looping
+            if [[ -z $input_val && -z $default_val ]]; then
+                echo "This value cannot be left empty. Please provide a value."
+            fi
+        done
+        # Use the default value if the input is empty
+        export $var_name="${input_val:-$default_val}"
+    fi
+}
+
 function ih::setup::core.shell::private::configure-profile() {
+  while true; do
+    echo "Please enter the requested information for each prompt."
 
-  re_source
+    ih::setup::core.shell::private::collect-env-var "IH_HOME" \
+      "Directory where you want to clone Legacy Grand Rounds repos" \
+      "$HOME/src/github.com/ConsultingMD"
 
-  if ih::setup::core.shell::private::validate-profile; then
-    return 0
-  fi
+    ih::setup::core.shell::private::collect-env-var "EMAIL_ADDRESS" \
+      "Your Included Health email address" \
+      ""
 
-  local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
+    ih::setup::core.shell::private::collect-env-var "GITHUB_USER" \
+      "Your GitHub username" \
+      ""
 
-  ih::ask::confirm "Your profile environment variables are not set up. Ready to input and update your variables?"
-  local confirm_input=$?
-  if [[ ${confirm_input} -ne 0 ]]; then
-    echo "You can't continue bootstrapping until you've updated your environment variables."
-    echo "You can manually edit ${PROFILE_FILE} and re-run the script."
-    exit 1
-  fi
+    local default_email="$EMAIL_ADDRESS"
+    ih::setup::core.shell::private::collect-env-var "GITHUB_EMAIL_ADDRESS" \
+      "The email address you want to associate with commits" \
+      "$default_email"
 
-  echo "Please enter the requested information for each prompt."
+    ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
+      "Your full name, the name you would introduce yourself with" \
+      ""
 
-  local IH_HOME
-  local GR_HOME
-  local EMAIL_ADDRESS
-  local GITHUB_USER
-  local GITHUB_EMAIL_ADDRESS
-  local FULL_NAME
-  local IH_USERNAME
-  local GR_USERNAME
-  local JIRA_USERNAME
-  local AWS_DEFAULT_ROLE
+    ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
+      "Your username, probably firstname.lastname" \
+      ""
 
-  read -p "Directory where you want to clone Legacy Grand Rounds repos [default: $HOME/src/github.com/ConsultingMD]: " IH_HOME
-  GR_HOME="${IH_HOME:-$HOME/src/github.com/ConsultingMD}"
+    local default_gr_username="$IH_USERNAME"
+    ih::setup::core.shell::private::collect-env-var "GR_USERNAME" \
+      "This is exported for compatibility with older scripts" \
+      "$default_gr_username"
 
-  read -p "Your Included Health email address: " EMAIL_ADDRESS
-  read -p "Your GitHub username: " GITHUB_USER
+    local default_jira_username
+    if [[ "$(date +%Y%m%d)" -le 20220115 ]]; then
+      default_jira_username="$GR_USERNAME@grandrounds.com"
+    else
+      default_jira_username="$GR_USERNAME@includedhealth.com"
+    fi
 
-  echo "The email address you want to associate with commits can be kept private following GitHub guidance."
-  read -p "Commit email address [default: $EMAIL_ADDRESS]: " GITHUB_EMAIL_ADDRESS
-  GITHUB_EMAIL_ADDRESS=${GITHUB_EMAIL_ADDRESS:-$EMAIL_ADDRESS}
+    ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
+      "The username you have in JIRA" \
+      "$default_jira_username"
 
-  read -p "Your full name: " FULL_NAME
-  read -p "Your username (probably firstname.lastname): " IH_USERNAME
-  GR_USERNAME="$IH_USERNAME"
+    ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
+      "This is the default value used to authenticate to AWS resources" \
+      "dev"
 
-  echo "The username you have in JIRA has some specific rules."
-  read -p "Your JIRA username: " JIRA_USERNAME
-
-  read -p "The default value for AWS authentication [default: dev]: " AWS_DEFAULT_ROLE
-  AWS_DEFAULT_ROLE=${AWS_DEFAULT_ROLE:-dev}
-
-  # Now, let's write these to the file.
-  cat > "$PROFILE_FILE" <<EOF
-#!/bin/sh
-
-# This file defines the user-specific environment variables ...
-
-# Directory where you want to clone Legacy Grand Rounds repos,
-# which are currently located in the ConsultingMD org.
-export IH_HOME="$IH_HOME"
-export GR_HOME="$GR_HOME"
-export EMAIL_ADDRESS="$EMAIL_ADDRESS"
-export GITHUB_USER="$GITHUB_USER"
-export GITHUB_EMAIL_ADDRESS="$GITHUB_EMAIL_ADDRESS"
-export FULL_NAME="$FULL_NAME"
-export IH_USERNAME="$IH_USERNAME"
-export GR_USERNAME="$GR_USERNAME"
-export JIRA_USERNAME="$JIRA_USERNAME"
-export AWS_DEFAULT_ROLE="$AWS_DEFAULT_ROLE"
-EOF
-
-  re_source
-
-  if ih::setup::core.shell::private::validate-profile; then
-    return 0
-  else
-    echo "Something went wrong with the profile validation. Please manually review the file: ${PROFILE_FILE}"
-    exit 1
-  fi
+    if ih::setup::core.shell::private::validate-profile; then
+      return 0
+    else
+      echo "Validation failed for some environment variables. Please review the provided values."
+      if ! ih::ask::confirm "Would you like to re-enter the environment variable values?"; then
+        echo "Exiting..."
+        exit 1
+      fi
+    fi
+  done
 }
 
 function set-editor() {
@@ -253,29 +253,20 @@ function re_source() {
 }
 
 function ih::setup::core.shell::private::validate-profile() {
+  local EXPECTED_VARS=(
+    "IH_HOME"
+    "EMAIL_ADDRESS"
+    "GITHUB_USER"
+    "GITHUB_EMAIL_ADDRESS"
+    "FULL_NAME"
+    "IH_USERNAME"
+    "GR_USERNAME"
+    "JIRA_USERNAME"
+    "AWS_DEFAULT_ROLE"
+  )
 
-  re_source
-
-  local PROFILE_FILE="$IH_CUSTOM_DIR/00_env.sh"
-  local PROFILE_TEMPLATE_FILE="$IH_CORE_LIB_DIR/core/shell/custom/00_env.sh"
-
-  if [[ ! -f $PROFILE_FILE ]]; then
-    ih::log::debug "Profile file not found at $PROFILE_FILE"
-    return 1
-  fi
-  ih::log::debug "Profile file found at $PROFILE_FILE"
-
-  set -e
-  local VARS
-  VARS=$(grep export "$PROFILE_TEMPLATE_FILE" | grep -v "^#" | cut -f 2 -d" " - | cut -f 1 -d"=" -)
-
-  # shellcheck disable=SC1090
-  source "$PROFILE_FILE"
-
-  set +e
-
-  status=0
-  for name in $VARS; do
+  local status=0
+  for name in "${EXPECTED_VARS[@]}"; do
     value="${!name}"
     if [[ -z "$value" ]]; then
       ih::log::warn "$name environment variable must not be empty"
@@ -284,7 +275,7 @@ function ih::setup::core.shell::private::validate-profile() {
   done
 
   if [[ $status -ne 0 ]]; then
-    ih::log::warn "Set missing vars in $PROFILE_FILE"
+    ih::log::warn "Please set the missing environment variables."
   fi
 
   return $status
