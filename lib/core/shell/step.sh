@@ -158,39 +158,76 @@ function ih::setup::core.shell::private::configure-profile() {
   fi
 
   local PROFILE_FILE="$IH_CUSTOM_DIR"/00_env.sh
-  ih::ask::confirm "Your profile environment variables are not set up. Ready to edit and update your variables?"
-  confirm_edit=$?
-  if [[ ${confirm_edit} -ne 0 ]]; then
-    # shellcheck disable=SC2263
+
+  ih::ask::confirm "Your profile environment variables are not set up. Ready to input and update your variables?"
+  local confirm_input=$?
+  if [[ ${confirm_input} -ne 0 ]]; then
     echo "You can't continue bootstrapping until you've updated your environment variables."
-    # shellcheck disable=SC2263
     echo "You can manually edit ${PROFILE_FILE} and re-run the script."
     exit 1
   fi
 
-  if [ -z "$EDITOR" ]; then
-    set-editor
+  echo "Please enter the requested information for each prompt."
+
+  local IH_HOME
+  local GR_HOME
+  local EMAIL_ADDRESS
+  local GITHUB_USER
+  local GITHUB_EMAIL_ADDRESS
+  local FULL_NAME
+  local IH_USERNAME
+  local GR_USERNAME
+  local JIRA_USERNAME
+  local AWS_DEFAULT_ROLE
+
+  read -p "Directory where you want to clone Legacy Grand Rounds repos [default: $HOME/src/github.com/ConsultingMD]: " IH_HOME
+  GR_HOME="${IH_HOME:-$HOME/src/github.com/ConsultingMD}"
+
+  read -p "Your Included Health email address: " EMAIL_ADDRESS
+  read -p "Your GitHub username: " GITHUB_USER
+
+  echo "The email address you want to associate with commits can be kept private following GitHub guidance."
+  read -p "Commit email address [default: $EMAIL_ADDRESS]: " GITHUB_EMAIL_ADDRESS
+  GITHUB_EMAIL_ADDRESS=${GITHUB_EMAIL_ADDRESS:-$EMAIL_ADDRESS}
+
+  read -p "Your full name: " FULL_NAME
+  read -p "Your username (probably firstname.lastname): " IH_USERNAME
+  GR_USERNAME="$IH_USERNAME"
+
+  echo "The username you have in JIRA has some specific rules."
+  read -p "Your JIRA username: " JIRA_USERNAME
+
+  read -p "The default value for AWS authentication [default: dev]: " AWS_DEFAULT_ROLE
+  AWS_DEFAULT_ROLE=${AWS_DEFAULT_ROLE:-dev}
+
+  # Now, let's write these to the file.
+  cat > "$PROFILE_FILE" <<EOF
+#!/bin/sh
+
+# This file defines the user-specific environment variables ...
+
+# Directory where you want to clone Legacy Grand Rounds repos,
+# which are currently located in the ConsultingMD org.
+export IH_HOME="$IH_HOME"
+export GR_HOME="$GR_HOME"
+export EMAIL_ADDRESS="$EMAIL_ADDRESS"
+export GITHUB_USER="$GITHUB_USER"
+export GITHUB_EMAIL_ADDRESS="$GITHUB_EMAIL_ADDRESS"
+export FULL_NAME="$FULL_NAME"
+export IH_USERNAME="$IH_USERNAME"
+export GR_USERNAME="$GR_USERNAME"
+export JIRA_USERNAME="$JIRA_USERNAME"
+export AWS_DEFAULT_ROLE="$AWS_DEFAULT_ROLE"
+EOF
+
+  re_source
+
+  if ih::setup::core.shell::private::validate-profile; then
+    return 0
+  else
+    echo "Something went wrong with the profile validation. Please manually review the file: ${PROFILE_FILE}"
+    exit 1
   fi
-
-  while true; do
-    if ! ${EDITOR} "$PROFILE_FILE"; then
-      ih::log::error "It looks like your edit failed, you may want to exit and fix any errors you see above."
-      if ih::ask::confirm "Do you want to change your editor from '$EDITOR' to something else?"; then
-        set-editor
-      elif ih::ask::confirm "Do you want to cancel install"; then
-        exit 0
-      fi
-    fi
-
-    re_source
-
-    if ih::setup::core.shell::private::validate-profile; then
-      return 0
-    fi
-
-    ih::ask::confirm "Your profile is not yet complete. Do you want to edit again?" || exit 0
-  done
-
 }
 
 function set-editor() {
