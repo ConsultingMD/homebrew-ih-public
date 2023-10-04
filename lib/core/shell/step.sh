@@ -205,10 +205,10 @@ function ih::setup::core.shell::private::configure-profile() {
   export GR_USERNAME="$IH_USERNAME"
   local default_jira_username="$GR_USERNAME@includedhealth.com"
   ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
-    "The username you have in JIRA. Before 1/15/2022: If you've already logged in \
-    to JIRA with an email address, use that. Otherwise, if you're new, use \
-    \"$GR_USERNAME@grandrounds.com\". After 7/17/2022: Use \
-    $GR_USERNAME@includedhealth.com" \
+    "The username you have in JIRA. This is usually the email address you use to log in. \
+    If you're uncertain, you can find it in your JIRA profile settings. When in JIRA, \
+    click on your profile icon (usually in the top right corner), and it should be below your name. \
+    If still in doubt, use: $default_jira_username as a default." \
     "$default_jira_username"
 
   ih::setup::core.shell::private::collect-env-var "AWS_DEFAULT_ROLE" \
