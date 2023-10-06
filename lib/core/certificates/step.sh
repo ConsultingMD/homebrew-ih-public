@@ -92,8 +92,10 @@ function ih::setup::core.certificates::install() {
   # with no obvious pattern.
   curl https://www.amazontrust.com/repository/SFSRootCAG2.pem >>"$MOZILLA_PATH"
 
-  # Configure NPM to use the bundle.
-  npm config set cafile "$MOZILLA_PATH"
+  # Configure NPM to use the bundle, if npm exists.
+  if command -v npm &>/dev/null; then
+    npm config set cafile "$MOZILLA_PATH"
+  fi
 
   if command -v yarn &>/dev/null; then
     # Configure yarn to use the bundle.
