@@ -155,6 +155,10 @@ function ih::private::apply-to-steps() {
   local -a STEPS
   local -a DOMAINS
   local STEP DOMAIN
+  local DOMAIN_MATCH_FOUND=0
+  local STEP_MATCH_FOUND=0
+  local REQUESTED_DOMAIN=""
+  local -a REQUESTED_STEPS=()
 
   if [[ ${#} -eq 0 ]]; then
     # include active domains and all the steps (they will be filtered below)
@@ -164,18 +168,20 @@ function ih::private::apply-to-steps() {
     # one requested domain and all the steps (they will be filtered below)
     DOMAINS=("$1")
     STEPS=("${IH_SETUP_STEPS[@]}")
+    REQUESTED_DOMAIN="$1"
   else
     # prefix the requested steps with the domain so we can filter in a consistent way.
     DOMAIN="$1"
     DOMAINS=("$DOMAIN")
+    REQUESTED_DOMAIN="$DOMAIN"
     shift
     for STEP in "$@"; do
       STEPS=("${DOMAIN}.${STEP}")
+      REQUESTED_STEPS+=("$STEP")
     done
   fi
 
   local STEP_ERROR=0
-
 
   for STEP in "${STEPS[@]}"; do
     # This will be filtering the steps down to only those which are in domain
@@ -183,17 +189,29 @@ function ih::private::apply-to-steps() {
     # We want to look for the step with spaces on each side, which is annoying to quote
     # shellcheck disable=SC2027
     if [[ " ${DOMAINS[*]} " =~ " "${DOMAIN}" " ]]; then
+      DOMAIN_MATCH_FOUND=1
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
+        STEP_MATCH_FOUND=1
         "ih::private::$COMMAND" "$STEP"
         if [[ $? -gt 0 ]]; then
           ih::log::error "Command $COMMAND failed for step $STEP"
           STEP_ERROR=1
         fi
       else
-        ih::log::error "No step found with name '$STEP'"
+        ih::log::error "No step found with name '$STEP' for domain '$DOMAIN'."
       fi
     fi
   done
+
+  # Handle the case when no matching domain is found
+  if [[ $DOMAIN_MATCH_FOUND -eq 0 && -n $REQUESTED_DOMAIN ]]; then
+    ih::log::error "No matching domain found for requested domain: $REQUESTED_DOMAIN. Available domains are: ${IH_SETUP_ACTIVE_DOMAINS[*]}"
+  fi
+
+  # Handle the case when no matching step is found
+  if [[ $STEP_MATCH_FOUND -eq 0 && ${#REQUESTED_STEPS[@]} -ne 0 ]]; then
+    ih::log::error "No matching step found for requested steps: ${REQUESTED_STEPS[*]}. Available steps are: ${IH_SETUP_STEPS[*]}"
+  fi
 
   if [[ $STEP_ERROR -gt 0 ]]; then
     if [[ $COMMAND = 'test-step' ]]; then
@@ -203,8 +221,6 @@ function ih::private::apply-to-steps() {
     fi
     exit 1
   fi
-
-
 }
 
 # Pretty prints the description of the step in $1
