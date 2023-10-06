@@ -38,9 +38,11 @@ function ih::setup::core.shell::test() {
     return 1
   fi
 
-  if [[ -f ~/.bash_profile && ! grep -q "source ~/.bashrc" ~/.bash_profile ]]; then
-    ih::log::debug ".bashrc not sourced from .bash_profile"
-    return 1
+  if [[ -f ~/.bash_profile ]]; then
+    if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
+      ih::log::debug ".bashrc not sourced from .bash_profile"
+      return 1
+    fi
   fi
 
   if ! grep -q -e "augment.sh" ~/.zshrc; then
