@@ -108,19 +108,18 @@ BOOTSTRAP_SOURCE_LINE='
 '
 
 function ih::setup::core.shell::private::configure-bash() {
-  local configFile
+  local configFile="${HOME}/.bashrc"
 
-  # On many Unix-like systems, non-login shells typically source the `.bashrc` file.
-  # macOS's Terminal.app, by default, opens a login shell, which sources `.bash_profile`.
-  if [[ -e "${HOME}/.bashrc" ]]; then
-    configFile="${HOME}/.bashrc"
-  elif [[ -e "${HOME}/.bash_profile" ]]; then
-    configFile="${HOME}/.bash_profile"
-  else
-    # If neither exists, default to creating .bashrc
+  # If ~/.bashrc doesn't exist, create it
+  if [[ ! -e "${HOME}/.bashrc" ]]; then
     echo "Creating new ~/.bashrc file"
     touch "${HOME}/.bashrc"
-    configFile="${HOME}/.bashrc"
+  fi
+
+  # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
+  if [[ ! -e "${HOME}/.bash_profile" || ! $(grep -q "source ~/.bashrc" "${HOME}/.bash_profile") ]]; then
+    echo "Ensuring .bash_profile sources .bashrc..."
+    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> "${HOME}/.bash_profile"
   fi
 
   # shellcheck disable=SC2016
@@ -137,7 +136,6 @@ $BOOTSTRAP_SOURCE_LINE
 
 If you want to source IH scripts earlier, adjust your $configFile"
   fi
-
 }
 
 # Create zshrc if it doesn't exist, if it does, append standard template
