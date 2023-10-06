@@ -111,34 +111,32 @@ BOOTSTRAP_SOURCE_LINE='
 '
 
 function ih::setup::core.shell::private::configure-bash() {
-  local bashRC="${HOME}/.bashrc"
 
   # If ~/.bashrc doesn't exist, create it
-  if [[ ! -e "$bashRC" ]]; then
-    echo "Creating new $bashRC"
-    touch "$bashRC"
+  if [[ ! -e ~/.bashrc ]]; then
+    echo "Creating new ~/.bashrc"
+    touch ~/.bashrc
   fi
 
   # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
-  local bashProfile="${HOME}/.bash_profile"
-  if [[ ! -e "$bashProfile" || ! $(grep -q "source ~/.bashrc" "$bashProfile") ]]; then
+  if [[ ! -e ~/.bash_profile || ! $(grep -q "source ~/.bashrc" ~/.bash_profile) ]]; then
     echo "Ensuring .bash_profile sources .bashrc..."
-    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> "$bashProfile"
+    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> ~/.bash_profile
   fi
 
   # shellcheck disable=SC2016
-  if grep -qF -E '^[^#]+\.ih/augment.sh' "$bashRC"; then
-    echo "Included Health shell augmentation already sourced in $bashRC"
+  if grep -qF -E '^[^#]+\.ih/augment.sh' ~/.bashrc; then
+    echo "Included Health shell augmentation already sourced in ~/.bashrc"
   else
-    echo "Appending Included Health config to $bashRC"
+    echo "Appending Included Health config to ~/.bashrc"
     # shellcheck disable=SC2016
-    echo "$BOOTSTRAP_SOURCE_LINE" >>"$bashRC"
+    echo "$BOOTSTRAP_SOURCE_LINE" >> ~/.bashrc
 
-    echo "Updated $bashRC to include this line at the end:
+    echo "Updated ~/.bashrc to include this line at the end:
 
 $BOOTSTRAP_SOURCE_LINE
 
-If you want to source IH scripts earlier, adjust your $bashRC"
+If you want to source IH scripts earlier, adjust your ~/.bashrc"
   fi
 }
 
