@@ -24,7 +24,7 @@ function ih::setup::core.shell::test() {
   if [[ -f "${IH_DIR}/augment.sh" ]]; then
     ih::log::debug "Found augment.sh"
     if [[ -z $IH_AUGMENT_SOURCED ]]; then
-      ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
+      ih::log::warn "Shell augments are installed but not sourced; source .zshrc, .bashrc, or .bash_profile to load them"
       source "${IH_DIR}/augment.sh"
     fi
   else
@@ -34,6 +34,11 @@ function ih::setup::core.shell::test() {
 
   if ! grep -q -e "augment.sh" ~/.bashrc; then
     ih::log::debug "Augment not sourced in .bashrc"
+    return 1
+  fi
+
+  if [[ -f ~/.bash_profile && ! grep -q -e "augment.sh" ~/.bash_profile ]]; then
+    ih::log::debug "Augment not sourced in .bash_profile"
     return 1
   fi
 
