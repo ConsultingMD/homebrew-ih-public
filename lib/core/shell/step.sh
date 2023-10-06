@@ -16,6 +16,7 @@ function ih::setup::core.shell::help() {
 function ih::setup::core.shell::test() {
 
   ih::log::debug "Checking for shell augment files and variables..."
+
   if ! ih::setup::core.shell::private::validate-profile; then
     ih::log::debug "Profile is not valid"
     return 1
@@ -35,6 +36,13 @@ function ih::setup::core.shell::test() {
   if ! grep -q -e "augment.sh" ~/.bashrc; then
     ih::log::debug "Augment not sourced in .bashrc"
     return 1
+  fi
+
+  if [[ -f ~/.bash_profile ]]; then
+    if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
+      ih::log::debug ".bashrc not sourced from .bash_profile"
+      return 1
+    fi
   fi
 
   if ! grep -q -e "augment.sh" ~/.zshrc; then
@@ -86,7 +94,7 @@ function ih::setup::core.shell::install() {
 
   echo "Configuring shells to source IH shell configs"
 
-  ih::setup::core.shell::private::configure-bashrc
+  ih::setup::core.shell::private::configure-bash
   ih::setup::core.shell::private::configure-zshrc
 
   echo ""
@@ -102,27 +110,34 @@ BOOTSTRAP_SOURCE_LINE='
 . "$HOME/.ih/augment.sh"
 '
 
-# Create bashrc if it doesn't exist, if it does, append standard template
-function ih::setup::core.shell::private::configure-bashrc() {
-  if [[ ! -e "${HOME}/.bashrc" ]]; then
-    echo "Creating new ~/.bashrc file"
-    touch "${HOME}/.bashrc"
-  fi
-  # shellcheck disable=SC2016
-  if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.bashrc"; then
-    echo "Included Health shell augmentation already sourced in .bashrc"
-  else
-    echo "Appending Included Health config to .bashrc"
-    # shellcheck disable=SC2016
-    echo "$BOOTSTRAP_SOURCE_LINE" >>"${HOME}/.bashrc"
+function ih::setup::core.shell::private::configure-bash() {
 
-    echo "Updated .bashrc to include this line at the end:
+  # If ~/.bashrc doesn't exist, create it
+  if [[ ! -e ~/.bashrc ]]; then
+    echo "Creating new ~/.bashrc"
+    touch ~/.bashrc
+  fi
+
+  # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
+  if [[ ! -e ~/.bash_profile || ! $(grep -q "source ~/.bashrc" ~/.bash_profile) ]]; then
+    echo "Ensuring .bash_profile sources .bashrc..."
+    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> ~/.bash_profile
+  fi
+
+  # shellcheck disable=SC2016
+  if grep -qF -E '^[^#]+\.ih/augment.sh' ~/.bashrc; then
+    echo "Included Health shell augmentation already sourced in ~/.bashrc"
+  else
+    echo "Appending Included Health config to ~/.bashrc"
+    # shellcheck disable=SC2016
+    echo "$BOOTSTRAP_SOURCE_LINE" >> ~/.bashrc
+
+    echo "Updated ~/.bashrc to include this line at the end:
 
 $BOOTSTRAP_SOURCE_LINE
 
-If you want to source IH scripts earlier, adjust your .bashrc"
+If you want to source IH scripts earlier, adjust your ~/.bashrc"
   fi
-
 }
 
 # Create zshrc if it doesn't exist, if it does, append standard template
