@@ -86,7 +86,7 @@ function ih::setup::core.shell::install() {
 
   echo "Configuring shells to source IH shell configs"
 
-  ih::setup::core.shell::private::configure-bashrc
+  ih::setup::core.shell::private::configure-bash
   ih::setup::core.shell::private::configure-zshrc
 
   echo ""
@@ -102,25 +102,35 @@ BOOTSTRAP_SOURCE_LINE='
 . "$HOME/.ih/augment.sh"
 '
 
-# Create bashrc if it doesn't exist, if it does, append standard template
-function ih::setup::core.shell::private::configure-bashrc() {
-  if [[ ! -e "${HOME}/.bashrc" ]]; then
+function ih::setup::core.shell::private::configure-bash() {
+  local configFile
+
+  # On many Unix-like systems, non-login shells typically source the `.bashrc` file.
+  # macOS's Terminal.app, by default, opens a login shell, which sources `.bash_profile`.
+  if [[ -e "${HOME}/.bashrc" ]]; then
+    configFile="${HOME}/.bashrc"
+  elif [[ -e "${HOME}/.bash_profile" ]]; then
+    configFile="${HOME}/.bash_profile"
+  else
+    # If neither exists, default to creating .bashrc
     echo "Creating new ~/.bashrc file"
     touch "${HOME}/.bashrc"
+    configFile="${HOME}/.bashrc"
   fi
-  # shellcheck disable=SC2016
-  if grep -qF -E '^[^#]+\.ih/augment.sh' "${HOME}/.bashrc"; then
-    echo "Included Health shell augmentation already sourced in .bashrc"
-  else
-    echo "Appending Included Health config to .bashrc"
-    # shellcheck disable=SC2016
-    echo "$BOOTSTRAP_SOURCE_LINE" >>"${HOME}/.bashrc"
 
-    echo "Updated .bashrc to include this line at the end:
+  # shellcheck disable=SC2016
+  if grep -qF -E '^[^#]+\.ih/augment.sh' "$configFile"; then
+    echo "Included Health shell augmentation already sourced in $configFile"
+  else
+    echo "Appending Included Health config to $configFile"
+    # shellcheck disable=SC2016
+    echo "$BOOTSTRAP_SOURCE_LINE" >>"$configFile"
+
+    echo "Updated $configFile to include this line at the end:
 
 $BOOTSTRAP_SOURCE_LINE
 
-If you want to source IH scripts earlier, adjust your .bashrc"
+If you want to source IH scripts earlier, adjust your $configFile"
   fi
 
 }
