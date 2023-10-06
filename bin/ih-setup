@@ -593,18 +593,33 @@ $DEP $STEP"
 }
 
 function main() {
+  # Capture all arguments
+  local args=("$@")
 
-  while getopts "yfv" arg; do
-    case $arg in
-      y) export IH_NO_CONFIRM=1 ;;
-      f) export IH_FORCE=1 ;;
-      v) export IH_DEBUG=1 ;;
+  # Process and remove flags (to support flags anywhere in the command)
+  local index=0
+  while [ "$index" -lt "${#args[@]}" ]; do
+    case ${args[$index]} in
+      -y)
+        export IH_NO_CONFIRM=1
+        unset 'args[index]'
+        ;;
+      -f)
+        export IH_FORCE=1
+        unset 'args[index]'
+        ;;
+      -v)
+        export IH_DEBUG=1
+        unset 'args[index]'
+        ;;
       *)
-        ih::help
-        exit 1
+        ((index++))
         ;;
     esac
   done
+
+  # Remove gaps in array after unsetting elements
+  args=("${args[@]}")
 
   # these array modifications happen here
   # because they seem to get lost if they are
@@ -622,34 +637,41 @@ function main() {
 
   ih::setup::private::init
 
-  if [[ $# -eq 0 ]]; then
+  # Check if there are any remaining commands and arguments after flag processing.
+  # If not, display the help message.
+  if [[ ${#args[@]} -eq 0 ]]; then
     ih::help
+    return
   fi
 
-  shift $((OPTIND - 1))
-  local command=${1:?"Run ih-setup help for usage"}
-  shift
+  local command="${args[0]}"
+  unset 'args[0]'
+  args=("${args[@]}")
 
   case "${command}" in
     -h | -? | --help) command=help ;;
   esac
 
+  # Main command processing
   case "${command}" in
-    help) ;;
+    help)
+      ih::${command} "${args[@]}"
+      return
+      ;;
     install)
-      ih::private::apply-to-steps install-step "${@}"
+      ih::private::apply-to-steps install-step "${args[@]}"
       return
       ;;
     describe)
-      if [[ $# -eq 1 ]]; then
-        ih::private::domain-help "$1"
+      if [[ ${#args[@]} -eq 1 ]]; then
+        ih::private::domain-help "${args[0]}"
       else
-        ih::private::apply-to-steps describe-step "${@}"
+        ih::private::apply-to-steps describe-step "${args[@]}"
       fi
       return
       ;;
     show)
-      ih::private::step-show "${@}"
+      ih::private::step-show "${args[@]}"
       return
       ;;
     upgrade)
@@ -657,11 +679,11 @@ function main() {
       return
       ;;
     check | test)
-      ih::private::apply-to-steps test-step "${@}"
+      ih::private::apply-to-steps test-step "${args[@]}"
       return
       ;;
     add-step)
-      ih::private::add-step "${@}"
+      ih::private::add-step "${args[@]}"
       return
       ;;
     private::*)
@@ -673,7 +695,8 @@ function main() {
       ;;
   esac
 
-  ih::${command} "${@}"
+  # For any commands not caught above:
+  ih::${command} "${args[@]}"
 }
 
 main "${@}"
