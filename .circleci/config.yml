@@ -1,0 +1,34 @@
+version: 2.1
+
+jobs:
+  release:
+    executor:
+      docker:
+        - image: alpine:latest
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            apk add --no-cache git bash curl
+            curl -LO https://github.com/cli/cli/releases/download/v2.36.0/gh_2.36.0_linux_amd64.tar.gz
+            tar xvf gh_2.36.0_linux_amd64.tar.gz
+            install gh_2.36.0_linux_amd64/bin/gh /usr/local/bin
+      - run:
+          name: Configure Git
+          command: |
+            git config --global user.email "robot@github.com"
+            git config --global user.name "homebrew-ih-public-action"
+      - run:
+          name: Release
+          command: ./meta/release
+
+workflows:
+  version: 2
+  release-workflow:
+    jobs:
+      - release:
+          filters:
+            branches:
+              only:
+                - master
