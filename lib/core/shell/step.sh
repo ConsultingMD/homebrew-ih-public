@@ -215,7 +215,7 @@ function ih::setup::core.shell::private::configure-profile() {
     "Your full name, the name you would introduce yourself with" \
     ""
   ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
-    "Your username, probably firstname.lastname" \
+    "Your email username, likely firstname.lastname (without @includedhealth.com)" \
     ""
   export GR_USERNAME="$IH_USERNAME"
   local default_jira_username="$GR_USERNAME@includedhealth.com"
