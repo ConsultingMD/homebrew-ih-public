@@ -49,7 +49,25 @@ function ih::setup::core.rancher::deps() {
   echo "core.shell"
 }
 
+function ih::setup::docker_credentials::install() {
+  echo "Installing docker-credential-helper-ecr..."
+
+  if brew list docker-credential-helper-ecr >/dev/null 2>&1; then
+    echo "docker-credential-helper-ecr is already installed."
+  else
+    if brew install docker-credential-helper-ecr; then
+      echo "docker-credential-helper-ecr installed successfully."
+    else
+      echo "Failed to install docker-credential-helper-ecr."
+      return 1
+    fi
+  fi
+}
+
 function ih::setup::core.rancher::install() {
+  # Install Docker credentials helper before installing Rancher
+  ih::setup::docker_credentials::install || return 1
+  
   local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
