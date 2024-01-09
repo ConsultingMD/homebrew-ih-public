@@ -9,6 +9,9 @@ function ih::setup::core.rancher::help() {
 RANCHER_AUGMENT_SRC="$IH_CORE_LIB_DIR/core/rancher/default/11_rancher.sh"
 RANCHER_AUGMENT_DST="$IH_DEFAULT_DIR/11_rancher.sh"
 
+PLIST_SRC="$IH_CORE_LIB_DIR/core/rancher/io.rancherdesktop.profile.defaults.plist"
+PLIST_DST="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
+
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
@@ -36,9 +39,13 @@ function ih::setup::core.rancher::test() {
     return 1
   fi
 
-  # Check for PLIST FILE
-  PLISTFILE="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
-  if [ ! -f "$PLISTFILE" ]; then
+  if [ ! -f "$PLIST_DST" ]; then
+    ih::log::debug "The PLIST file is missing."
+    return 1
+  fi
+
+  if ! ih::file::check-file-in-sync "$PLIST_SRC" "$PLIST_DST"; then
+    ih::log::debug "The PLIST file is out of sync."
     return 1
   fi
 
