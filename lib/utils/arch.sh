@@ -28,9 +28,5 @@ ih::arch::get_macos_version() {
 
 ih::arch::is_m3_mac() {
   local hw_model=$(sysctl -n machdep.cpu.brand_string)
-  if [[ "$hw_model" == *"M3"* ]]; then
-    return 0  # This is an M3 Mac.
-  else
-    return 1  # This is not an M3 Mac.
-  fi
+  [[ "$hw_model" == *"M3"* ]]
 }
