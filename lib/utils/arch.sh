@@ -21,3 +21,12 @@ ih::arch::ibrew() {
 ih::arch::mbrew() {
   /opt/homebrew/bin/brew "${@}"
 }
+
+ih::arch::get_macos_version() {
+  sw_vers -productVersion | awk -F '.' '{ printf("%d.%d\n", $1, $2) }'
+}
+
+ih::arch::is_m3_mac() {
+  local hw_model=$(sysctl -n machdep.cpu.brand_string)
+  [[ "$hw_model" == *"M3"* ]]
+}
