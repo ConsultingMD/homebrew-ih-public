@@ -49,6 +49,19 @@ function ih::setup::core.rancher::test() {
     return 1
   fi
 
+  # Use vz instead of qemu on mac os 13.3 to resolve m3 mac issues.
+  # See: https://github.com/lima-vm/lima/issues/1996
+  # Also: https://github.com/rancher-sandbox/rancher-desktop/blob/fcffd3cc071a9414dcf03c895792b5142116ffd4/pkg/rancher-desktop/main/commandServer/settingsValidator.ts#L320-L330
+  local macos_version=$(ih::arch::get_macos_version)
+  if (( $(echo "$macos_version >= 13.3" | bc -l) )); then
+    if grep -q "<string>vz</string>" "$PLIST_DST"; then
+      ih::log::debug "The PLIST file already uses 'vz' for Virtualization."
+    else
+      ih::log::debug "The PLIST file needs to be updated to use 'vz'."
+      return 1
+    fi
+  fi
+
   return 0
 }
 
@@ -117,6 +130,15 @@ function ih::setup::core.rancher::install() {
       sudo ln -s $HOME/.rd/bin/docker /usr/local/bin/docker
       if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
         sudo ln -s $HOME/.rd/bin/docker-compose /usr/local/bin/docker-compose
+      fi
+    fi
+
+    # Use vz instead of qemu on mac os 13.3 to resolve m3 mac issues.
+    local macos_version=$(ih::arch::get_macos_version)
+    if (( $(echo "$macos_version >= 13.3" | bc -l) )); then
+      if ! grep -q "<string>vz</string>" "$PLIST_DST"; then
+        ih::log::debug "Updating PLIST to use 'vz' for Virtualization."
+        sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$PLIST_DST"
       fi
     fi
 

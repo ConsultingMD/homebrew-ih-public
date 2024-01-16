@@ -21,3 +21,7 @@ ih::arch::ibrew() {
 ih::arch::mbrew() {
   /opt/homebrew/bin/brew "${@}"
 }
+
+ih::arch::get_macos_version() {
+  sw_vers -productVersion | awk -F '.' '{ printf("%d.%d\n", $1, $2) }'
+}
