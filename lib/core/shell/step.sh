@@ -119,7 +119,7 @@ function ih::setup::core.shell::private::configure-bash() {
   fi
 
   # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
-  if [[ ! -e ~/.bash_profile || ! $(grep -q "source ~/.bashrc" ~/.bash_profile) ]]; then
+  if [[ ! -e ~/.bash_profile ]] || ! grep -q "source ~/.bashrc" ~/.bash_profile; then
     echo "Ensuring .bash_profile sources .bashrc..."
     echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> ~/.bash_profile
   fi
