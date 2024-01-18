@@ -90,6 +90,18 @@ function ih::setup::core.rancher::install() {
   if [ $RANCHER_INSTALLED -eq 0 ] || [ $IH_RANCHER_INSTALLED -eq 0 ]; then
     $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset)
   fi
+  
+  # If Rancher Desktop isn't installed via brew or ih-rancher, check for the app and remove it
+  # More info: https://docs.rancherdesktop.io/getting-started/installation/#installing-rancher-desktop-on-macos
+  RANCHER_APP_PATH="/Applications/Rancher Desktop.app"
+  if [ $RANCHER_INSTALLED -ne 0 ] && [ $IH_RANCHER_INSTALLED -ne 0 ] && [ -d "$RANCHER_APP_PATH" ]; then
+      echo "Rancher Desktop application found at $RANCHER_APP_PATH, removing..."
+      rm -rf "$RANCHER_APP_PATH"
+      if [ $? -ne 0 ]; then
+          ih::log::error "Failed to remove $RANCHER_APP_PATH. Please remove it manually."
+          return 1
+      fi
+  fi
 
   # Check if Rancher was installed manually with brew
   if [ $RANCHER_INSTALLED -eq 0 ]; then
