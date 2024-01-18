@@ -98,6 +98,18 @@ function ih::setup::core.rancher::install() {
     brew uninstall rancher
   fi
 
+  # Check if Rancher Desktop was installed without brew and uninstall it if it exists.
+  # More info: https://docs.rancherdesktop.io/getting-started/installation/#installing-rancher-desktop-on-macos
+  RANCHER_APP_PATH="/Applications/Rancher Desktop.app"
+  if [ -d "$RANCHER_APP_PATH" ]; then
+      echo "Removing existing Rancher Desktop application..."
+      rm -rf "$RANCHER_APP_PATH"
+      if [ $? -ne 0 ]; then
+          ih::log::error "Failed to remove $RANCHER_APP_PATH. Please remove it manually."
+          return 1
+      fi
+  fi
+
   CASKSUCCEEDED=1
   # Installation and configuration of Rancher Desktop
   for _ in 1 2 3; do
