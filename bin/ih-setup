@@ -301,11 +301,14 @@ function ih::private::state::is-step-installed() {
 }
 
 function ih::private::upgrade() {
-
   ih::log::info "Checking for updates..."
 
+  if ! brew update >/dev/null; then
+    ih::log::error "brew update failed"
+    return 1
+  fi
+
   local OUTDATED
-  brew update >/dev/null
   OUTDATED=$(brew outdated ih-core)
   if [ -z "$OUTDATED" ]; then
     ih::log::info "ih-setup is up-to-date"
@@ -313,8 +316,11 @@ function ih::private::upgrade() {
   fi
 
   ih::log::info "Upgrading ih-setup"
+  if ! brew upgrade ih-core; then
+    ih::log::error "brew upgrade ih-core failed"
+    return 1
+  fi
 
-  brew upgrade ih-core || exit 1
   ih-setup install
 }
 
