@@ -11,11 +11,22 @@ else
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+# The TAP_REPO variable is the internal reference that Homebrew uses for the tap.
+# Homebrew tap names are normalized to lowercase and omit the 'homebrew-' prefix.
+TAP_REPO="consultingmd/ih-public"
+
+# Check if the tap already exists, and if so, untap it to prevent issues caused by the old SSH url
+if brew tap | grep -q "$TAP_REPO"; then
+    echo "Homebrew tap $TAP_REPO already exists. Untapping..."
+    brew untap "$TAP_REPO"
+fi
+
+brew update
+
 echo "Installing ih-core formula..."
 echo "Sometimes the dependency downloads fail, possibly due to the VPN, so \
 I will retry installing a couple times if it fails."
 
-brew update
 brew tap ConsultingMD/homebrew-ih-public https://github.com/ConsultingMD/homebrew-ih-public.git
 
 SUCCEEDED=1
