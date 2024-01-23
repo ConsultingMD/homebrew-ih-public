@@ -56,24 +56,24 @@ function ih::setup::core.asdf::deps() {
 }
 
 function recreate_shims() {
-  echo "Removing existing asdf shims..."
+  ih::log::info "Removing existing asdf shims..."
   if [ -d "$HOME/.asdf/shims" ]; then
     rm -f "$HOME/.asdf/shims"/*
   else
-    echo "Shims directory not found."
+    ih::log::debug "Shims directory not found."
     return 1
   fi
 
-  echo "Generating new asdf shims..."
+  ih::log::info "Generating new asdf shims..."
   asdf reshim
 
   local EXIT_CODE=$?
   if [ $EXIT_CODE -ne 0 ]; then
-    echo "Failed to recreate asdf shims."
+    ih::log::error "Failed to recreate asdf shims."
     return $EXIT_CODE
   fi
 
-  echo "Successfully recreated asdf shims."
+  ih::log::info "Successfully recreated asdf shims."
 }
 
 function ih::setup::core.asdf::install() {
