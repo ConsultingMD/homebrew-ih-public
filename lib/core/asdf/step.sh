@@ -55,6 +55,28 @@ function ih::setup::core.asdf::deps() {
   echo "core.shell core.git"
 }
 
+function recreate_shims {
+  echo "Removing existing asdf shims..."
+  if [ -d "$HOME/.asdf/shims" ]; then
+    rm -f "$HOME/.asdf/shims"/*
+  else
+    echo "Shims directory not found."
+    return 1
+  fi
+
+  # Generate new shims
+  echo "Generating new asdf shims..."
+  asdf reshim
+
+  local EXIT_CODE=$?
+  if [ $EXIT_CODE -ne 0 ]; then
+    echo "Failed to recreate asdf shims."
+    return $EXIT_CODE
+  fi
+
+  echo "Successfully recreated asdf shims."
+}
+
 function ih::setup::core.asdf::install() {
 
   if ! command -v asdf; then
@@ -95,6 +117,8 @@ function ih::setup::core.asdf::install() {
       asdf global "$PLUGIN" "$VERSION"
     fi
   done <<<"$DESIRED_PLUGINS"
+
+  recreate_shims
 
   ih::log::info "Copying augment file for shell"
   cp -f "$ASDF_SH_TEMPLATE_PATH" "$ASDF_SH_PATH"
