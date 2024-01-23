@@ -55,7 +55,7 @@ function ih::setup::core.asdf::deps() {
   echo "core.shell core.git"
 }
 
-function recreate_shims {
+function recreate_shims() {
   echo "Removing existing asdf shims..."
   if [ -d "$HOME/.asdf/shims" ]; then
     rm -f "$HOME/.asdf/shims"/*
@@ -64,7 +64,6 @@ function recreate_shims {
     return 1
   fi
 
-  # Generate new shims
   echo "Generating new asdf shims..."
   asdf reshim
 
