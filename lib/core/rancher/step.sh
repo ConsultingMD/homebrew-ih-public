@@ -114,13 +114,12 @@ function ih::setup::core.rancher::install() {
   # Installation and configuration of Rancher Desktop
   for _ in 1 2 3; do
 
-    # Check if we have a Mac M1 and the terminal is running  over x86
-    if [[ $(sysctl -n sysctl.proc_translated) -eq 1 ]] && [ $(arch) = "i386" ]; then
-      arch -arm64 -c brew reinstall ih-rancher
+    # Check if we have a M1 Mac
+    if [ "$(uname -m)" = "arm64" ]; then
+      arch -arm64 brew reinstall ih-rancher
     else
       brew reinstall ih-rancher
     fi
-
     CASKSUCCEEDED=$?
     if [ $CASKSUCCEEDED -eq 0 ]; then
       break
