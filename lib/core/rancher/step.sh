@@ -70,25 +70,22 @@ function ih::setup::core.rancher::deps() {
 }
 
 function ih::setup::core.rancher::install() {
-  # Clean up old docker install to prevent "Permission denied" error
+  # Clean up old docker symlink to prevent "Permission denied" error
   # More details: https://stackoverflow.com/a/75141533
-  if [ -d "/usr/local/lib/docker" ] || [ -d "$HOME/.docker" ]; then
-    ih::ask::confirm "Old Docker installation detected. Would you like to clean it up to prevent conflicts?"
-    if [ $? -eq 0 ]; then
-      ih::log::info "Cleaning up Docker installation..."
-
-      sudo rm -rf /usr/local/lib/docker
-      sudo rm -rf /usr/local/bin/docker
-      sudo rm -rf /usr/local/bin/docker-compose
-      sudo rm -rf "$HOME/.docker"
+  local SYMLINK_PATH="/usr/local/lib/docker/cli-plugins"
+  if [ -L "$SYMLINK_PATH" ]; then
+    local TARGET_PATH=$(readlink "$SYMLINK_PATH")
+    if [ ! -d "$TARGET_PATH" ]; then
+      sudo rm -f "$SYMLINK_PATH"
+      ih::log::info "Removed broken symlink from old docker install at $SYMLINK_PATH"
 
       brew cleanup
-
-      if [ -d "/Applications/Docker.app" ]; then
-        ih::log::info "Removing Docker Application..."
-        sudo rm -rf /Applications/Docker.app
-      fi
+      ih::log::info "Homebrew cleanup completed."
+    else
+      ih::log::debug "Symlink at $SYMLINK_PATH is valid. No action required."
     fi
+  else
+    ih::log::debug "Symlink at $SYMLINK_PATH does not exist. No action required."
   fi
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
