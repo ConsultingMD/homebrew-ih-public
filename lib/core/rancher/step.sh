@@ -70,12 +70,32 @@ function ih::setup::core.rancher::deps() {
 }
 
 function ih::setup::core.rancher::install() {
-  local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
+  # Clean up old docker install to prevent "Permission denied" error
+  # More details: https://stackoverflow.com/a/75141533
+  if [ -d "/usr/local/lib/docker" ] || [ -d "$HOME/.docker" ]; then
+    ih::ask::confirm "Old Docker installation detected. Would you like to clean it up to prevent conflicts?"
+    if [ $? -eq 0 ]; then
+      ih::log::info "Cleaning up Docker installation..."
+
+      sudo rm -rf /usr/local/lib/docker
+      sudo rm -rf /usr/local/bin/docker
+      sudo rm -rf /usr/local/bin/docker-compose
+      sudo rm -rf "$HOME/.docker"
+
+      brew cleanup
+
+      if [ -d "/Applications/Docker.app" ]; then
+        ih::log::info "Removing Docker Application..."
+        sudo rm -rf /Applications/Docker.app
+      fi
+    fi
+  fi
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
   echo "A configuration file for Rancher Desktop will be copied to your system"
   echo "You may be required to enter your password"
+  local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
   sudo cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$PLIST_DST"
 
   # Check if Rancher was installed manually
