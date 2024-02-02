@@ -70,12 +70,25 @@ function ih::setup::core.rancher::deps() {
 }
 
 function ih::setup::core.rancher::install() {
-  local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
+  # Clean up old docker symlink to prevent "Permission denied" error
+  # More details: https://stackoverflow.com/a/75141533
+  local SYMLINK_PATH="/usr/local/lib/docker/cli-plugins"
+  if [ -L "$SYMLINK_PATH" ]; then
+    local TARGET_PATH=$(readlink "$SYMLINK_PATH")
+    if [ ! -d "$TARGET_PATH" ]; then
+      sudo rm -f "$SYMLINK_PATH"
+      ih::log::info "Removed broken symlink from old docker install at $SYMLINK_PATH"
+
+      brew cleanup
+      ih::log::info "Homebrew cleanup completed."
+    fi
+  fi
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
   echo "A configuration file for Rancher Desktop will be copied to your system"
   echo "You may be required to enter your password"
+  local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
   sudo cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$PLIST_DST"
 
   # Check if Rancher was installed manually
