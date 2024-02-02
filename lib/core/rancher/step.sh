@@ -81,11 +81,7 @@ function ih::setup::core.rancher::install() {
 
       brew cleanup
       ih::log::info "Homebrew cleanup completed."
-    else
-      ih::log::debug "Symlink at $SYMLINK_PATH is valid. No action required."
     fi
-  else
-    ih::log::debug "Symlink at $SYMLINK_PATH does not exist. No action required."
   fi
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
