@@ -49,19 +49,6 @@ function ih::setup::core.rancher::test() {
     return 1
   fi
 
-  # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
-  # More details: https://github.com/lima-vm/lima/issues/1996
-  local macos_version=$(ih::arch::get_macos_version)
-  if ih::arch::is_m3_mac; then
-    if (( $(echo "$macos_version < 13.3" | bc -l) )); then
-      ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
-      return 1
-    elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
-      ih::log::debug "The PLIST file needs to be updated to use 'vz' for M3 Macs."
-      return 1
-    fi
-  fi
-
   return 0
 }
 
@@ -154,18 +141,6 @@ function ih::setup::core.rancher::install() {
       sudo ln -s $HOME/.rd/bin/docker /usr/local/bin/docker
       if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
         sudo ln -s $HOME/.rd/bin/docker-compose /usr/local/bin/docker-compose
-      fi
-    fi
-
-    # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
-    # More details: https://github.com/lima-vm/lima/issues/1996
-    if ih::arch::is_m3_mac; then
-      if (( $(echo "$macos_version < 13.3" | bc -l) )); then
-        ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
-        return 1 # Abort the installation for M3 Macs
-      elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
-        ih::log::debug "Updating PLIST to use 'vz' for Virtualization for M3 Macs."
-        sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$PLIST_DST"
       fi
     fi
 
