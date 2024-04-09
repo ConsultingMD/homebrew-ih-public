@@ -15,7 +15,6 @@ class IhCore < Formula
   depends_on "jq"
   depends_on "yq"
   depends_on "go-jira"
-  depends_on "virtualenv"
   depends_on "envconsul"
   depends_on "openssl@3"
   depends_on "coreutils"
