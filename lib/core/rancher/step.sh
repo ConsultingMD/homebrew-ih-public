@@ -55,7 +55,6 @@ function ih::setup::core.rancher::test() {
   # More details: https://github.com/lima-vm/lima/issues/1996
   if ih::arch::is_m2_or_m3_mac; then
     if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
-      ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
       return 1
     elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
       ih::log::debug "The PLIST file needs to be updated to use 'vz' for M3 Macs."
@@ -165,7 +164,6 @@ function ih::setup::core.rancher::install() {
     # More details: https://github.com/lima-vm/lima/issues/1996
     if ih::arch::is_m2_or_m3_mac; then
       if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
-        ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
         return 1 # Abort the installation for M3 Macs
       elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
         ih::log::debug "Updating PLIST to use 'vz' for Virtualization for M3 Macs."
