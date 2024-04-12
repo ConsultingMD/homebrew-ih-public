@@ -27,8 +27,8 @@ ih::arch::get_macos_version() {
 }
 
 ih::arch::check_macos_version_compatibility() {
-  local current_version="$1"
-  local required_version="$2"
+  local required_version="$1"
+  local current_version=$(ih::arch::get_macos_version)
 
   # Splitting the current and required versions into major and minor components
   IFS='.' read -r current_major current_minor _ <<< "$current_version"
