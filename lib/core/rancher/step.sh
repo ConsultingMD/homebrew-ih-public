@@ -59,7 +59,9 @@ function ih::setup::core.rancher::test() {
     elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
       ih::log::debug "The PLIST file needs to be updated to use 'vz' for M3 Macs."
       return 1
-      # TODO: figure out how to check virtual-machine.mount.type (there's no rdctl get)
+    elif ! grep -q "<string>virtiofs</string>" "$PLIST_DST"; then
+      ih::log::debug "The PLIST file needs to be updated to use 'virtiofs' for M3 Macs."
+      return 1
     fi
   fi
 
@@ -167,7 +169,7 @@ function ih::setup::core.rancher::install() {
       elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
         ih::log::debug "Updating PLIST to use 'vz' for Virtualization for M3 Macs."
         sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$PLIST_DST"
-        $HOME/.rd/bin/rdctl set --experimental.virtual-machine.mount.type virtiofs
+        sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$PLIST_DST"
       fi
     fi
 
