@@ -167,7 +167,7 @@ function ih::setup::core.rancher::install() {
       elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
         ih::log::debug "Updating PLIST to use 'vz' for Virtualization for M3 Macs."
         sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$PLIST_DST"
-        rdctl set --experimental.virtual-machine.mount.type virtiofs
+        $HOME/.rd/bin/rdctl set --experimental.virtual-machine.mount.type virtiofs
       fi
     fi
 
