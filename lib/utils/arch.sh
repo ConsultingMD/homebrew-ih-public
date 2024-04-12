@@ -26,6 +26,28 @@ ih::arch::get_macos_version() {
   sw_vers -productVersion | awk -F '.' '{ printf("%d.%d\n", $1, $2) }'
 }
 
+ih::arch::check_macos_version_compatibility() {
+  local current_version="$1"
+  local required_version="$2"
+
+  # Splitting the current and required versions into major and minor components
+  IFS='.' read -r current_major current_minor _ <<< "$current_version"
+  IFS='.' read -r required_major required_minor _ <<< "$required_version"
+
+  # Ensure variables are integers (default to 0 if empty for robust comparison)
+  current_major=${current_major:-0}
+  current_minor=${current_minor:-0}
+  required_major=${required_major:-0}
+  required_minor=${required_minor:-0}
+
+  if (( current_major > required_major )) || { (( current_major == required_major )) && (( current_minor >= required_minor )); }; then
+    return 0 # meets minimum requirement
+  else
+    ih::log::error "macOS version $required_version or higher is required. Current version: $current_version."
+    return 1
+  fi
+}
+
 ih::arch::is_m2_or_m3_mac() {
   local hw_model=$(sysctl -n machdep.cpu.brand_string)
   [[ "$hw_model" == *"M2"* ]] || [[ "$hw_model" == *"M3"* ]]

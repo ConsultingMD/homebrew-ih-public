@@ -12,6 +12,8 @@ RANCHER_AUGMENT_DST="$IH_DEFAULT_DIR/11_rancher.sh"
 PLIST_SRC="$IH_CORE_LIB_DIR/core/rancher/io.rancherdesktop.profile.defaults.plist"
 PLIST_DST="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
+REQUIRED_APPLE_SILICON_MACOS_VERSION="13.3"
+
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
@@ -51,9 +53,9 @@ function ih::setup::core.rancher::test() {
 
   # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
   # More details: https://github.com/lima-vm/lima/issues/1996
-  local macos_version=$(ih::arch::get_macos_version)
   if ih::arch::is_m2_or_m3_mac; then
-    if (( $(echo "$macos_version < 13.3" | bc -l) )); then
+    local current_macos_version=$(ih::arch::get_macos_version)
+    if ! ih::arch::check_macos_version_compatibility "$current_macos_version" "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
       ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
       return 1
     elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
@@ -163,7 +165,8 @@ function ih::setup::core.rancher::install() {
     # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
     # More details: https://github.com/lima-vm/lima/issues/1996
     if ih::arch::is_m2_or_m3_mac; then
-      if (( $(echo "$macos_version < 13.3" | bc -l) )); then
+      local current_macos_version=$(ih::arch::get_macos_version)
+      if ! ih::arch::check_macos_version_compatibility "$current_macos_version" "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
         ih::log::error "macOS version 13.3 or higher is required for M3 Macs."
         return 1 # Abort the installation for M3 Macs
       elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
