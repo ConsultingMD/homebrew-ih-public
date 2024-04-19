@@ -6,7 +6,7 @@
     <key>Label</key>
     <string>com.includedhealth.auto-update-repositories</string>
     <key>Program</key>
-    <string>$IH_HOME/homebrew-ih-public/lib/core/toolrepos/autoupdate/ih_auto_update_repositories.sh</string>
+    <string>$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/ih_auto_update_repositories.sh</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>IH_HOME</key>

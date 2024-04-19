@@ -109,10 +109,12 @@ function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
 
   # shellcheck disable=SC2001
   GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
+  # shellcheck disable=SC2001
+  IH_CORE_LIB_DIR_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
 
-  sed "s/\$IH_HOME/${GR_HOME_ESC}/g" "${THIS_DIR}/${PLIST_FILE}.plist" >"${LAUNCH_AGENTS_PATH}"
+  sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g" "${THIS_DIR}/${PLIST_FILE}.plist" >"${LAUNCH_AGENTS_PATH}"
 
-  if launchctl list | grep -q ${PLIST_FILE}; then
+  if launchctl list | grep -e ${PLIST_FILE}; then
     launchctl unload "${LAUNCH_AGENTS_PATH}"
   fi
 
