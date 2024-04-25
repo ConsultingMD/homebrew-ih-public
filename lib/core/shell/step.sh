@@ -104,6 +104,18 @@ function ih::setup::core.shell::install() {
   export IH_WANT_RE_SOURCE=1
 }
 
+function ih::setup::core.shell::private::ensure_correct_ownership() {
+  local file="$1"
+  if [[ -e "$file" ]]; then
+    local current_owner
+    current_owner=$(stat -f '%Su' "$file") # For macOS
+    if [[ "$current_owner" != "$(whoami)" ]]; then
+      echo "Changing ownership of $file to the current user..."
+      sudo chown "$(whoami)" "$file"
+    fi
+  fi
+}
+
 # shellcheck disable=SC2016
 BOOTSTRAP_SOURCE_LINE='
 # This loads the Included Health shell augmentations into your interactive shell
@@ -117,6 +129,10 @@ function ih::setup::core.shell::private::configure-bash() {
     echo "Creating new ~/.bashrc"
     touch ~/.bashrc
   fi
+
+  # prevent permission errors from files accidentally created as root
+  ih::setup::core.shell::private::ensure_correct_ownership ~/.bash_profile
+  ih::setup::core.shell::private::ensure_correct_ownership ~/.bashrc
 
   # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
   if [[ ! -e ~/.bash_profile ]] || ! grep -q "source ~/.bashrc" ~/.bash_profile; then
@@ -146,6 +162,9 @@ function ih::setup::core.shell::private::configure-zshrc() {
     echo "Creating new ~/.zshrc file"
     touch "${HOME}/.zshrc"
   fi
+
+  # prevent permission errors from files accidentally created as root
+  ih::setup::core.shell::private::ensure_correct_ownership ~/.zshrc
 
   # apply fix to support brew completions in zsh: https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh
   chmod -R go-w "$(brew --prefix)/share"
