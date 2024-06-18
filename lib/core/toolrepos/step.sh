@@ -54,17 +54,19 @@ function ih::setup::core.toolrepos::test-or-install() {
     git clone git@github.com:ConsultingMD/kore.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/kore" || return
   fi
 
-  local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
-  local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
-
-  PLIST_FILE="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
-  if [ ! -f "$PLIST_FILE" ]; then
+  local plist_src_path="$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/com.includedhealth.auto-update-repositories.plist"
+  local plist_tgt_path="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
+  if [ ! -f "$plist_tgt_path" ] || ! ih::file::check-file-in-sync "$plist_src_path" "$plist_tgt_path"; then
     if [ "$1" == "test" ]; then
       return 1
     fi
+    cp -f "$plist_src_path" "$plist_tgt_path"
+    ih::log::info "Plist file updated."
     ih::setup::core.toolrepos::set-auto-update-repositories-job
   fi
 
+  local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
+  local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
   if ! ih::file::check-file-in-sync "$toolsrepo_src_path" "$toolsrepo_tgt_path"; then
     if [ "$1" = "test" ]; then
       return 1
@@ -101,11 +103,9 @@ manually in order to have pre-commit configured correctly."
 }
 
 function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
-
   local THIS_DIR="$IH_CORE_LIB_DIR/core/toolrepos/autoupdate"
-
-  PLIST_FILE="com.includedhealth.auto-update-repositories"
-  LAUNCH_AGENTS_PATH="${HOME}/Library/LaunchAgents/${PLIST_FILE}.plist"
+  local PLIST_FILE="com.includedhealth.auto-update-repositories"
+  local LAUNCH_AGENTS_PATH="${HOME}/Library/LaunchAgents/${PLIST_FILE}.plist"
 
   # shellcheck disable=SC2001
   GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
@@ -120,4 +120,5 @@ function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
 
   launchctl load "${LAUNCH_AGENTS_PATH}"
 
+  ih::log::info "Plist file loaded successfully: $LAUNCH_AGENTS_PATH"
 }
