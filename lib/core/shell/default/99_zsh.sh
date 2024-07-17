@@ -44,10 +44,10 @@ if [[ ${#PROMPT} -lt 10 ]]; then
 fi
 
 # Open SSL management
-export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
-export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
-export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
-export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
+export PATH="$(brew --prefix openssl@1.1)/bin:$PATH"
+export LDFLAGS="-L$(brew --prefix openssl@1.1)/lib"
+export CPPFLAGS="-I$(brew --prefix openssl@1.1)/include"
+export PKG_CONFIG_PATH="$(brew --prefix openssl@1.1)/lib/pkgconfig"
 
 # Rancher desktop added to the PATH
 export PATH=$PATH:/Users/$USER/.rd/bin
