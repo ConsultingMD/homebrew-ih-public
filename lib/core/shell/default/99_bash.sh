@@ -76,10 +76,11 @@ if [[ "$PS1" = "\\s-\\v\\\$ " ]]; then
 fi
 
 # Open SSL management
-export PATH="$(brew --prefix openssl@1.1)/bin:$PATH"
-export LDFLAGS="-L$(brew --prefix openssl@1.1)/lib"
-export CPPFLAGS="-I$(brew --prefix openssl@1.1)/include"
-export PKG_CONFIG_PATH="$(brew --prefix openssl@1.1)/lib/pkgconfig"
+BREW_PREFIX_OPENSSL="$(brew --prefix openssl@1.1)"
+export PATH="$BREW_PREFIX_OPENSSL/bin:$PATH"
+export LDFLAGS="-L$BREW_PREFIX_OPENSSL/lib"
+export CPPFLAGS="-I$BREW_PREFIX_OPENSSL/include"
+export PKG_CONFIG_PATH="$BREW_PREFIX_OPENSSL/lib/pkgconfig"
 ##########################################################
 
 # Rancher desktop added to the PATH
