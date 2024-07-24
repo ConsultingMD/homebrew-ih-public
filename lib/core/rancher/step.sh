@@ -36,7 +36,6 @@ function ih::setup::core.rancher::create_temp_plist() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
-  # Create and modify the temporary PLIST file
   ih::setup::core.rancher::create_temp_plist
   if [ $? -ne 0 ]; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
@@ -107,7 +106,6 @@ function ih::setup::core.rancher::install() {
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
-  # Create and modify the temporary PLIST file
   ih::setup::core.rancher::create_temp_plist
   if [ $? -ne 0 ]; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
