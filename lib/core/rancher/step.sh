@@ -14,9 +14,35 @@ PLIST_DST="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
 REQUIRED_APPLE_SILICON_MACOS_VERSION="13.3"
 
+# Create a temporary plist file with our modifications, to allow for sharing logic between test/install.
+# This allows us to avoid making a lot of different versions of the plist file.
+function ih::setup::core.rancher::create_temp_plist() {
+  TEMP_PLIST_DST=$(mktemp /tmp/io.rancherdesktop.profile.defaults.XXXXXX)
+  cp -f "$PLIST_SRC" "$TEMP_PLIST_DST"
+
+  # Use vz instead of qemu on M2+ macs to resolve issues.
+  # More details: https://github.com/lima-vm/lima/issues/1996
+  if ih::arch::is_m2_or_m3_mac; then
+    if ! grep -q "<string>vz</string>" "$TEMP_PLIST_DST"; then
+      ih::log::debug "Updating temporary PLIST to use 'vz' and 'virtiofs' for Virtualization for M2+ Macs."
+      sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$TEMP_PLIST_DST"
+      sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$TEMP_PLIST_DST"
+    fi
+  fi
+
+  echo "$TEMP_PLIST_DST"
+  return 0
+}
+
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
+  # Create and modify the temporary PLIST file
+  TEMP_PLIST_DST=$(ih::setup::core.rancher::create_temp_plist)
+  if [ $? -ne 0 ]; then
+    ih::log::error "Failed to create and modify the temporary PLIST file."
+    return 1
+  fi
 
   # Check if Rancher was installed manually
   brew list rancher >/dev/null 2>&1
@@ -46,21 +72,14 @@ function ih::setup::core.rancher::test() {
     return 1
   fi
 
-  if ! ih::file::check-file-in-sync "$PLIST_SRC" "$PLIST_DST"; then
+  if ! ih::file::check-file-in-sync "$TEMP_PLIST_DST" "$PLIST_DST"; then
     ih::log::debug "The PLIST file is out of sync."
     return 1
   fi
 
-  # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
-  # More details: https://github.com/lima-vm/lima/issues/1996
+  # VZ requires macOS >=13.3
   if ih::arch::is_m2_or_m3_mac; then
     if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
-      return 1
-    elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
-      ih::log::debug "The PLIST file needs to be updated to use 'vz' for M3 Macs."
-      return 1
-    elif ! grep -q "<string>virtiofs</string>" "$PLIST_DST"; then
-      ih::log::debug "The PLIST file needs to be updated to use 'virtiofs' for M3 Macs."
       return 1
     fi
   fi
@@ -89,10 +108,24 @@ function ih::setup::core.rancher::install() {
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
+  # Create and modify the temporary PLIST file
+  TEMP_PLIST_DST=$(ih::setup::core.rancher::create_temp_plist)
+  if [ $? -ne 0 ]; then
+    ih::log::error "Failed to create and modify the temporary PLIST file."
+    return 1
+  fi
+
+  # Check macOS version compatibility with VZ for M2+ Macs (VZ requires macOS >=13.3)
+  if ih::arch::is_m2_or_m3_mac; then
+    if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
+      ih::log::error "macOS version is not compatible for M3 Macs."
+      return 1 # Abort the installation for M3 Macs
+    fi
+  fi
+
   echo "A configuration file for Rancher Desktop will be copied to your system"
   echo "You may be required to enter your password"
-  local THIS_DIR="$IH_CORE_LIB_DIR/core/rancher"
-  sudo cp "${THIS_DIR}/io.rancherdesktop.profile.defaults.plist" "$PLIST_DST"
+  sudo cp "$TEMP_PLIST_DST" "$PLIST_DST"
 
   # Check if Rancher was installed manually
   brew list rancher >/dev/null 2>&1
@@ -157,18 +190,6 @@ function ih::setup::core.rancher::install() {
       sudo ln -s $HOME/.rd/bin/docker /usr/local/bin/docker
       if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
         sudo ln -s $HOME/.rd/bin/docker-compose /usr/local/bin/docker-compose
-      fi
-    fi
-
-    # Use vz (requires macOS >=13.3) instead of qemu on M3 macs to resolve issues.
-    # More details: https://github.com/lima-vm/lima/issues/1996
-    if ih::arch::is_m2_or_m3_mac; then
-      if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
-        return 1 # Abort the installation for M3 Macs
-      elif ! grep -q "<string>vz</string>" "$PLIST_DST"; then
-        ih::log::debug "Updating PLIST to use 'vz' for Virtualization for M3 Macs."
-        sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$PLIST_DST"
-        sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$PLIST_DST"
       fi
     fi
 
