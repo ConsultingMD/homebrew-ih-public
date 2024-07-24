@@ -14,6 +14,8 @@ PLIST_DST="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
 REQUIRED_APPLE_SILICON_MACOS_VERSION="13.3"
 
+TEMP_PLIST_DST=""  # filled by create_temp_plist
+
 # Create a temporary plist file with our modifications, to allow for sharing logic between test/install.
 # This allows us to avoid making a lot of different versions of the plist file.
 function ih::setup::core.rancher::create_temp_plist() {
@@ -30,7 +32,6 @@ function ih::setup::core.rancher::create_temp_plist() {
     fi
   fi
 
-  echo "$TEMP_PLIST_DST"
   return 0
 }
 
@@ -38,7 +39,7 @@ function ih::setup::core.rancher::create_temp_plist() {
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
   # Create and modify the temporary PLIST file
-  TEMP_PLIST_DST=$(ih::setup::core.rancher::create_temp_plist)
+  ih::setup::core.rancher::create_temp_plist
   if [ $? -ne 0 ]; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
     return 1
@@ -109,7 +110,7 @@ function ih::setup::core.rancher::install() {
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
   # Create and modify the temporary PLIST file
-  TEMP_PLIST_DST=$(ih::setup::core.rancher::create_temp_plist)
+  ih::setup::core.rancher::create_temp_plist
   if [ $? -ne 0 ]; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
     return 1
@@ -118,7 +119,7 @@ function ih::setup::core.rancher::install() {
   # Check macOS version compatibility with VZ for M2+ Macs (VZ requires macOS >=13.3)
   if ih::arch::is_m2_or_m3_mac; then
     if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
-      ih::log::error "macOS version is not compatible for M3 Macs."
+      ih::log::error "macOS version is not compatible for M2+ Macs."
       return 1 # Abort the installation for M3 Macs
     fi
   fi
