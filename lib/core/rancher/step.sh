@@ -25,11 +25,9 @@ function ih::setup::core.rancher::create_temp_plist() {
   # Use vz instead of qemu on M2+ macs to resolve issues.
   # More details: https://github.com/lima-vm/lima/issues/1996
   if ih::arch::is_m2_or_m3_mac; then
-    if ! grep -q "<string>vz</string>" "$TEMP_PLIST_DST"; then
-      ih::log::debug "Updating temporary PLIST to use 'vz' and 'virtiofs' for Virtualization for M2+ Macs."
-      sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$TEMP_PLIST_DST"
-      sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$TEMP_PLIST_DST"
-    fi
+    ih::log::debug "Updating temporary PLIST to use 'vz' and 'virtiofs' for Virtualization for M2+ Macs."
+    sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$TEMP_PLIST_DST"
+    sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$TEMP_PLIST_DST"
   fi
 
   return 0
