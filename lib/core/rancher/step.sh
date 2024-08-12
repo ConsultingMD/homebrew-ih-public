@@ -123,6 +123,8 @@ function ih::setup::core.rancher::install() {
   echo "A configuration file for Rancher Desktop will be copied to your system"
   echo "You may be required to enter your password"
   sudo cp "$TEMP_PLIST_DST" "$PLIST_DST"
+  sudo chown $USER:staff "$PLIST_DST"
+  sudo chmod 644 "$PLIST_DST"
 
   # Check if Rancher was installed manually
   brew list rancher >/dev/null 2>&1
