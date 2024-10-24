@@ -1,5 +1,5 @@
 class IhCore < Formula
-  VERSION="0.1.61"
+  VERSION="0.1.62"
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
@@ -16,7 +16,6 @@ class IhCore < Formula
   depends_on "yq"
   depends_on "go-jira"
   depends_on "envconsul"
-  depends_on "openssl@1.1"  # required by ruby 2.7.2
   depends_on "openssl@3"
   depends_on "coreutils"
   depends_on "yamllint"

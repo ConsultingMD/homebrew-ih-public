@@ -44,7 +44,8 @@ if [[ ${#PROMPT} -lt 10 ]]; then
 fi
 
 # Open SSL management
-BREW_PREFIX_OPENSSL="$(brew --prefix openssl@1.1)"
+# https://github.com/rbenv/ruby-build/discussions/2185#discussioncomment-5588486
+BREW_PREFIX_OPENSSL="$(brew --prefix openssl@3)"
 export PATH="$BREW_PREFIX_OPENSSL/bin:$PATH"
 export LDFLAGS="-L$BREW_PREFIX_OPENSSL/lib"
 export CPPFLAGS="-I$BREW_PREFIX_OPENSSL/include"
