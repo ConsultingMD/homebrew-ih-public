@@ -80,7 +80,7 @@ function ih::setup::core.asdf::install() {
 
   if ! command -v asdf; then
     ih::log::info "Cloning asdf into $HOME/.asdf"
-    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.9.0
+    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.14.1
     # If this is set it messes up asdf initialization
     unset ASDF_DIR
     # shellcheck disable=SC1091
