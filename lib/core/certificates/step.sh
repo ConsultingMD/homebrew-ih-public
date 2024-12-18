@@ -2,6 +2,13 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
+CA_DIR="$HOME/.ih/certs"
+SOURCE_CA_PATH="$IH_CORE_LIB_DIR/core/certificates/certs/grand_rounds_chained_ca.pem"
+INSTALLED_CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
+SOURCE_CERT_SCRIPT="$IH_CORE_LIB_DIR/core/certificates/default/11_certificates.sh"
+INSTALLED_CERT_SCRIPT="$IH_DEFAULT_DIR/11_certificates.sh"
+MOZILLA_PATH="$CA_DIR/mozilla.pem"
+
 function ih::setup::core.certificates::help() {
   # shellcheck disable=SC2016
   echo 'Trust the certificates used by the VPN DLP
@@ -24,12 +31,20 @@ function ih::setup::core.certificates::help() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.certificates::test() {
-
-  if [ ! -f "$IH_DEFAULT_DIR/11_certificates.sh" ]; then
+  if [ ! -f "$INSTALLED_CERT_SCRIPT" ]; then
     return 1
   fi
 
-  if [ ! -d "$HOME/.ih/certs" ]; then
+  if [ ! -d "$CA_DIR" ]; then
+    return 1
+  fi
+
+  # Compare both the CA cert and the certificates script with their sources
+  if [ ! -f "$INSTALLED_CA_PATH" ] || ! diff -q "$SOURCE_CA_PATH" "$INSTALLED_CA_PATH" >/dev/null; then
+    return 1
+  fi
+
+  if ! diff -q "$SOURCE_CERT_SCRIPT" "$INSTALLED_CERT_SCRIPT" >/dev/null; then
     return 1
   fi
 
@@ -42,10 +57,6 @@ function ih::setup::core.certificates::deps() {
 }
 
 function ih::setup::core.certificates::install() {
-
-  local CA_DIR="$HOME/.ih/certs"
-  local CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
-  local MOZILLA_PATH="$CA_DIR"/mozilla.pem
   mkdir -p "$CA_DIR"
   ih::log::info "Copying internal CA certs into $CA_DIR"
 
@@ -85,7 +96,7 @@ function ih::setup::core.certificates::install() {
     return 1
   fi
   # Append our DLP certs to the mozilla bundle.
-  cat "$CA_PATH" >>"$MOZILLA_PATH"
+  cat "$INSTALLED_CA_PATH" >>"$MOZILLA_PATH"
 
   # Download a CA cert that AWS sometimes uses, which is not
   # included in the Mozilla bundle. This affects a few people
@@ -107,7 +118,7 @@ function ih::setup::core.certificates::install() {
   OPENSSL_FOUND=$?
   if [[ "$OPENSSL_FOUND" -eq 0 ]]; then
     ih::log::info "Copying internal CA cert to brew OpenSSL certs..."
-    cp "$CA_PATH" "$OPENSSL_PATH"/gr_root_ca.pem
+    cp "$INSTALLED_CA_PATH" "$OPENSSL_PATH"/gr_root_ca.pem
     REHASH_PATH=$(brew info openssl | grep -oE "/usr/local/opt/openssl.*")
     $REHASH_PATH
   fi
@@ -115,5 +126,5 @@ function ih::setup::core.certificates::install() {
   ih::log::info "Rehashing brew OpenSSL certs..."
   "$(brew --prefix)"/opt/openssl/bin/c_rehash
 
-  cp -f "$IH_CORE_LIB_DIR/core/certificates/default/11_certificates.sh" "$IH_DEFAULT_DIR/11_certificates.sh"
+  cp -f "$SOURCE_CERT_SCRIPT" "$INSTALLED_CERT_SCRIPT"
 }
