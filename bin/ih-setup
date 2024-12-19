@@ -52,9 +52,17 @@ declare -a IH_SETUP_DOMAINS
 # they are for the user to customize.
 export IH_CUSTOM_DIR="$IH_DIR/custom"
 
+if [ ! -d "$IH_CUSTOM_DIR" ]; then
+  mkdir "$IH_CUSTOM_DIR"
+fi
+
 # The directory where IH shell default files are to be installed
 # These are files that may be overwritten during an upgrade
 export IH_DEFAULT_DIR="$IH_DIR/default"
+
+if [ ! -d "$IH_DEFAULT_DIR" ]; then
+  mkdir "$IH_DEFAULT_DIR"
+fi
 
 # If a step sets this then the ih-setup script will
 # write out a warning to the user that they should
