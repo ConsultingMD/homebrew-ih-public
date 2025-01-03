@@ -14,9 +14,17 @@ set +o hashall
 
 # The directory where ih-core has been installed
 export IH_CORE_DIR
-IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
+HOMEBREW_PREFIX=$(brew --prefix)
+if [[ "$0" == ${HOMEBREW_PREFIX}* ]]; then
+    # We're running from a Homebrew installation, use the stable symlink
+    IH_CORE_DIR="${HOMEBREW_PREFIX}/opt/ih-core"
+else
+    # We're probably running from source/test environment
+    IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
+fi
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
+
 # Source utility functions
 for f in "$IH_CORE_LIB_DIR"/utils/*; do
   # shellcheck source=/dev/null
