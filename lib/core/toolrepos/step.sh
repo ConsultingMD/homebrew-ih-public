@@ -16,7 +16,7 @@ function ih::setup::core.toolrepos::test() {
 }
 
 function ih::setup::core.toolrepos::deps() {
-  echo "core.github"
+  echo "core.git"
 }
 
 function ih::setup::core.toolrepos::install() {
