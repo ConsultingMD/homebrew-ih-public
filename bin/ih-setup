@@ -223,7 +223,13 @@ function ih::private::apply-to-steps() {
 
   if [[ $STEP_ERROR -gt 0 ]]; then
     if [[ $COMMAND = 'test-step' ]]; then
-      ih::log::error "One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
+      if [[ ${#} -eq 0 ]]; then
+        # When checking all steps
+        ih::log::error "One or more steps need to be installed. Re-run using 'ih-setup -v install' for more details."
+      else
+        # When checking specific steps
+        ih::log::error "One or more dependencies missing. Re-run using 'ih-setup -v install' for more details."
+      fi
     else
       ih::log::error "Re-run using 'ih-setup -v install' for more details."
     fi
