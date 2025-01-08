@@ -24,7 +24,7 @@ function ih::setup::core.rancher::create_temp_plist() {
 
   # Use vz instead of qemu on M2+ macs to resolve issues.
   # More details: https://github.com/lima-vm/lima/issues/1996
-  if ih::arch::is_m2_or_m3_mac; then
+  if ih::arch::is_recent_apple_silicon; then
     ih::log::debug "Updating temporary PLIST to use 'vz' and 'virtiofs' for Virtualization for M2+ Macs."
     sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$TEMP_PLIST_DST"
     sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$TEMP_PLIST_DST"
@@ -76,7 +76,7 @@ function ih::setup::core.rancher::test() {
   fi
 
   # VZ requires macOS >=13.3
-  if ih::arch::is_m2_or_m3_mac; then
+  if ih::arch::is_recent_apple_silicon; then
     if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
       return 1
     fi
@@ -113,7 +113,7 @@ function ih::setup::core.rancher::install() {
   fi
 
   # Check macOS version compatibility with VZ for M2+ Macs (VZ requires macOS >=13.3)
-  if ih::arch::is_m2_or_m3_mac; then
+  if ih::arch::is_recent_apple_silicon; then
     if ! ih::arch::check_macos_version_compatibility "$REQUIRED_APPLE_SILICON_MACOS_VERSION"; then
       ih::log::error "macOS version is not compatible for M2+ Macs."
       return 1 # Abort the installation for M3 Macs
