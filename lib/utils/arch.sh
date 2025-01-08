@@ -48,7 +48,8 @@ ih::arch::check_macos_version_compatibility() {
   fi
 }
 
-ih::arch::is_m2_or_m3_mac() {
+ih::arch::is_recent_apple_silicon() {
   local hw_model=$(sysctl -n machdep.cpu.brand_string)
-  [[ "$hw_model" == *"M2"* ]] || [[ "$hw_model" == *"M3"* ]]
+  # Check macOS version compatibility with VZ for M2+ Macs (VZ requires macOS >=13.3)
+  [[ "$hw_model" =~ "Apple M[2-9]" ]]
 }
