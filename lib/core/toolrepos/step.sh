@@ -60,6 +60,7 @@ function ih::setup::core.toolrepos::test-or-install() {
     if [ "$1" == "test" ]; then
       return 1
     fi
+    mkdir -p "$(dirname "$plist_tgt_path")"
     cp -f "$plist_src_path" "$plist_tgt_path"
     ih::log::info "Plist file updated."
     ih::setup::core.toolrepos::set-auto-update-repositories-job
