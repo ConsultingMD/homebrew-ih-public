@@ -23,6 +23,24 @@ function ih::setup::core.toolrepos::install() {
   ih::setup::core.toolrepos::test-or-install "install"
 }
 
+function ih::setup::core.toolrepos::create_temp_plist() {
+  local TEMP_PLIST_DST
+  TEMP_PLIST_DST=$(mktemp /tmp/ih_auto_update_repositories.XXXXXX)
+
+  local GR_HOME_ESC
+  # shellcheck disable=SC2001
+  GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
+
+  local IH_CORE_LIB_DIR_ESC
+  # shellcheck disable=SC2001
+  IH_CORE_LIB_DIR_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
+
+  sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g" \
+    "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/com.includedhealth.auto-update-repositories.plist" >"$TEMP_PLIST_DST"
+
+  echo "$TEMP_PLIST_DST"
+}
+
 # If $1 is "test", this will check if install is needed and return 1 if it is.
 # Otherwise, this will install the repos.
 function ih::setup::core.toolrepos::test-or-install() {
@@ -54,17 +72,23 @@ function ih::setup::core.toolrepos::test-or-install() {
     git clone git@github.com:ConsultingMD/kore.git --filter=blob:limit=1m --depth=5 "${GR_HOME}/kore" || return
   fi
 
-  local plist_src_path="$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/com.includedhealth.auto-update-repositories.plist"
   local plist_tgt_path="$HOME/Library/LaunchAgents/com.includedhealth.auto-update-repositories.plist"
-  if [ ! -f "$plist_tgt_path" ] || ! ih::file::check-file-in-sync "$plist_src_path" "$plist_tgt_path"; then
+
+  # Create temporary plist with variables replaced
+  local temp_plist
+  temp_plist=$(ih::setup::core.toolrepos::create_temp_plist)
+
+  if [ ! -f "$plist_tgt_path" ] || ! ih::file::check-file-in-sync "$temp_plist" "$plist_tgt_path"; then
     if [ "$1" == "test" ]; then
+      rm -f "$temp_plist"
       return 1
     fi
     mkdir -p "$(dirname "$plist_tgt_path")"
-    cp -f "$plist_src_path" "$plist_tgt_path"
+    cp -f "$temp_plist" "$plist_tgt_path"
     ih::log::info "Plist file updated."
     ih::setup::core.toolrepos::set-auto-update-repositories-job
   fi
+  rm -f "$temp_plist"
 
   local toolsrepo_src_path="$IH_CORE_LIB_DIR/core/toolrepos/default/10_toolrepos.sh"
   local toolsrepo_tgt_path="$IH_DEFAULT_DIR/10_toolrepos.sh"
@@ -104,16 +128,8 @@ manually in order to have pre-commit configured correctly."
 }
 
 function ih::setup::core.toolrepos::set-auto-update-repositories-job() {
-  local THIS_DIR="$IH_CORE_LIB_DIR/core/toolrepos/autoupdate"
   local PLIST_FILE="com.includedhealth.auto-update-repositories"
   local LAUNCH_AGENTS_PATH="${HOME}/Library/LaunchAgents/${PLIST_FILE}.plist"
-
-  # shellcheck disable=SC2001
-  GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
-  # shellcheck disable=SC2001
-  IH_CORE_LIB_DIR_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
-
-  sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g" "${THIS_DIR}/${PLIST_FILE}.plist" >"${LAUNCH_AGENTS_PATH}"
 
   if launchctl list | grep -e ${PLIST_FILE}; then
     launchctl unload "${LAUNCH_AGENTS_PATH}"
