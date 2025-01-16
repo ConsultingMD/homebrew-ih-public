@@ -28,10 +28,12 @@ function ih::setup::core.toolrepos::create_temp_plist() {
   TEMP_PLIST_DST=$(mktemp /tmp/ih_auto_update_repositories.XXXXXX)
 
   local GR_HOME_ESC
-  GR_HOME_ESC=${GR_HOME//\//\\/}
+  # shellcheck disable=SC2001
+  GR_HOME_ESC=$(echo "$GR_HOME" | sed 's_/_\\/_g')
 
   local IH_CORE_LIB_DIR_ESC
-  IH_CORE_LIB_DIR_ESC=${IH_CORE_LIB_DIR//\//\\/}
+  # shellcheck disable=SC2001
+  IH_CORE_LIB_DIR_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
 
   sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g" \
     "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/com.includedhealth.auto-update-repositories.plist" >"$TEMP_PLIST_DST"
