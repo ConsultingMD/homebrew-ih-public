@@ -28,11 +28,12 @@ ih::arch::get_macos_version() {
 
 ih::arch::check_macos_version_compatibility() {
   local required_version="$1"
-  local current_version=$(ih::arch::get_macos_version)
+  local current_version
+  current_version=$(ih::arch::get_macos_version)
 
   # Splitting the current and required versions into major and minor components
-  IFS='.' read -r current_major current_minor _ <<< "$current_version"
-  IFS='.' read -r required_major required_minor _ <<< "$required_version"
+  IFS='.' read -r current_major current_minor _ <<<"$current_version"
+  IFS='.' read -r required_major required_minor _ <<<"$required_version"
 
   # Ensure variables are integers (default to 0 if empty for robust comparison)
   current_major=${current_major:-0}
@@ -40,7 +41,7 @@ ih::arch::check_macos_version_compatibility() {
   required_major=${required_major:-0}
   required_minor=${required_minor:-0}
 
-  if (( current_major > required_major )) || { (( current_major == required_major )) && (( current_minor >= required_minor )); }; then
+  if ((current_major > required_major)) || { ((current_major == required_major)) && ((current_minor >= required_minor)); }; then
     return 0 # meets minimum requirement
   else
     ih::log::error "macOS version $required_version or higher is required. Current version: $current_version."
@@ -49,7 +50,8 @@ ih::arch::check_macos_version_compatibility() {
 }
 
 ih::arch::is_recent_apple_silicon() {
-  local hw_model=$(sysctl -n machdep.cpu.brand_string)
+  local hw_model
+  hw_model=$(sysctl -n machdep.cpu.brand_string)
   # Check macOS version compatibility with VZ for M2+ Macs (VZ requires macOS >=13.3)
-  [[ "$hw_model" =~ "Apple M[2-9]" ]]
+  [[ "$hw_model" =~ Apple\ M[2-9] ]]
 }
