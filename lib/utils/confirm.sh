@@ -65,3 +65,10 @@ function ih::ask::retry-cancel() {
       ;;
   esac
 }
+# Prints the prompts of $1 and allows the
+# user to press enter to continue, or
+# Ctrl+C to cancel.
+function ih::ask::enter-continue() {
+  local prompt="${1}"
+  read -rp "$prompt"
+}

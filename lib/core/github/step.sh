@@ -39,7 +39,7 @@ Please choose:
  "
 
   # log in with scopes we need to update keys
-  gh auth login --scopes repo,read:org,admin:public_key,user
+  gh auth login --scopes repo,read:org,admin:public_key,user,admin:ssh_signing_key
 
   local PUBLIC_KEY
   local EXISTING_KEYS
@@ -55,13 +55,10 @@ Please choose:
   if ih::setup::core.github::test; then
     echo "GitHub configuration complete"
 
-    ih::log::warn "To clone repos from the doctorondemand organization you will need to manually authorize your SSH key"
+    ih::log::warn "To clone repos from the ConsultingMD organization you will need to manually authorize your SSH key"
 
-    ih::ask::confirm "Do you need to authorize your SSH key to clone doctorondemand repos?"
-    local CONFIRMED=$?
-    if [ $CONFIRMED ]; then
-      open "https://github.com/settings/keys"
-    fi
+    ih::ask::enter-continue "Press enter to open a browser authorize your SSH key to clone ConsultingMD repos."
+    open "https://github.com/settings/keys"
 
     return 0
   fi
