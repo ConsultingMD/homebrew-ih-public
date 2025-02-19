@@ -16,11 +16,11 @@ set +o hashall
 export IH_CORE_DIR
 HOMEBREW_PREFIX=$(brew --prefix)
 if [[ "$0" == ${HOMEBREW_PREFIX}* ]]; then
-    # We're running from a Homebrew installation, use the stable symlink
-    IH_CORE_DIR="${HOMEBREW_PREFIX}/opt/ih-core"
+  # We're running from a Homebrew installation, use the stable symlink
+  IH_CORE_DIR="${HOMEBREW_PREFIX}/opt/ih-core"
 else
-    # We're probably running from source/test environment
-    IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
+  # We're probably running from source/test environment
+  IH_CORE_DIR=$(dirname "$(dirname "$(realpath "$0")")")
 fi
 export IH_CORE_BIN_DIR="$IH_CORE_DIR/bin"
 export IH_CORE_LIB_DIR="$IH_CORE_DIR/lib"
@@ -208,8 +208,7 @@ function ih::private::apply-to-steps() {
       DOMAIN_MATCH_FOUND=1
       if [[ " ${IH_SETUP_STEPS[*]} " =~ " "${STEP}" " ]]; then
         STEP_MATCH_FOUND=1
-        "ih::private::$COMMAND" "$STEP"
-        if [[ $? -gt 0 ]]; then
+        if ! "ih::private::$COMMAND" "$STEP"; then
           ih::log::error "Command $COMMAND failed for step $STEP"
           STEP_ERROR=1
         fi
@@ -432,7 +431,9 @@ function ih::private::install-step() {
     ih::private::step-test "$STEP" >/dev/null
     TEST_CODE=$?
     if [[ $TEST_CODE -eq 0 ]]; then
-      ih::log::info "${STEP} has been installed (use -f to re-install)"
+      local DOMAIN="${STEP%.*}"
+      local NAME="${STEP#*.}"
+      ih::log::info "${STEP} has been installed (use 'ih-setup install -f ${DOMAIN} ${NAME}' to re-install)"
       return 0
     fi
 
