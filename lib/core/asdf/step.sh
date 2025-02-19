@@ -79,8 +79,14 @@ function recreate_shims() {
 function ih::setup::core.asdf::install() {
 
   if ! command -v asdf; then
-    ih::log::info "Cloning asdf into $HOME/.asdf"
-    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.14.1
+    if [ ! -d "$HOME/.asdf" ] || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
+      if [ -d "$HOME/.asdf" ]; then
+        ih::log::warn "Found corrupted .asdf installation, removing..."
+        rm -rf "$HOME/.asdf"
+      fi
+      ih::log::info "Cloning asdf into $HOME/.asdf"
+      git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.14.1
+    fi
     # If this is set it messes up asdf initialization
     unset ASDF_DIR
     # shellcheck disable=SC1091
