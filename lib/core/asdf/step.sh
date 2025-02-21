@@ -96,21 +96,35 @@ function recreate_shims() {
   ih::log::info "Successfully recreated asdf shims."
 }
 
-function ih::setup::core.asdf::install() {
-  if ! command -v asdf || ! check_asdf_version || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
-    if [ -d "$HOME/.asdf" ]; then
-      if ! ih::ask::confirm "Found existing asdf installation that appears incorrect or corrupted.
-This step will remove $HOME/.asdf and install asdf $ASDF_VERSION."; then
-        ih::log::warn "Skipping asdf installation"
-        return 1
-      fi
-
-      ih::log::info "Removing existing asdf installation..."
-      rm -rf "$HOME/.asdf"
+function clean_and_install_asdf() {
+  if [ -d "$HOME/.asdf" ]; then
+    if ! ih::ask::confirm "Found invalid asdf installation. This step will remove $HOME/.asdf and install asdf $ASDF_VERSION."; then
+      ih::log::warn "Skipping asdf installation"
+      return 1
     fi
+    ih::log::info "Removing existing asdf installation..."
+    rm -rf "$HOME/.asdf"
+  fi
 
-    ih::log::info "Installing asdf $ASDF_VERSION..."
-    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch "$ASDF_VERSION"
+  ih::log::info "Installing asdf $ASDF_VERSION..."
+  git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch "$ASDF_VERSION"
+  return 0
+}
+
+function ih::setup::core.asdf::install() {
+  # Fix asdf installation if needed
+  if ! command -v asdf || ! check_asdf_version || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
+    # Try to update if it's a valid git repo
+    if [ -d "$HOME/.asdf/.git" ]; then
+      ih::log::info "Updating asdf to $ASDF_VERSION..."
+      cd "$HOME/.asdf" || return 1
+      git fetch --tags
+      if ! git checkout "$ASDF_VERSION"; then
+        clean_and_install_asdf || return 1
+      fi
+    else
+      clean_and_install_asdf || return 1
+    fi
 
     # If this is set it messes up asdf initialization
     unset ASDF_DIR
