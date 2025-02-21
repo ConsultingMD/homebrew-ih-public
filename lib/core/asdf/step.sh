@@ -5,6 +5,7 @@
 ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/default/90_asdf.sh"
 ASDF_SH_PATH="$IH_DEFAULT_DIR/90_asdf.sh"
 TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
+ASDF_VERSION="v0.14.1"
 
 function ih::setup::core.asdf::help() {
 
@@ -21,6 +22,20 @@ ${CURRENT_VERSIONS}
     "
 }
 
+function check_asdf_version() {
+  local current_version
+
+  if [ -d "$HOME/.asdf" ]; then
+    cd "$HOME/.asdf" || return 1
+    current_version=$(git describe --tags)
+
+    if [ "$current_version" != "$ASDF_VERSION" ]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.asdf::test() {
@@ -31,6 +46,11 @@ function ih::setup::core.asdf::test() {
 
   if [[ ! -f "$ASDF_SH_PATH" ]]; then
     ih::log::debug "asdf augment file not found at $ASDF_SH_PATH"
+    return 1
+  fi
+
+  if ! check_asdf_version; then
+    ih::log::debug "asdf version check failed"
     return 1
   fi
 
@@ -77,16 +97,21 @@ function recreate_shims() {
 }
 
 function ih::setup::core.asdf::install() {
-
-  if ! command -v asdf; then
-    if [ ! -d "$HOME/.asdf" ] || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
-      if [ -d "$HOME/.asdf" ]; then
-        ih::log::warn "Found corrupted .asdf installation, removing..."
-        rm -rf "$HOME/.asdf"
+  if ! command -v asdf || ! check_asdf_version || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
+    if [ -d "$HOME/.asdf" ]; then
+      if ! ih::ask::confirm "Found existing asdf installation that appears incorrect or corrupted.
+This step will remove $HOME/.asdf and install asdf $ASDF_VERSION."; then
+        ih::log::warn "Skipping asdf installation"
+        return 1
       fi
-      ih::log::info "Cloning asdf into $HOME/.asdf"
-      git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.14.1
+
+      ih::log::info "Removing existing asdf installation..."
+      rm -rf "$HOME/.asdf"
     fi
+
+    ih::log::info "Installing asdf $ASDF_VERSION..."
+    git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch "$ASDF_VERSION"
+
     # If this is set it messes up asdf initialization
     unset ASDF_DIR
     # shellcheck disable=SC1091
