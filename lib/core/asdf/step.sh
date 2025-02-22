@@ -30,6 +30,7 @@ function check_asdf_version() {
     current_version=$(git describe --tags)
 
     if [ "$current_version" != "$ASDF_VERSION" ]; then
+      ih::log::debug "Found asdf version $current_version, expecting $ASDF_VERSION"
       return 1
     fi
   fi
