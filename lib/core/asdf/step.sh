@@ -34,6 +34,11 @@ function ih::setup::core.asdf::test() {
     return 1
   fi
 
+  if ! ih::file::check-file-in-sync "$ASDF_SH_TEMPLATE_PATH" "$ASDF_SH_PATH"; then
+    ih::log::debug "asdf augment file is out of sync with template"
+    return 1
+  fi
+
   local CURRENT_PLUGINS
   CURRENT_PLUGINS=$(asdf plugin list)
   local DESIRED_PLUGINS
