@@ -16,8 +16,8 @@ function source_asdf() {
     version=$(asdf --version 2>/dev/null || echo "unknown")
 
     # Check if it's the Go version (0.16.0+)
-    # The Go version will output a version string like "v0.16.0" or "v1.0.0"
-    if [[ "$version" =~ ^v0\.1[6-9] ]] || [[ "$version" =~ ^v[1-9] ]]; then
+    # Match versions like v0.16.x, 0.16.x, v1.x.x, 1.x.x
+    if [[ "$version" =~ ^v?0\.1[6-9] ]] || [[ "$version" =~ ^v?[1-9] ]]; then
       # Go version detected - use the official recommended setup
       if [ -z "$ASDF_DATA_DIR" ]; then
         export ASDF_DATA_DIR="$HOME/.asdf"
