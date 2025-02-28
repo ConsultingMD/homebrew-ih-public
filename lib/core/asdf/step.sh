@@ -108,8 +108,8 @@ function clean_and_install_asdf() {
       ih::log::warn "Skipping asdf installation"
       return 1
     fi
-    ih::log::info "Removing existing asdf installation..."
-    rm -rf "$HOME/.asdf"
+    ih::log::info "Removing existing asdf installation... (this may prompt for a password)"
+    sudo rm -rf "$HOME/.asdf"
   fi
 
   ih::log::info "Installing asdf $ASDF_VERSION..."
