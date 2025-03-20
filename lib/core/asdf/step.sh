@@ -5,6 +5,7 @@
 ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/default/90_asdf.sh"
 ASDF_SH_PATH="$IH_DEFAULT_DIR/90_asdf.sh"
 TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
+ASDF_VERSION="v0.14.1"
 
 function ih::setup::core.asdf::help() {
 
@@ -19,6 +20,21 @@ function ih::setup::core.asdf::help() {
         - Install default versions for commonly used apps:
 ${CURRENT_VERSIONS}
     "
+}
+
+function check_asdf_version() {
+  local current_version
+
+  if [ -d "$HOME/.asdf" ]; then
+    cd "$HOME/.asdf" || return 1
+    current_version=$(git describe --tags)
+
+    if [ "$current_version" != "$ASDF_VERSION" ]; then
+      ih::log::debug "Found asdf version $current_version, expecting $ASDF_VERSION"
+      return 1
+    fi
+  fi
+  return 0
 }
 
 # Check if the step has been installed and return 0 if it has.
@@ -36,6 +52,11 @@ function ih::setup::core.asdf::test() {
 
   if ! ih::file::check-file-in-sync "$ASDF_SH_TEMPLATE_PATH" "$ASDF_SH_PATH"; then
     ih::log::debug "asdf augment file is out of sync with template"
+    return 1
+  fi
+
+  if ! check_asdf_version; then
+    ih::log::debug "asdf version check failed"
     return 1
   fi
 
@@ -81,17 +102,36 @@ function recreate_shims() {
   ih::log::info "Successfully recreated asdf shims."
 }
 
-function ih::setup::core.asdf::install() {
-
-  if ! command -v asdf; then
-    if [ ! -d "$HOME/.asdf" ] || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
-      if [ -d "$HOME/.asdf" ]; then
-        ih::log::warn "Found corrupted .asdf installation, removing..."
-        rm -rf "$HOME/.asdf"
-      fi
-      ih::log::info "Cloning asdf into $HOME/.asdf"
-      git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch v0.14.1
+function clean_and_install_asdf() {
+  if [ -d "$HOME/.asdf" ]; then
+    if ! ih::ask::confirm "Found invalid asdf installation. This step will remove $HOME/.asdf and install asdf $ASDF_VERSION."; then
+      ih::log::warn "Skipping asdf installation"
+      return 1
     fi
+    ih::log::info "Removing existing asdf installation... (this may prompt for a password)"
+    sudo rm -rf "$HOME/.asdf"
+  fi
+
+  ih::log::info "Installing asdf $ASDF_VERSION..."
+  git clone https://github.com/asdf-vm/asdf.git "$HOME"/.asdf --branch "$ASDF_VERSION"
+  return 0
+}
+
+function ih::setup::core.asdf::install() {
+  # Fix asdf installation if needed
+  if ! command -v asdf || ! check_asdf_version || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
+    # Try to update if it's a valid git repo
+    if [ -d "$HOME/.asdf/.git" ]; then
+      ih::log::info "Updating asdf to $ASDF_VERSION..."
+      cd "$HOME/.asdf" || return 1
+      git fetch --tags
+      if ! git checkout "$ASDF_VERSION"; then
+        clean_and_install_asdf || return 1
+      fi
+    else
+      clean_and_install_asdf || return 1
+    fi
+
     # If this is set it messes up asdf initialization
     unset ASDF_DIR
     # shellcheck disable=SC1091
