@@ -74,14 +74,13 @@ function check_asdf_version() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.asdf::test() {
-  # First check for Homebrew asdf, as this is a common source of issues
-  if detect_brew_asdf; then
-    ih::log::debug "asdf is installed via Homebrew, which may conflict with ih-setup"
+  if ! command -v asdf >/dev/null; then
+    ih::log::debug "asdf command is not available"
     return 1
   fi
 
-  if ! command -v asdf >/dev/null; then
-    ih::log::debug "asdf command is not available"
+  if detect_brew_asdf; then
+    ih::log::debug "asdf is installed via Homebrew, which may conflict with ih-setup"
     return 1
   fi
 
@@ -158,7 +157,6 @@ function clean_and_install_asdf() {
 }
 
 function ih::setup::core.asdf::install() {
-  # Check for brew-installed asdf first
   if detect_brew_asdf; then
     uninstall_brew_asdf
     # Even if user chooses not to uninstall, we continue with the rest of the setup
