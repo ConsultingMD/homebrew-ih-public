@@ -22,6 +22,40 @@ ${CURRENT_VERSIONS}
     "
 }
 
+function detect_brew_asdf() {
+  # Check if asdf is installed via Homebrew
+  if brew list asdf &>/dev/null; then
+    return 0 # asdf is installed via Homebrew
+  fi
+
+  return 1 # asdf is not installed via Homebrew
+}
+
+function uninstall_brew_asdf() {
+  ih::log::info "Detected asdf installed via Homebrew."
+  ih::log::info "This conflicts with ih-setup's asdf installation and can cause version conflicts."
+
+  if ! ih::ask::confirm "Would you like to uninstall the Homebrew version of asdf?"; then
+    ih::log::warn "Keeping Homebrew asdf installation. This may cause conflicts with ih-setup."
+    return 1
+  fi
+
+  ih::log::info "Uninstalling asdf from Homebrew..."
+
+  # Try standard uninstall first, then force if needed
+  brew uninstall asdf 2>/dev/null || brew uninstall --force asdf 2>/dev/null
+
+  # Check if uninstall was successful
+  if brew list asdf &>/dev/null; then
+    ih::log::error "Failed to uninstall asdf via brew. Please try manually with 'brew uninstall --force asdf'."
+    return 1
+  fi
+
+  ih::log::info "Successfully uninstalled Homebrew asdf installation."
+
+  return 0
+}
+
 function check_asdf_version() {
   local current_version
 
@@ -42,6 +76,11 @@ function check_asdf_version() {
 function ih::setup::core.asdf::test() {
   if ! command -v asdf >/dev/null; then
     ih::log::debug "asdf command is not available"
+    return 1
+  fi
+
+  if detect_brew_asdf; then
+    ih::log::debug "asdf is installed via Homebrew, which may conflict with ih-setup"
     return 1
   fi
 
@@ -118,6 +157,11 @@ function clean_and_install_asdf() {
 }
 
 function ih::setup::core.asdf::install() {
+  if detect_brew_asdf; then
+    uninstall_brew_asdf
+    # Even if user chooses not to uninstall, we continue with the rest of the setup
+  fi
+
   # Fix asdf installation if needed
   if ! command -v asdf || ! check_asdf_version || [ ! -f "$HOME/.asdf/asdf.sh" ]; then
     # Try to update if it's a valid git repo
