@@ -27,8 +27,20 @@ function ih::setup::core.github::test() {
 }
 
 function ih::setup::core.github::deps() {
-  # echo "other steps"
   echo "core.shell core.git core.ssh"
+}
+
+function ih::setup::core.github::_show_sso_instructions() {
+  ih::log::info "Follow these steps:"
+  ih::log::info "1. Go to the GitHub SSH keys page"
+  ih::log::info "2. Find your SSH key (usually labeled 'Included Health')"
+  ih::log::info "3. Click 'Configure SSO' next to your key"
+  ih::log::info "4. Select 'ConsultingMD' and click 'Authorize'"
+}
+
+function ih::setup::core.github::_check_sso_auth() {
+  git ls-remote git@github.com:ConsultingMD/engineering.git &>/dev/null
+  return $?
 }
 
 function ih::setup::core.github::install() {
@@ -72,36 +84,26 @@ Please choose:
 
   # Now handle SAML SSO authorization
   ih::log::warn "IMPORTANT: You must authorize your SSH key for the ConsultingMD organization"
-  ih::log::info "Follow these steps:"
-  ih::log::info "1. Go to the GitHub SSH keys page (will open automatically)"
-  ih::log::info "2. Find your SSH key (usually labeled 'Included Health')"
-  ih::log::info "3. Click 'Configure SSO' next to your key"
-  ih::log::info "4. Select 'ConsultingMD' and click 'Authorize'"
+  ih::setup::core.github::_show_sso_instructions
 
   ih::ask::enter-continue "Press enter to open the GitHub SSH keys page."
   open "https://github.com/settings/keys"
 
-  # Wait for user to complete the process and verify
   ih::ask::enter-continue "After completing the steps above, press enter to verify your authorization."
 
-  # Verify SAML SSO authorization
-  if git ls-remote git@github.com:ConsultingMD/engineering.git &>/dev/null; then
+  if ih::setup::core.github::_check_sso_auth; then
     ih::log::info "✅ Success! Your SSH key is now authorized for the ConsultingMD organization."
     echo "GitHub configuration complete"
     return 0
   else
     ih::log::error "❌ Your SSH key is not authorized for the ConsultingMD organization."
-    ih::log::info "Please complete the SAML SSO authorization steps:"
-    ih::log::info "1. Go to https://github.com/settings/keys"
-    ih::log::info "2. Find your SSH key (usually labeled 'Included Health')"
-    ih::log::info "3. Click 'Configure SSO' next to your key"
-    ih::log::info "4. Select 'ConsultingMD' and click 'Authorize'"
+    ih::setup::core.github::_show_sso_instructions
 
     if ih::ask::confirm "Would you like to try again?"; then
       open "https://github.com/settings/keys"
       ih::ask::enter-continue "After completing the steps above, press enter to verify..."
 
-      if git ls-remote git@github.com:ConsultingMD/engineering.git &>/dev/null; then
+      if ih::setup::core.github::_check_sso_auth; then
         ih::log::info "✅ Success! Your SSH key is now authorized for the ConsultingMD organization."
         echo "GitHub configuration complete"
         return 0
