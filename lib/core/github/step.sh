@@ -5,28 +5,45 @@ function ih::setup::core.github::help() {
 
     This step will:
     - Authenticate you to GitHub via the gh CLI tool
-    - Configure your GitHub account to support authenticating with your SSH key"
+    - Configure your GitHub account to support authenticating with your SSH key
+    - Authorize your SSH key for the ConsultingMD organization (SAML SSO)"
 }
 
 function ih::setup::core.github::test() {
-
+  # check basic GitHub SSH authentication
   local SSH_RESULT
   SSH_RESULT=$(ssh git@github.com 2>&1)
 
-  if [[ $SSH_RESULT =~ "You've successfully authenticated" ]]; then
-    return 0
+  if [[ ! $SSH_RESULT =~ "You've successfully authenticated" ]]; then
+    return 1
   fi
 
-  return 1
+  # check SAML SSO authorization for ConsultingMD organization
+  if ! git ls-remote git@github.com:ConsultingMD/engineering.git &>/dev/null; then
+    return 1
+  fi
+
+  return 0
 }
 
 function ih::setup::core.github::deps() {
-  # echo "other steps"
   echo "core.shell core.git core.ssh"
 }
 
-function ih::setup::core.github::install() {
+function ih::setup::core.github::_show_sso_instructions() {
+  ih::log::info "Follow these steps:"
+  ih::log::info "1. Go to the GitHub SSH keys page"
+  ih::log::info "2. Find your SSH key (usually labeled 'Included Health')"
+  ih::log::info "3. Click 'Configure SSO' next to your key"
+  ih::log::info "4. Select 'ConsultingMD' and click 'Authorize'"
+}
 
+function ih::setup::core.github::_check_sso_auth() {
+  git ls-remote git@github.com:ConsultingMD/engineering.git &>/dev/null
+  return $?
+}
+
+function ih::setup::core.github::install() {
   # make sure gh is installed
   command -v gh >/dev/null 2>&1 || brew install gh
 
@@ -52,18 +69,51 @@ Please choose:
     gh ssh-key add "$HOME/.ssh/id_rsa.pub" -t "Included Health"
   fi
 
-  if ih::setup::core.github::test; then
-    echo "GitHub configuration complete"
+  # Check basic GitHub authentication
+  local SSH_RESULT
+  SSH_RESULT=$(ssh git@github.com 2>&1)
 
-    ih::log::warn "To clone repos from the ConsultingMD organization you will need to manually authorize your SSH key"
-
-    ih::ask::enter-continue "Press enter to open a browser authorize your SSH key to clone ConsultingMD repos."
-    open "https://github.com/settings/keys"
-
-    return 0
+  if [[ ! $SSH_RESULT =~ "You've successfully authenticated" ]]; then
+    ih::log::error "Basic GitHub SSH authentication failed"
+    ih::log::info "Try re-running the SSH setup step with: ih-setup install -f core ssh"
+    ih::log::info "Then run this step again with: ih-setup install -f core github"
+    return 1
   fi
 
-  ih::log::error "Github configuration failed, try installing again with -v flag for details"
-  return 1
+  echo "Basic GitHub authentication successful"
 
+  # Now handle SAML SSO authorization
+  ih::log::warn "IMPORTANT: You must authorize your SSH key for the ConsultingMD organization"
+  ih::setup::core.github::_show_sso_instructions
+
+  ih::ask::enter-continue "Press enter to open the GitHub SSH keys page."
+  open "https://github.com/settings/keys"
+
+  ih::ask::enter-continue "After completing the steps above, press enter to verify your authorization."
+
+  if ih::setup::core.github::_check_sso_auth; then
+    ih::log::info "✅ Success! Your SSH key is now authorized for the ConsultingMD organization."
+    echo "GitHub configuration complete"
+    return 0
+  else
+    ih::log::error "❌ Your SSH key is not authorized for the ConsultingMD organization."
+    ih::setup::core.github::_show_sso_instructions
+
+    if ih::ask::confirm "Would you like to try again?"; then
+      open "https://github.com/settings/keys"
+      ih::ask::enter-continue "After completing the steps above, press enter to verify..."
+
+      if ih::setup::core.github::_check_sso_auth; then
+        ih::log::info "✅ Success! Your SSH key is now authorized for the ConsultingMD organization."
+        echo "GitHub configuration complete"
+        return 0
+      else
+        ih::log::error "❌ Authorization still failed. Please run 'ih-setup install -f core github' after completing the steps."
+        return 1
+      fi
+    else
+      ih::log::error "SAML SSO authorization is required to continue. Please run 'ih-setup install -f core github' after completing the steps."
+      return 1
+    fi
+  fi
 }
