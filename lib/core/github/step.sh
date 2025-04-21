@@ -55,6 +55,15 @@ Please choose:
  authenticate with a web browser
  "
 
+  # gh auth login will use
+  # the GITHUB_TOKEN env var if it is set
+  # which will likely lack the scopes we need
+  # as listed below.
+  #
+  # To avoid this problem,
+  # we are unsetting it
+  unset GITHUB_TOKEN
+
   # log in with scopes we need to update keys
   gh auth login --scopes repo,read:org,admin:public_key,user,admin:ssh_signing_key
 
