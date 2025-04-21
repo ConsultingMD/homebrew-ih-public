@@ -47,7 +47,9 @@ function ih::setup::core.github::install() {
   # make sure gh is installed
   command -v gh >/dev/null 2>&1 || brew install gh
 
-  echo "You are about to walk through the gh CLI tool auth process.
+  echo "
+Starting the gh CLI tool auth process.
+
 Please choose:
  authenticate to github.com
  use SSH as preferred protocol
