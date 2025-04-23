@@ -80,7 +80,7 @@ Please choose:
     -H "X-GitHub-Api-Version: 2022-11-28" \
     /user/teams | jq -e 'any(.[]; .name == "Engineering")')
 
-  if [[ $HAS_ENG_GITHUB_TEAM_ACCESS == "x" ]]; then
+  if [[ $HAS_ENG_GITHUB_TEAM_ACCESS == "true" ]]; then
     ih::log::info "You are a member of the Engineering team in GitHub."
   else
     ih::log::warn "You are not a member of the Engineering team in GitHub."
