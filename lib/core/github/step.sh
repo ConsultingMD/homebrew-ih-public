@@ -47,7 +47,9 @@ function ih::setup::core.github::install() {
   # make sure gh is installed
   command -v gh >/dev/null 2>&1 || brew install gh
 
-  echo "You are about to walk through the gh CLI tool auth process.
+  echo "
+Starting the gh CLI tool auth process.
+
 Please choose:
  authenticate to github.com
  use SSH as preferred protocol
@@ -55,8 +57,36 @@ Please choose:
  authenticate with a web browser
  "
 
+  # gh auth login will use
+  # the GITHUB_TOKEN env var if it is set
+  # which will likely lack the scopes we need
+  # as listed below.
+  #
+  # To avoid this problem,
+  # we are unsetting it
+  unset GITHUB_TOKEN
+
   # log in with scopes we need to update keys
   gh auth login --scopes repo,read:org,admin:public_key,user,admin:ssh_signing_key
+
+  # now that we are authenticated,
+  # we must ensure we've been added
+  # to the @ConsultingMD/engineering team
+  # otherwise, we can't access the repo
+  # which verifies our SSO auth
+
+  HAS_ENG_GITHUB_TEAM_ACCESS=$(gh api \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    /user/teams | jq -e 'any(.[]; .name == "Engineering")')
+
+  if [[ $HAS_ENG_GITHUB_TEAM_ACCESS == "true" ]]; then
+    ih::log::info "You are a member of the Engineering team in GitHub."
+  else
+    ih::log::warn "You are not a member of the Engineering team in GitHub."
+    ih::log::info "Please reach out to #infrastructure-support on Slack to request access."
+    return 1
+  fi
 
   local PUBLIC_KEY
   local EXISTING_KEYS

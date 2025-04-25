@@ -92,6 +92,9 @@ and links ih-setup into /usr/local/bin.
 
 ### Testing
 
+To invoke the setup script,
+run `./bin/ih-setup` in a terminal.
+
 To test out the setup script without affecting your actual setup, run the script
 at `./meta/test-isolated`. It will create a fake home directory where you can
 experiment with the `ih-setup` command. Run `./meta/test-isolated reset` to
