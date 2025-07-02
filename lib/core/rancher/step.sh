@@ -14,7 +14,7 @@ PLIST_DST="$HOME/Library/Preferences/io.rancherdesktop.profile.defaults.plist"
 
 REQUIRED_APPLE_SILICON_MACOS_VERSION="13.3"
 
-TEMP_PLIST_DST=""  # filled by create_temp_plist
+TEMP_PLIST_DST="" # filled by create_temp_plist
 
 # Create a temporary plist file with our modifications, to allow for sharing logic between test/install.
 # This allows us to avoid making a lot of different versions of the plist file.
@@ -28,6 +28,9 @@ function ih::setup::core.rancher::create_temp_plist() {
     ih::log::debug "Updating temporary PLIST to use 'vz' and 'virtiofs' for Virtualization for M2+ Macs."
     sudo sed -i '' 's/<string>qemu<\/string>/<string>vz<\/string>/g' "$TEMP_PLIST_DST"
     sudo sed -i '' 's/<string>reverse-sshfs<\/string>/<string>virtiofs<\/string>/g' "$TEMP_PLIST_DST"
+
+    ih::log::debug "Enabling Rosetta support for VZ virtualization on M2+ Macs."
+    sudo sed -i '' '/<key>useRosetta<\/key>/{n;s/<false\/>/<true\/>/;}' "$TEMP_PLIST_DST"
   fi
 
   return 0
@@ -36,8 +39,7 @@ function ih::setup::core.rancher::create_temp_plist() {
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.rancher::test() {
-  ih::setup::core.rancher::create_temp_plist
-  if [ $? -ne 0 ]; then
+  if ! ih::setup::core.rancher::create_temp_plist; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
     return 1
   fi
@@ -94,7 +96,8 @@ function ih::setup::core.rancher::install() {
   # More details: https://stackoverflow.com/a/75141533
   local SYMLINK_PATH="/usr/local/lib/docker/cli-plugins"
   if [ -L "$SYMLINK_PATH" ]; then
-    local TARGET_PATH=$(readlink "$SYMLINK_PATH")
+    local TARGET_PATH
+    TARGET_PATH=$(readlink "$SYMLINK_PATH")
     if [ ! -d "$TARGET_PATH" ]; then
       sudo rm -f "$SYMLINK_PATH"
       ih::log::info "Removed broken symlink from old docker install at $SYMLINK_PATH"
@@ -106,8 +109,7 @@ function ih::setup::core.rancher::install() {
 
   cp -f "$RANCHER_AUGMENT_SRC" "$RANCHER_AUGMENT_DST"
 
-  ih::setup::core.rancher::create_temp_plist
-  if [ $? -ne 0 ]; then
+  if ! ih::setup::core.rancher::create_temp_plist; then
     ih::log::error "Failed to create and modify the temporary PLIST file."
     return 1
   fi
@@ -123,7 +125,7 @@ function ih::setup::core.rancher::install() {
   echo "A configuration file for Rancher Desktop will be copied to your system"
   echo "You may be required to enter your password"
   sudo cp "$TEMP_PLIST_DST" "$PLIST_DST"
-  sudo chown $USER:staff "$PLIST_DST"
+  sudo chown "$USER":staff "$PLIST_DST"
   sudo chmod 644 "$PLIST_DST"
 
   # Check if Rancher was installed manually
@@ -136,19 +138,18 @@ function ih::setup::core.rancher::install() {
 
   # If rancher or ih-rancher is already installed  reset to factory
   if [ $RANCHER_INSTALLED -eq 0 ] || [ $IH_RANCHER_INSTALLED -eq 0 ]; then
-    $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset)
+    /Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl factory-reset
   fi
-  
+
   # If Rancher Desktop isn't installed via brew or ih-rancher, check for the app and remove it
   # More info: https://docs.rancherdesktop.io/getting-started/installation/#installing-rancher-desktop-on-macos
   RANCHER_APP_PATH="/Applications/Rancher Desktop.app"
   if [ $RANCHER_INSTALLED -ne 0 ] && [ $IH_RANCHER_INSTALLED -ne 0 ] && [ -d "$RANCHER_APP_PATH" ]; then
-      echo "Rancher Desktop application found at $RANCHER_APP_PATH, removing..."
-      rm -rf "$RANCHER_APP_PATH"
-      if [ $? -ne 0 ]; then
-          ih::log::error "Failed to remove $RANCHER_APP_PATH. Please remove it manually."
-          return 1
-      fi
+    echo "Rancher Desktop application found at $RANCHER_APP_PATH, removing..."
+    if ! rm -rf "$RANCHER_APP_PATH"; then
+      ih::log::error "Failed to remove $RANCHER_APP_PATH. Please remove it manually."
+      return 1
+    fi
   fi
 
   # Check if Rancher was installed manually with brew
@@ -177,7 +178,7 @@ function ih::setup::core.rancher::install() {
   # Continue with the setting just if the cask was installed successfully
   if [ $CASKSUCCEEDED -eq 0 ]; then
     rm -rf ~/.rd
-    $(/Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl start)
+    /Applications/Rancher\ Desktop.app/Contents/Resources/resources/darwin/bin/rdctl start
     # Check for docker binary in /usr/local/bin
     # Check if /usr/local/bin/docker exists
     DOCKERBIN=/usr/local/bin/docker
@@ -186,9 +187,9 @@ function ih::setup::core.rancher::install() {
 
       echo "In order to continue with Rancher configuration and be able to use this engine, some IDEs require the creation of symlinks for remote Python interpreters"
       echo "Your password is required for the creation of symlink mentioned above"
-      sudo ln -s $HOME/.rd/bin/docker /usr/local/bin/docker
+      sudo ln -s "$HOME"/.rd/bin/docker /usr/local/bin/docker
       if [ ! -f "$DOCKERCOMPOSEBIN" ]; then
-        sudo ln -s $HOME/.rd/bin/docker-compose /usr/local/bin/docker-compose
+        sudo ln -s "$HOME"/.rd/bin/docker-compose /usr/local/bin/docker-compose
       fi
     fi
 
