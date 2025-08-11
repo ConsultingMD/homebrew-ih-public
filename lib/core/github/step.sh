@@ -84,8 +84,14 @@ Please choose:
     ih::log::info "You are a member of the Engineering team in GitHub."
   else
     ih::log::warn "You are not a member of the Engineering team in GitHub."
-    ih::log::info "Please reach out to #infrastructure-support on Slack to request access."
-    return 1
+    ih::log::warn "Some repositories may be inaccessible as this setup is primarily designed for the Engineering team."
+
+    if ih::ask::confirm "Would you like to continue with limited access anyway?"; then
+      ih::log::info "Proceeding with setup - note that some engineering repositories may not be accessible."
+    else
+      ih::log::info "Please reach out to #infrastructure-support on Slack to request access to the Engineering team."
+      return 1
+    fi
   fi
 
   local PUBLIC_KEY
