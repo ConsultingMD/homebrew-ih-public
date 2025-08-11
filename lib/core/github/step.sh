@@ -75,23 +75,20 @@ Please choose:
   # otherwise, we can't access the repo
   # which verifies our SSO auth
 
-  HAS_ENG_GITHUB_TEAM_ACCESS=$(gh api \
+  USER_TEAMS=$(gh api \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    /user/teams | jq -e 'any(.[]; .name == "Engineering")')
+    /user/teams | jq -r '.[].name')
 
-  if [[ $HAS_ENG_GITHUB_TEAM_ACCESS == "true" ]]; then
+  if echo "$USER_TEAMS" | grep -q "^Engineering$"; then
     ih::log::info "You are a member of the Engineering team in GitHub."
+  elif echo "$USER_TEAMS" | grep -q "^TechSupport$"; then
+    ih::log::info "You are a member of a supported team (TechSupport) in GitHub."
+    ih::log::warn "Note: Some engineering repositories may not be accessible to your team."
   else
     ih::log::warn "You are not a member of the Engineering team in GitHub."
-    ih::log::warn "Some repositories may be inaccessible as this setup is primarily designed for the Engineering team."
-
-    if ih::ask::confirm "Would you like to continue with limited access anyway?"; then
-      ih::log::info "Proceeding with setup - note that some engineering repositories may not be accessible."
-    else
-      ih::log::info "Please reach out to #infrastructure-support on Slack to request access to the Engineering team."
-      return 1
-    fi
+    ih::log::info "Please reach out to #infrastructure-support on Slack to request access to the Engineering team."
+    return 1
   fi
 
   local PUBLIC_KEY
