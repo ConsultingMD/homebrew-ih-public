@@ -21,6 +21,9 @@ class IhCore < Formula
   depends_on "wget"
   depends_on "rancher-cli"
   depends_on "ripgrep"
+  # Ensure Homebrew zlib is available so python-build (pyenv) can build CPython on
+  # macOS Command Line Tools–only hosts. See: https://github.com/pyenv/pyenv/issues/3300
+  depends_on "zlib"
 
   def install
     lib.install Dir["lib/*"]
