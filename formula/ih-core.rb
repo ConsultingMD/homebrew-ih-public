@@ -1,5 +1,5 @@
 class IhCore < Formula
-  VERSION="0.1.83"
+  VERSION="0.1.84"
   desc "Brew formula for installing core tools used at Included Health engineering."
   homepage "https://github.com/ConsultingMD/homebrew-ih-public"
   license "CC BY-NC-ND 4.0"
@@ -21,6 +21,9 @@ class IhCore < Formula
   depends_on "wget"
   depends_on "rancher-cli"
   depends_on "ripgrep"
+  # Ensure Homebrew zlib is available so python-build (pyenv) can build CPython on
+  # macOS Command Line Tools–only hosts. See: https://github.com/pyenv/pyenv/issues/3300
+  depends_on "zlib"
 
   def install
     lib.install Dir["lib/*"]
