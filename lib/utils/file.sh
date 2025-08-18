@@ -127,3 +127,21 @@ function ih::file::sync-shell-defaults() {
     chmod 0600 "${DST_DIR}/$(basename "$SRC")"
   done
 }
+
+# Ensures the specified directory and its contents are owned by the current user
+function ih::file::ensure_directory_ownership() {
+  local dir_path="$1"
+
+  if [[ -e "$dir_path" ]]; then
+    local current_owner
+    current_owner=$(stat -f '%Su' "$dir_path") # For macOS
+    if [[ "$current_owner" != "$(whoami)" ]]; then
+      ih::log::warn "Found $dir_path owned by '$current_owner' instead of current user"
+      ih::log::info "Fixing ownership of $dir_path and its contents..."
+      sudo chown -R "$(whoami)" "$dir_path"
+      ih::log::info "Fixed ownership of $dir_path"
+    else
+      ih::log::debug "$dir_path has correct ownership"
+    fi
+  fi
+}

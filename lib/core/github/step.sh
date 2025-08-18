@@ -66,6 +66,10 @@ Please choose:
   # we are unsetting it
   unset GITHUB_TOKEN
 
+  # Ensure .config directory has correct ownership before gh auth login
+  # This prevents "permission denied" errors when gh tries to create ~/.config/gh/
+  ih::file::ensure_directory_ownership "$HOME/.config"
+
   # log in with scopes we need to update keys
   gh auth login --scopes repo,read:org,admin:public_key,user,admin:ssh_signing_key
 
