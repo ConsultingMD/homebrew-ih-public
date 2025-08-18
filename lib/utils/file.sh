@@ -139,7 +139,6 @@ function ih::file::ensure_directory_ownership() {
       ih::log::warn "Found $dir_path owned by '$current_owner' instead of current user"
       ih::log::info "Fixing ownership of $dir_path and its contents..."
       sudo chown -R "$(whoami)" "$dir_path"
-      chmod -R 755 "$dir_path" 2>/dev/null || true
       ih::log::info "Fixed ownership of $dir_path"
     else
       ih::log::debug "$dir_path has correct ownership"
