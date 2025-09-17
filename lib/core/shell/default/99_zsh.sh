@@ -74,9 +74,9 @@ fi
 autoload -Uz compinit
 compinit
 
-# Deduplicate path
+# Deduplicate path via zsh magic
 # shellcheck disable=SC2034
-typeset -U PATH path
+path=($path)
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
