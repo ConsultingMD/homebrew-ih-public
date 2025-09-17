@@ -76,7 +76,7 @@ compinit
 
 # Deduplicate path via zsh magic
 # shellcheck disable=SC2034
-path=($path)
+typeset -u path
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
