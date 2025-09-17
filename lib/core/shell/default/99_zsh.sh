@@ -74,9 +74,6 @@ fi
 autoload -Uz compinit
 compinit
 
-# Deduplicate path
-# shellcheck disable=SC2034
-typeset -U PATH path
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
