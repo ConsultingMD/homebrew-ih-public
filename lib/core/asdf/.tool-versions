@@ -3,7 +3,7 @@ golang 1.21.0
 helm 3.6.1
 mkcert 1.4.4
 nodejs 16.2.0
-pre-commit 3.6.2
+pre-commit 4.3.0
 protoc 24.3
 python 3.9.7
 ruby 2.7.2
