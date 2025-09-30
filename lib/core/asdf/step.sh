@@ -208,8 +208,9 @@ function ih::setup::core.asdf::install() {
     if [[ ! $INSTALLED_VERSIONS =~ $VERSION ]]; then
       ih::log::info "Installing correct default version for $PLUGIN_VERSION"
       asdf install "$PLUGIN" "$VERSION"
-      asdf global "$PLUGIN" "$VERSION"
     fi
+
+    asdf global "$PLUGIN" "$VERSION"
   done <<<"$DESIRED_PLUGINS"
 
   recreate_shims
