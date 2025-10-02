@@ -26,6 +26,7 @@ function ih::setup::core.shell::test() {
     ih::log::debug "Found augment.sh"
     if [[ -z $IH_AUGMENT_SOURCED ]]; then
       ih::log::warn "Shell augments are installed but not sourced; source .zshrc or .bashrc to load them"
+      # shellcheck disable=SC1091
       source "${IH_DIR}/augment.sh"
     fi
   else
@@ -56,12 +57,12 @@ function ih::setup::core.shell::test() {
   for DEFAULT_SRC in "$DEFAULT_SRC_DIR"/*; do
     local DEFAULT_DST="${DEFAULT_SRC/$DEFAULT_SRC_DIR/$DEFAULT_DST_DIR}"
     if [ ! -f "$DEFAULT_DST" ]; then
-      ih::log::debug "File $DEFAULT_DST not found."
+      ih::log::info "Shell file missing: $DEFAULT_DST needs to be installed"
       return 1
     fi
 
     if ! diff -q "$DEFAULT_DST" "$DEFAULT_SRC" >/dev/null; then
-      ih::log::debug "File $DEFAULT_DST does not match source"
+      ih::log::info "Shell file out of sync: $DEFAULT_DST doesn't match current template"
       return 1
     fi
   done
@@ -137,7 +138,7 @@ function ih::setup::core.shell::private::configure-bash() {
   # Check if .bash_profile exists and if it doesn't already source .bashrc, then add it
   if [[ ! -e ~/.bash_profile ]] || ! grep -q "source ~/.bashrc" ~/.bash_profile; then
     echo "Ensuring .bash_profile sources .bashrc..."
-    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >> ~/.bash_profile
+    echo "[[ -r ~/.bashrc ]] && source ~/.bashrc" >>~/.bash_profile
   fi
 
   # shellcheck disable=SC2016
@@ -146,7 +147,7 @@ function ih::setup::core.shell::private::configure-bash() {
   else
     echo "Appending Included Health config to ~/.bashrc"
     # shellcheck disable=SC2016
-    echo "$BOOTSTRAP_SOURCE_LINE" >> ~/.bashrc
+    echo "$BOOTSTRAP_SOURCE_LINE" >>~/.bashrc
 
     echo "Updated ~/.bashrc to include this line at the end:
 
@@ -192,14 +193,14 @@ function ih::setup::core.shell::private::collect-env-var() {
   # If the variable is already set, skip
   if [[ -z ${!var_name} ]]; then
     while [[ -z $input_val && -z $default_val ]]; do
-      read -p "$prompt_msg [$default_val]: " input_val
+      read -r -p "$prompt_msg [$default_val]: " input_val
       # If the input is empty and there's no default, keep looping
       if [[ -z $input_val && -z $default_val ]]; then
         echo "This value cannot be left empty. Please provide a value."
       fi
     done
     # Use the default value if the input is empty
-    export $var_name="${input_val:-$default_val}"
+    export "$var_name"="${input_val:-$default_val}"
   fi
 }
 
@@ -236,6 +237,7 @@ function ih::setup::core.shell::private::configure-profile() {
   ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
     "Your email username, likely firstname.lastname (without @includedhealth.com)" \
     ""
+  # shellcheck disable=SC2153
   export GR_USERNAME="$IH_USERNAME"
   local default_jira_username="$GR_USERNAME@includedhealth.com"
   ih::setup::core.shell::private::collect-env-var "JIRA_USERNAME" \
@@ -255,7 +257,7 @@ function ih::setup::core.shell::private::configure-profile() {
   touch "$PROFILE_FILE"
 
   # Now, let's write these to the file.
-  cat > "$PROFILE_FILE" <<EOF
+  cat >"$PROFILE_FILE" <<EOF
 #!/bin/sh
 
 # This file defines the user-specific environment variables
@@ -317,9 +319,9 @@ function ih::setup::core.shell::private::validate-profile() {
   for name in "${EXPECTED_VARS[@]}"; do
     value="${!name}"
     if [[ -z "$value" ]]; then
-      return 1  # Return 1 as soon as an unset variable is found
+      return 1 # Return 1 as soon as an unset variable is found
     fi
   done
 
-  return 0  # Return 0 if all variables are set
+  return 0 # Return 0 if all variables are set
 }
