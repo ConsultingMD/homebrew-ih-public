@@ -113,6 +113,21 @@ function ih::setup::core.asdf::test() {
     return 1
   fi
 
+  # Check if global versions match expected versions from .tool-versions
+  while IFS= read -r PLUGIN_VERSION; do
+    local PLUGIN VERSION CURRENT_GLOBAL
+    PLUGIN=$(echo "$PLUGIN_VERSION" | awk '{print $1}')
+    VERSION=$(echo "$PLUGIN_VERSION" | awk '{print $2}')
+
+    # Get the actual global version for this plugin from ~/.tool-versions
+    CURRENT_GLOBAL=$(grep "^$PLUGIN " "$HOME/.tool-versions" 2>/dev/null | awk '{print $2}' || echo "")
+
+    if [[ "$CURRENT_GLOBAL" != "$VERSION" ]]; then
+      ih::log::info "Global version mismatch for $PLUGIN: expected $VERSION, got $CURRENT_GLOBAL"
+      return 1
+    fi
+  done < <(sort "$TOOL_VERSIONS_TEMPLATE_PATH")
+
   return 0
 }
 
