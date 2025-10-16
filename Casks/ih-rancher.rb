@@ -1,5 +1,5 @@
 cask "ih-rancher" do
-    version "1.19.0"
+    version "1.20.0"
 
     if Hardware::CPU.intel?
         url "https://github.com/rancher-sandbox/rancher-desktop/releases/download/v#{version}/Rancher.Desktop-#{version}.x86_64.dmg"
