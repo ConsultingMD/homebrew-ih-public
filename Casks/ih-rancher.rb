@@ -1,12 +1,16 @@
 cask "ih-rancher" do
-    version "1.19.0"
+    version "1.20.0"
 
+    # To update these values,
+    # Go to the release page in GitHub
+    # and copy the download URL and SHA256 hash
+    # for the appropriate architecture.
     if Hardware::CPU.intel?
         url "https://github.com/rancher-sandbox/rancher-desktop/releases/download/v#{version}/Rancher.Desktop-#{version}.x86_64.dmg"
-        sha256 "d0a0f06556c69bce86c10e7cc0fcc88f02c9a9fa0241ea16325d0995a03425bd"
+        sha256 "380cb77bcdcb7723817abe387fd32c4f81998c3070455c98b43619626640b290"
     else
         url "https://github.com/rancher-sandbox/rancher-desktop/releases/download/v#{version}/Rancher.Desktop-#{version}.aarch64.dmg"
-        sha256 "1b5c90261bcba90afb5d1372e78f1f68487b888b5a847623ab5177eb16acf112"
+        sha256 "ee0073896ffc149c3db12a21004981edbaa2f194341d9680375dc2df809fcfc2"
     end
 
     name "Rancher Desktop"
