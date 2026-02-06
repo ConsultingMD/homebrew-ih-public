@@ -41,6 +41,39 @@ function ih::setup::core.toolrepos::create_temp_plist() {
   echo "$TEMP_PLIST_DST"
 }
 
+# Repair an existing partial clone by converting it to a full clone.
+# Partial clones (--filter=blob:limit=1m) are fragile for repos where branches are
+# rebased/force-pushed: local refs accumulate blobs that get GC'd on the remote,
+# causing "fatal: unable to read <sha>" errors in any git operation that touches
+# those objects (which breaks pre-commit across all repos).
+# Returns 0 if no repair was needed, 1 if repair was needed (or performed).
+function ih::setup::core.toolrepos::repair-partial-clone() {
+  local repo_path="${1:?repo_path is required}"
+  local repo_name
+  repo_name=$(basename "$repo_path")
+
+  if [ ! -d "$repo_path" ]; then
+    return 0
+  fi
+
+  if ! git -C "$repo_path" config --get remote.origin.promisor >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # Partial clone detected — needs repair
+  if [ "$2" == "test" ]; then
+    return 1
+  fi
+
+  ih::log::info "Converting $repo_name from partial clone to full clone..."
+  git -C "$repo_path" config --unset remote.origin.promisor
+  git -C "$repo_path" config --unset remote.origin.partialclonefilter
+  git -C "$repo_path" reflog expire --expire=now --all
+  git -C "$repo_path" gc --prune=now
+  git -C "$repo_path" fetch --refetch
+  ih::log::info "$repo_name converted to full clone."
+}
+
 # If $1 is "test", this will check if install is needed and return 1 if it is.
 # Otherwise, this will install the repos.
 function ih::setup::core.toolrepos::test-or-install() {
@@ -48,12 +81,18 @@ function ih::setup::core.toolrepos::test-or-install() {
     mkdir -p "${GR_HOME}"
   fi
 
+  # Repair existing partial clones of engineering and image-builder.
+  # These repos had --depth=5 removed in April 2023 but --filter=blob:limit=1m
+  # was left in place, creating a fragile combination of full history with missing blobs.
+  ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/engineering" "$1" || return 1
+  ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/image-builder" "$1" || return 1
+
   if [ ! -d "${GR_HOME}/engineering" ]; then
     if [ "$1" == "test" ]; then
       return 1
     fi
     ih::log::info "Cloning engineering repo..."
-    git clone git@github.com:ConsultingMD/engineering.git --filter=blob:limit=1m "${GR_HOME}/engineering" || return
+    git clone git@github.com:ConsultingMD/engineering.git "${GR_HOME}/engineering" || return
   fi
 
   if [ ! -d "${GR_HOME}/image-builder" ]; then
@@ -61,7 +100,7 @@ function ih::setup::core.toolrepos::test-or-install() {
       return 1
     fi
     ih::log::info "Cloning image-builder repo.."
-    git clone git@github.com:ConsultingMD/image-builder.git --filter=blob:limit=1m "${GR_HOME}/image-builder" || return
+    git clone git@github.com:ConsultingMD/image-builder.git "${GR_HOME}/image-builder" || return
   fi
 
   if [ ! -d "${GR_HOME}/kore" ]; then
