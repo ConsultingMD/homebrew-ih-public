@@ -18,4 +18,9 @@ for repo in "${repos[@]}"; do
     git pull origin "$defaultBranch" --ff-only --autostash
   fi
 
+  # Expire old reflogs to prevent stale blob references from accumulating.
+  # This is especially important for repos that were previously partial clones,
+  # where unreachable blobs can cause "fatal: unable to read <sha>" errors.
+  git reflog expire --expire=30.days --all 2>/dev/null
+
 done
