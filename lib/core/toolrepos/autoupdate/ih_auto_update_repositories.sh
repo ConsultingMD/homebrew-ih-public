@@ -5,7 +5,12 @@
 repos=(engineering image-builder janus temporal kafka ih-observability)
 
 for repo in "${repos[@]}"; do
-  cd "$IH_HOME/$repo" || exit 1
+  if [[ ! -d "$IH_HOME/$repo" ]]; then
+    echo "Skipping $repo (not cloned)" >&2
+    continue
+  fi
+
+  cd "$IH_HOME/$repo" || continue
 
   currentBranch=$(git branch --show-current)
   defaultBranch=$(git branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev)
