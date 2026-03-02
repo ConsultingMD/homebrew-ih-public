@@ -15,6 +15,15 @@ MCP_ROUTER_APP="/Applications/MCP Router.app"
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.mcp-router::test() {
+  # Check if MCP Router was installed manually (not via our cask)
+  brew list mcp-router >/dev/null 2>&1
+  MCP_ROUTER_INSTALLED=$?
+
+  if [ $MCP_ROUTER_INSTALLED -eq 0 ]; then
+    ih::log::debug "mcp-router was installed manually and should be uninstalled"
+    return 1
+  fi
+
   # Check if IH MCP Router cask is installed
   brew list ih-mcp-router >/dev/null 2>&1
   IH_MCP_ROUTER_INSTALLED=$?
