@@ -87,7 +87,6 @@ export PKG_CONFIG_PATH="$BREW_PREFIX_OPENSSL/lib/pkgconfig"
 # Rancher desktop added to the PATH
 export PATH=$PATH:/Users/$USER/.rd/bin
 
-
 #Determine where a shell function is defined / declared
 function find_function {
   shopt -s extdebug
@@ -115,6 +114,11 @@ if type brew &>/dev/null; then
       [[ -r "${COMPLETION}" ]] && source "${COMPLETION}"
     done
   fi
+fi
+
+# asdf: eager init for bash (zsh uses 99_zsh.zsh shims-only boot)
+if declare -F source_asdf >/dev/null 2>&1; then
+  source_asdf
 fi
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
