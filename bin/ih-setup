@@ -670,7 +670,6 @@ function main() {
   # If not, display the help message.
   if [[ ${#args[@]} -eq 0 ]]; then
     ih::help
-    return
   fi
 
   local command="${args[0]}"
@@ -684,7 +683,7 @@ function main() {
   # Main command processing
   case "${command}" in
     help)
-      ih::${command} "${args[@]}"
+      ih::"${command}" "${args[@]}"
       return
       ;;
     install)
@@ -725,7 +724,7 @@ function main() {
   esac
 
   # For any commands not caught above:
-  ih::${command} "${args[@]}"
+  ih::"${command}" "${args[@]}"
 }
 
 main "${@}"

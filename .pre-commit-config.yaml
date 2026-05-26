@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -23,15 +23,16 @@ repos:
           - develop
       - id: detect-private-key
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 2.1.5
+    rev: 3.0.0
     hooks:
       - id: shellcheck
       - id: script-must-have-extension
+        exclude: \.zsh$
       - id: script-must-not-have-extension
       - id: shfmt
-  - repo: https://github.com/gruntwork-io/pre-commit
-    rev: v0.1.30
-    hooks:
-      - id: shellcheck
-        types:
-          - shell
+        exclude: \.zsh$
+      - id: shfmt
+        alias: shfmt-zsh
+        name: shfmt (zsh)
+        args: [-ln, zsh]
+        files: \.zsh$

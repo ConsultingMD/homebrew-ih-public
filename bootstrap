@@ -17,8 +17,8 @@ TAP_REPO="consultingmd/ih-public"
 
 # Check if the tap already exists, and if so, untap it to prevent issues caused by the old SSH url
 if brew tap | grep -q "$TAP_REPO"; then
-    echo "Homebrew tap $TAP_REPO already exists. Untapping..."
-    brew untap "$TAP_REPO"
+  echo "Homebrew tap $TAP_REPO already exists. Untapping..."
+  brew untap "$TAP_REPO"
 fi
 
 brew update
