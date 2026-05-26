@@ -1,6 +1,6 @@
 #!/bin/bash
 # Shebang indicates bash to enable shellcheck.
-# Body below is zsh-only (see guard). ShellCheck has no zsh dialect — use disables for zsh syntax, not "shell=zsh" (SC1103).
+# Body below is zsh-only (see guard). ShellCheck has no zsh dialect — use disables for zsh syntax.
 
 # These are some default settings for zsh suggested
 # by the Developer Platform team. You can override these in the
