@@ -667,64 +667,64 @@ function main() {
   ih::setup::private::init
 
   # Check if there are any remaining commands and arguments after flag processing.
-  # If not, display the help message.
+  # If not, display the help message (ih::help exits the process).
   if [[ ${#args[@]} -eq 0 ]]; then
     ih::help
+  else
+    local command="${args[0]}"
+    unset 'args[0]'
+    args=("${args[@]}")
+
+    case "${command}" in
+      -h | -? | --help) command=help ;;
+    esac
+
+    # Main command processing
+    case "${command}" in
+      help)
+        ih::"${command}" "${args[@]}"
+        return
+        ;;
+      install)
+        ih::private::apply-to-steps install-step "${args[@]}"
+        return
+        ;;
+      describe)
+        if [[ ${#args[@]} -eq 1 ]]; then
+          ih::private::domain-help "${args[0]}"
+        else
+          ih::private::apply-to-steps describe-step "${args[@]}"
+        fi
+        return
+        ;;
+      show)
+        ih::private::step-show "${args[@]}"
+        return
+        ;;
+      upgrade)
+        ih::private::upgrade
+        return
+        ;;
+      check | test)
+        ih::private::apply-to-steps test-step "${args[@]}"
+        return
+        ;;
+      add-step)
+        ih::private::add-step "${args[@]}"
+        return
+        ;;
+      private::*)
+        : # Assume the caller knows what they're doing
+        ;;
+      *)
+        ih::log::error "Unrecognized command ${command}"
+        return 1
+        ;;
+    esac
+
+    # For any commands not caught above:
+    ih::"${command}" "${args[@]}"
   fi
-
-  local command="${args[0]}"
-  unset 'args[0]'
-  args=("${args[@]}")
-
-  case "${command}" in
-    -h | -? | --help) command=help ;;
-  esac
-
-  # Main command processing
-  case "${command}" in
-    help)
-      ih::"${command}" "${args[@]}"
-      return
-      ;;
-    install)
-      ih::private::apply-to-steps install-step "${args[@]}"
-      return
-      ;;
-    describe)
-      if [[ ${#args[@]} -eq 1 ]]; then
-        ih::private::domain-help "${args[0]}"
-      else
-        ih::private::apply-to-steps describe-step "${args[@]}"
-      fi
-      return
-      ;;
-    show)
-      ih::private::step-show "${args[@]}"
-      return
-      ;;
-    upgrade)
-      ih::private::upgrade
-      return
-      ;;
-    check | test)
-      ih::private::apply-to-steps test-step "${args[@]}"
-      return
-      ;;
-    add-step)
-      ih::private::add-step "${args[@]}"
-      return
-      ;;
-    private::*)
-      : # Assume the caller knows what they're doing
-      ;;
-    *)
-      ih::log::error "Unrecognized command ${command}"
-      return 1
-      ;;
-  esac
-
-  # For any commands not caught above:
-  ih::"${command}" "${args[@]}"
 }
 
 main "${@}"

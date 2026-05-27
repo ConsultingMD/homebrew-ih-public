@@ -92,11 +92,12 @@ unset _ih_asdf_brew_prefix
 # shellcheck disable=SC2039,SC2206
 if command -v asdf >/dev/null 2>&1; then
 	asdf() {
+		local _ih_asdf_completions="${ASDF_DATA_DIR}/completions"
 		unfunction asdf 2>/dev/null
 		((${+functions[source_asdf]})) && source_asdf
-		if [[ -f "${ASDF_DATA_DIR}/completions/_asdf" ]] &&
-			[[ ${fpath[(ie)$ASDF_DATA_DIR / completions]} -gt ${#fpath} ]]; then
-			fpath=("${ASDF_DATA_DIR}/completions" $fpath)
+		if [[ -f "${_ih_asdf_completions}/_asdf" ]] &&
+			[[ ${fpath[(ie)${_ih_asdf_completions}]} -gt ${#fpath} ]]; then
+			fpath=("${_ih_asdf_completions}" $fpath)
 			autoload -Uz compinit
 			if [[ -n "${ZSH_COMPDUMP:-}" ]]; then
 				if [[ -f "${ZSH_COMPDUMP}.zwc" ]]; then
