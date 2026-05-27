@@ -13,26 +13,27 @@ function source_asdf() {
   local is_go_version=0
   local version binary
 
-  # Check if asdf is installed and which version it is
-  if command -v asdf >/dev/null 2>&1; then
-    binary=$(command -v asdf)
-    version=$(command asdf --version 2>/dev/null || echo "unknown")
-    # Normalize: "asdf version 0.19.0" or "v0.14.1-f00f759"
-    if [[ "$version" == *version* ]]; then
-      version=${version##*version }
-    fi
-    version=${version%% *}
+  if ! command -v asdf >/dev/null 2>&1; then
+    return 0
+  fi
 
-    # Go asdf: 0.16+, 0.19+, 1.x+
-    if [[ "$version" =~ ^v?0\.(1[6-9]|[2-9][0-9]+) ]] || [[ "$version" =~ ^v?[1-9][0-9]*(\.[0-9]+)*$ ]]; then
-      is_go_version=1
-    fi
-    # brew Go asdf has no libexec/asdf.sh; prefer non-legacy binary
-    if [[ $is_go_version -eq 0 ]] && [[ -x "$binary" ]] \
-      && [[ ! -f "$(brew --prefix asdf 2>/dev/null)/libexec/asdf.sh" ]] \
-      && [[ "$binary" != *"/.asdf/bin/asdf" ]]; then
-      is_go_version=1
-    fi
+  binary=$(command -v asdf)
+  version=$(command asdf --version 2>/dev/null || echo "unknown")
+  # Normalize: "asdf version 0.19.0" or "v0.14.1-f00f759"
+  if [[ "$version" == *version* ]]; then
+    version=${version##*version }
+  fi
+  version=${version%% *}
+
+  # Go asdf: 0.16+, 0.19+, 1.x+
+  if [[ "$version" =~ ^v?0\.(1[6-9]|[2-9][0-9]+) ]] || [[ "$version" =~ ^v?[1-9][0-9]*(\.[0-9]+)*$ ]]; then
+    is_go_version=1
+  fi
+  # brew Go asdf has no libexec/asdf.sh; prefer non-legacy binary
+  if [[ $is_go_version -eq 0 ]] && [[ -x "$binary" ]] \
+    && [[ ! -f "$(brew --prefix asdf 2>/dev/null)/libexec/asdf.sh" ]] \
+    && [[ "$binary" != *"/.asdf/bin/asdf" ]]; then
+    is_go_version=1
   fi
 
   # Go version detected - use the official recommended setup
