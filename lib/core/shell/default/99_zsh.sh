@@ -71,9 +71,9 @@ if type brew &>/dev/null; then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 fi
 
-autoload -Uz compinit
-compinit
-
+# compinit: do not run here — duplicates ~/.zshrc when compinit runs after augment.sh.
+# In ~/.zshrc, after sourcing "$HOME/.ih/augment.sh", set fpath (plugins, etc.), then once:
+#   autoload -Uz compinit && compinit -C -d "$ZSH_COMPDUMP"  # or compinit -d on first run
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
