@@ -1,1 +1,6 @@
 * @ConsultingMD/developer-platform
+
+# Claude Code mirror casks are auto-maintained by workflow — no code owner review required
+Casks/claude-code.rb
+Casks/claude-code@latest.rb
+.github/workflows/update-claude-code-casks.yml
