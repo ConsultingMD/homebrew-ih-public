@@ -1,9 +1,9 @@
 cask "claude-code@latest" do
   arch arm: "arm64", intel: "x64"
 
-  version "2.1.154"
-  sha256 arm:    "643ec0cfa324744c15f6bf552d3ce6e934c42651b56f40ea8d4ec4f653a9b49f",
-         x86_64: "352e504e405a25e5f2b44ae3758b6dced15371c5411486b2c3add4c3ac4a5000"
+  version "2.1.153"
+  sha256 arm:    "f2f2f09273971c634cd4c90b96882ae0a2bafa026e4f501fb37b6c2794d4594d",
+         x86_64: "368e3ec7ee2554e2205f9f3c57e698b259af8c526a8abb675c34bd1a9c1079fb"
 
   url "https://github.com/anthropics/claude-code/releases/download/v#{version}/claude-darwin-#{arch}.tar.gz"
   name "Claude Code"
