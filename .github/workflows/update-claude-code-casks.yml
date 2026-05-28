@@ -80,8 +80,10 @@ jobs:
           printf 'Automated update of the Claude Code GitHub mirror casks.\n\nstable: %s\nlatest: %s\n\nChecksums sourced from upstream SHASUMS256.txt on each GitHub release.' \
             "$STABLE_VER" "$LATEST_VER" > /tmp/pr-body.txt
 
-          gh pr create \
+          PR_URL=$(gh pr create \
             --title "chore: update claude-code casks (stable=${STABLE_VER}, latest=${LATEST_VER})" \
             --body-file /tmp/pr-body.txt \
             --base master \
-            --head "$BRANCH"
+            --head "$BRANCH")
+
+          gh pr merge --squash --auto "$PR_URL" || echo "Auto-merge not available (code owner review required); PR opened for manual merge."
