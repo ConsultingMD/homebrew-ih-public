@@ -1,0 +1,91 @@
+name: update-claude-code-casks
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9am UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get upstream versions
+        id: upstream
+        run: |
+          DIST_TAGS=$(npm view @anthropic-ai/claude-code dist-tags --json)
+          LATEST=$(echo "$DIST_TAGS" | jq -r '.latest')
+          STABLE=$(echo "$DIST_TAGS" | jq -r '.stable // .latest')
+          echo "stable=${STABLE}" >> "$GITHUB_OUTPUT"
+          echo "latest=${LATEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Get current cask versions
+        id: current
+        run: |
+          echo "stable=$(grep -m1 'version ' Casks/claude-code.rb | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')" >> "$GITHUB_OUTPUT"
+          echo "latest=$(grep -m1 'version ' 'Casks/claude-code@latest.rb' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')" >> "$GITHUB_OUTPUT"
+
+      - name: Update stable cask
+        if: steps.upstream.outputs.stable != steps.current.outputs.stable
+        env:
+          NEW_VER: ${{ steps.upstream.outputs.stable }}
+          OLD_VER: ${{ steps.current.outputs.stable }}
+        run: |
+          curl -fsSL "https://github.com/anthropics/claude-code/releases/download/v${NEW_VER}/SHASUMS256.txt" \
+            -o /tmp/shasums-stable.txt
+          ARM64=$(awk '/claude-darwin-arm64\.tar\.gz/{print $1}' /tmp/shasums-stable.txt)
+          X64=$(awk   '/claude-darwin-x64\.tar\.gz/{print $1}'   /tmp/shasums-stable.txt)
+          sed -i "s/version \"${OLD_VER}\"/version \"${NEW_VER}\"/" Casks/claude-code.rb
+          sed -i "s/arm:    \"[0-9a-f]\{64\}\"/arm:    \"${ARM64}\"/" Casks/claude-code.rb
+          sed -i "s/x86_64: \"[0-9a-f]\{64\}\"/x86_64: \"${X64}\"/"  Casks/claude-code.rb
+
+      - name: Update latest cask
+        if: steps.upstream.outputs.latest != steps.current.outputs.latest
+        env:
+          NEW_VER: ${{ steps.upstream.outputs.latest }}
+          OLD_VER: ${{ steps.current.outputs.latest }}
+        run: |
+          curl -fsSL "https://github.com/anthropics/claude-code/releases/download/v${NEW_VER}/SHASUMS256.txt" \
+            -o /tmp/shasums-latest.txt
+          ARM64=$(awk '/claude-darwin-arm64\.tar\.gz/{print $1}' /tmp/shasums-latest.txt)
+          X64=$(awk   '/claude-darwin-x64\.tar\.gz/{print $1}'   /tmp/shasums-latest.txt)
+          sed -i "s/version \"${OLD_VER}\"/version \"${NEW_VER}\"/" 'Casks/claude-code@latest.rb'
+          sed -i "s/arm:    \"[0-9a-f]\{64\}\"/arm:    \"${ARM64}\"/" 'Casks/claude-code@latest.rb'
+          sed -i "s/x86_64: \"[0-9a-f]\{64\}\"/x86_64: \"${X64}\"/"  'Casks/claude-code@latest.rb'
+
+      - name: Open PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STABLE_VER: ${{ steps.upstream.outputs.stable }}
+          LATEST_VER: ${{ steps.upstream.outputs.latest }}
+        run: |
+          if git diff --quiet; then
+            echo "Casks are up to date."
+            exit 0
+          fi
+
+          BRANCH="auto/claude-code-${LATEST_VER}"
+
+          if gh pr list --head "$BRANCH" --json number --jq '.[0].number' | grep -qE '^[0-9]+$'; then
+            echo "PR already open for $BRANCH — skipping."
+            exit 0
+          fi
+
+          git config user.email "robot@github.com"
+          git config user.name "homebrew-ih-public-action"
+          git checkout -b "$BRANCH"
+          git add Casks/claude-code.rb 'Casks/claude-code@latest.rb'
+          git commit -m "chore: update claude-code casks (stable=${STABLE_VER}, latest=${LATEST_VER})"
+          git push origin "$BRANCH"
+
+          printf 'Automated update of the Claude Code GitHub mirror casks.\n\nstable: %s\nlatest: %s\n\nChecksums sourced from upstream SHASUMS256.txt on each GitHub release.' \
+            "$STABLE_VER" "$LATEST_VER" > /tmp/pr-body.txt
+
+          PR_URL=$(gh pr create \
+            --title "chore: update claude-code casks (stable=${STABLE_VER}, latest=${LATEST_VER})" \
+            --body-file /tmp/pr-body.txt \
+            --base master \
+            --head "$BRANCH")
+
+          gh pr merge --squash --auto "$PR_URL" || echo "Auto-merge not available (code owner review required); PR opened for manual merge."

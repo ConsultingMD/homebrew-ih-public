@@ -1,1 +1,6 @@
 * @ConsultingMD/developer-platform
+
+# Claude Code mirror casks: version bumps are auto-merged without code owner review.
+# Workflow changes still require review from @ConsultingMD/developer-platform.
+Casks/claude-code.rb
+Casks/claude-code@latest.rb
