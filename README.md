@@ -104,3 +104,31 @@ You can test the setup script against your actual $HOME by running `./meta/test 
 or `./meta/test bash`. This will start a new shell of the specified type without loading
 your existing .\*rc files. Be careful, as running steps in this mode will update your
 real $HOME directory with things.
+
+## Claude Code
+
+The official Homebrew cask downloads from `downloads.claude.ai`, which is blocked on the IH VPN. `npm install -g @anthropic-ai/claude-code` is deprecated by Anthropic (it still works, but is no longer the recommended install path) and also uses the same blocked CDN. This tap provides VPN-safe mirror casks that download from GitHub releases instead.
+
+### Installation
+
+```bash
+brew tap ConsultingMD/ih-public
+brew install --cask claude-code@latest
+```
+
+### Updating
+
+```bash
+brew upgrade claude-code@latest
+```
+
+A GitHub Actions workflow runs daily, checks npm for new releases, and opens a PR to bump the cask version and SHA. Once merged, running `brew upgrade claude-code@latest` picks up the new version.
+
+### Channels
+
+| Cask | npm dist-tag | Use when |
+|------|-------------|----------|
+| `claude-code@latest` | `latest` | You want the most recent release (recommended) |
+| `claude-code` | `stable` | You want the explicitly promoted stable release |
+
+Both casks are updated by the same daily workflow. If you are unsure which to use, install `claude-code@latest`.
