@@ -17,8 +17,8 @@ TAP_REPO="consultingmd/ih-public"
 
 # Check if the tap already exists, and if so, untap it to prevent issues caused by the old SSH url
 if brew tap | grep -q "$TAP_REPO"; then
-    echo "Homebrew tap $TAP_REPO already exists. Untapping..."
-    brew untap "$TAP_REPO"
+  echo "Homebrew tap $TAP_REPO already exists. Untapping..."
+  brew untap "$TAP_REPO"
 fi
 
 brew update
@@ -28,6 +28,15 @@ echo "Sometimes the dependency downloads fail, possibly due to the VPN, so \
 I will retry installing a couple times if it fails."
 
 brew tap ConsultingMD/homebrew-ih-public https://github.com/ConsultingMD/homebrew-ih-public.git
+
+# Trust our internal tap so Homebrew loads its formulae and casks without
+# warnings. From Homebrew 5.2.0/6.0.0 non-official taps must be explicitly
+# trusted (see https://docs.brew.sh/Tap-Trust). We administer this tap, so
+# whole-tap trust is appropriate. Guard on availability so this keeps working
+# on older Homebrew where 'brew trust' does not yet exist.
+if brew trust --help >/dev/null 2>&1; then
+  brew trust "$TAP_REPO"
+fi
 
 SUCCEEDED=1
 for _ in 1 2 3; do
