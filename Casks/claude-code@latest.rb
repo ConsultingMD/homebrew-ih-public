@@ -15,6 +15,9 @@ cask "claude-code@latest" do
     strategy :github_latest
   end
 
+  deprecate! date:    "2026-07-01",
+             because: "is superseded by the official claude-code@latest cask, now reachable on the IH VPN"
+
   binary "claude"
 
   zap trash: [
