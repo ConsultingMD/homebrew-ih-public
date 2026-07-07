@@ -321,8 +321,36 @@ function ih::private::state::is-step-installed() {
   ! [ -f "${IH_SETUP_DOMAINS_DIR}/${DOMAIN}/${STEP}" ]
 }
 
+# The internal reference Homebrew uses for our tap. Tap names are normalized
+# to lowercase and omit the 'homebrew-' prefix.
+IH_TAP_REPO="consultingmd/ih-public"
+
+# Trust our internal tap. From Homebrew 5.2.0/6.0.0 non-official taps must be
+# explicitly trusted (see https://docs.brew.sh/Tap-Trust) or Homebrew skips
+# their formulae. When ih-core is skipped, its dependencies (awscli, gh,
+# coreutils, gnu-getopt, ...) look unneeded and get autoremoved by routine
+# brew commands, and 'brew upgrade ih-core' refuses to load the formula.
+# Existing users set up before this requirement won't have re-run bootstrap,
+# so we trust the tap here. Guard on availability so this keeps working on
+# older Homebrew where 'brew trust' does not yet exist.
+function ih::private::trust-tap() {
+  if ! brew trust --help >/dev/null 2>&1; then
+    return 0
+  fi
+  if brew trust "$IH_TAP_REPO"; then
+    ih::log::debug "Trusted tap $IH_TAP_REPO"
+  else
+    ih::log::warn "Could not trust tap $IH_TAP_REPO; run 'brew trust $IH_TAP_REPO' manually if brew skips ih-core"
+  fi
+}
+
 function ih::private::upgrade() {
   ih::log::info "Checking for updates..."
+
+  # Trust the tap before any formula operations so Homebrew will load ih-core
+  # (untrusted taps are skipped, which makes 'brew outdated'/'brew upgrade'
+  # ignore ih-core and lets brew autoremove its dependencies).
+  ih::private::trust-tap
 
   if ! brew update >/dev/null; then
     ih::log::error "brew update failed"
