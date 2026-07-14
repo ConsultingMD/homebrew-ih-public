@@ -238,7 +238,7 @@ function ih::setup::core.shell::private::configure-profile() {
   # people don't retype it and can't fat-finger a mismatch. collect-env-var only
   # prompts when there's no default, so this derives the username automatically.
   ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
-    "Your email username, likely firstname.lastname (without @includedhealth.com)" \
+    "The part of your email before the @ (likely firstname.lastname), not the full address" \
     "${EMAIL_ADDRESS%%@*}"
   # IH_USERNAME should be just the email local-part (the prompt says so), but a full
   # email can get pasted or already be saved that way. Strip the domain so IH_USERNAME
@@ -246,7 +246,7 @@ function ih::setup::core.shell::private::configure-profile() {
   # re-derives from the cleaned value below (collect-env-var keeps a set value as-is),
   # which repairs the doubled domain older setups produced.
   if [[ "$IH_USERNAME" == *@* ]]; then
-    ih::log::warn "IH_USERNAME should be just your email username; dropping the domain and using '${IH_USERNAME%%@*}'."
+    ih::log::warn "IH_USERNAME should be just the part of your email before the @ (like firstname.lastname), not the full address. Using '${IH_USERNAME%%@*}'."
     export IH_USERNAME="${IH_USERNAME%%@*}"
     unset JIRA_USERNAME
   fi
