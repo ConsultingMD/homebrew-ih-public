@@ -234,9 +234,22 @@ function ih::setup::core.shell::private::configure-profile() {
   ih::setup::core.shell::private::collect-env-var "FULL_NAME" \
     "Your full name, the name you would introduce yourself with" \
     ""
+  # Default from the email collected just above: its local-part is the username, so
+  # people don't retype it and can't fat-finger a mismatch. collect-env-var only
+  # prompts when there's no default, so this derives the username automatically.
   ih::setup::core.shell::private::collect-env-var "IH_USERNAME" \
     "Your email username, likely firstname.lastname (without @includedhealth.com)" \
-    ""
+    "${EMAIL_ADDRESS%%@*}"
+  # IH_USERNAME should be just the email local-part (the prompt says so), but a full
+  # email can get pasted or already be saved that way. Strip the domain so IH_USERNAME
+  # and everything derived from it stay correct. Also drop a stale JIRA_USERNAME so it
+  # re-derives from the cleaned value below (collect-env-var keeps a set value as-is),
+  # which repairs the doubled domain older setups produced.
+  if [[ "$IH_USERNAME" == *@* ]]; then
+    ih::log::warn "IH_USERNAME should be just your email username; dropping the domain and using '${IH_USERNAME%%@*}'."
+    export IH_USERNAME="${IH_USERNAME%%@*}"
+    unset JIRA_USERNAME
+  fi
   # shellcheck disable=SC2153
   export GR_USERNAME="$IH_USERNAME"
   local default_jira_username="$GR_USERNAME@includedhealth.com"
@@ -322,6 +335,14 @@ function ih::setup::core.shell::private::validate-profile() {
       return 1 # Return 1 as soon as an unset variable is found
     fi
   done
+
+  # IH_USERNAME must be just the email local-part. A domain here is the root cause of
+  # the doubled JIRA_USERNAME that broke Jira auth in older setups, so treat the
+  # profile as out of sync. Re-running strips it and re-derives JIRA_USERNAME.
+  if [[ "$IH_USERNAME" == *@* ]]; then
+    ih::log::debug "IH_USERNAME contains a domain and needs normalizing"
+    return 1
+  fi
 
   return 0 # Return 0 if all variables are set
 }
