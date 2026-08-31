@@ -17,12 +17,22 @@ function source_asdf() {
   # Check if asdf is installed and which version it is
   if command -v asdf >/dev/null 2>&1; then
     # Try to get the version
-    local version
+    local version major minor
     version=$(asdf --version 2>/dev/null || echo "unknown")
 
-    # Check if it's the Go version (0.16.0+)
-    # Match versions like v0.16.x, 0.16.x, v1.x.x, 1.x.x
-    if [[ "$version" =~ ^v?0\.1[6-9] ]] || [[ "$version" =~ ^v?[1-9] ]]; then
+    # Check if it's the Go version (0.16.0+).
+    # The Bash releases print "v0.14.0-<sha>" but the Go rewrite prints
+    # "asdf version 0.20.0 (revision ...)", so strip the prefix first.
+    # Compare the numbers rather than pattern-matching them: an anchored
+    # "0\.1[6-9]" also misses every release from 0.20 onward.
+    # No capture groups here on purpose: zsh sources this file too, and it
+    # populates $match rather than $BASH_REMATCH.
+    version=${version#asdf version }
+    version=${version#v}
+    major=${version%%.*}
+    minor=${version#*.}
+    minor=${minor%%.*}
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+ ]] && ((major > 0 || minor >= 16)); then
       is_go_version=1
 
       # Go version detected - use the official recommended setup
