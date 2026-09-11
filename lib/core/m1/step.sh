@@ -47,7 +47,16 @@ function ih::setup::core.m1::deps() {
 function ih::setup::core.m1::install() {
 
   if [ ! -x /usr/local/bin/brew ]; then
-    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    # Homebrew's installer now refuses to install under arch -x86_64 on
+    # Apple Silicon, so clone Homebrew directly instead (must be a real
+    # git clone, not a tarball, so `brew update` has a remote to fetch).
+    ih::log::info "Installing x86 (Intel) Homebrew via manual clone"
+    sudo mkdir -p /usr/local/Homebrew
+    sudo chown -R "$(whoami)" /usr/local/Homebrew
+    git clone https://github.com/Homebrew/brew.git /usr/local/Homebrew
+    sudo mkdir -p /usr/local/bin
+    sudo ln -sf /usr/local/Homebrew/bin/brew /usr/local/bin/brew
+    /usr/local/bin/brew update --force >/dev/null
   fi
 
   ih::file::sync-shell-defaults "${IH_CORE_LIB_DIR}/core/m1/default"
