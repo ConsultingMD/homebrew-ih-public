@@ -57,7 +57,19 @@ function ih::setup::core.m1::install() {
     sudo mkdir -p /usr/local/Homebrew
     sudo chown -R "$(whoami)" /usr/local/Homebrew
     git clone https://github.com/Homebrew/brew.git /usr/local/Homebrew
-    sudo mkdir -p /usr/local/bin
+
+    # brew needs to write formula/cask installs under these standard
+    # prefix directories, which are root-owned by default on a stock Mac.
+    # The official installer creates and chowns them; do the same here.
+    local PREFIX_DIRS=(
+      bin etc include lib opt sbin share
+      var var/homebrew Cellar Caskroom Frameworks
+    )
+    for DIR in "${PREFIX_DIRS[@]}"; do
+      sudo mkdir -p "/usr/local/$DIR"
+    done
+    sudo chown "$(whoami)" "${PREFIX_DIRS[@]/#//usr/local/}"
+
     sudo ln -sf /usr/local/Homebrew/bin/brew /usr/local/bin/brew
     /usr/local/bin/brew update --force >/dev/null
   fi
