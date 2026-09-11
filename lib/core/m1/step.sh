@@ -47,7 +47,31 @@ function ih::setup::core.m1::deps() {
 function ih::setup::core.m1::install() {
 
   if [ ! -x /usr/local/bin/brew ]; then
-    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    # Homebrew's installer now refuses to install under arch -x86_64 on
+    # Apple Silicon, so clone Homebrew directly instead (must be a real
+    # git clone, not a tarball, so `brew update` has a remote to fetch).
+    ih::log::info "Installing x86 (Intel) Homebrew via manual clone"
+    # Clear any partial clone from a prior interrupted run so this stays
+    # retry-safe: `git clone` refuses a non-empty destination directory.
+    sudo rm -rf /usr/local/Homebrew
+    sudo mkdir -p /usr/local/Homebrew
+    sudo chown -R "$(whoami)" /usr/local/Homebrew
+    git clone https://github.com/Homebrew/brew.git /usr/local/Homebrew
+
+    # brew needs to write formula/cask installs under these standard
+    # prefix directories, which are root-owned by default on a stock Mac.
+    # The official installer creates and chowns them; do the same here.
+    local PREFIX_DIRS=(
+      bin etc include lib opt sbin share
+      var var/homebrew Cellar Caskroom Frameworks
+    )
+    for DIR in "${PREFIX_DIRS[@]}"; do
+      sudo mkdir -p "/usr/local/$DIR"
+    done
+    sudo chown "$(whoami)" "${PREFIX_DIRS[@]/#//usr/local/}"
+
+    sudo ln -sf /usr/local/Homebrew/bin/brew /usr/local/bin/brew
+    /usr/local/bin/brew update --force >/dev/null
   fi
 
   ih::file::sync-shell-defaults "${IH_CORE_LIB_DIR}/core/m1/default"
