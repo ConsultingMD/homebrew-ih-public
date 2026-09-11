@@ -51,6 +51,9 @@ function ih::setup::core.m1::install() {
     # Apple Silicon, so clone Homebrew directly instead (must be a real
     # git clone, not a tarball, so `brew update` has a remote to fetch).
     ih::log::info "Installing x86 (Intel) Homebrew via manual clone"
+    # Clear any partial clone from a prior interrupted run so this stays
+    # retry-safe: `git clone` refuses a non-empty destination directory.
+    sudo rm -rf /usr/local/Homebrew
     sudo mkdir -p /usr/local/Homebrew
     sudo chown -R "$(whoami)" /usr/local/Homebrew
     git clone https://github.com/Homebrew/brew.git /usr/local/Homebrew
