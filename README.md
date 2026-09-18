@@ -48,6 +48,27 @@ Before you submit a PR with your change, run `meta/bump`. This will print off th
 Then run `meta/bump {version you want}`. This will update the version everywhere it needs to be updated.
 When your PR is merged, a new release with the new version will be created.
 
+### Updating Casks
+
+Casks (e.g. [ih-rancher](./Casks/ih-rancher.rb), [ih-mcp-router](./Casks/ih-mcp-router.rb))
+pin a specific upstream version and a `sha256` per architecture. To bump one:
+
+1. Find the new version's release page for the upstream tool (e.g.
+   `https://github.com/rancher-sandbox/rancher-desktop/releases`).
+2. Download the release asset for each architecture the cask supports
+   (Intel/`x86_64` and Apple Silicon/`aarch64`), and compute its checksum:
+
+   ```bash
+   shasum -a 256 <downloaded-file>
+   ```
+
+3. Update the cask's `version` and the `sha256` for each architecture.
+4. Sanity test before opening a PR:
+
+   ```bash
+   brew reinstall consultingmd/ih-public/<cask-name>
+   ```
+
 ### Overview
 
 The ih-setup script works by scanning the folders in ./lib for files which contain functions
