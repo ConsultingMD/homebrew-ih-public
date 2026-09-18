@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # These are some default settings for bash suggested
-# by the Developer Platform team. You can override these in the
+# by the App Platform team. You can override these in the
 # bash_custom.sh file.
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
@@ -86,7 +86,6 @@ export PKG_CONFIG_PATH="$BREW_PREFIX_OPENSSL/lib/pkgconfig"
 
 # Rancher desktop added to the PATH
 export PATH=$PATH:/Users/$USER/.rd/bin
-
 
 #Determine where a shell function is defined / declared
 function find_function {

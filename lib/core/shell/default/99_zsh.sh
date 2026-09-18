@@ -2,7 +2,7 @@
 # Shebang indicates bash to enable shellcheck
 
 # These are some default settings for zsh suggested
-# by the Developer Platform team. You can override these in the
+# by the App Platform team. You can override these in the
 # zsh_custom.sh file.
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
@@ -73,7 +73,6 @@ fi
 
 autoload -Uz compinit
 compinit
-
 
 # ██████╗  ██████╗     ███╗   ██╗ ██████╗ ████████╗    ███████╗██████╗ ██╗████████╗
 # ██╔══██╗██╔═══██╗    ████╗  ██║██╔═══██╗╚══██╔══╝    ██╔════╝██╔══██╗██║╚══██╔══╝
