@@ -4,6 +4,7 @@
 
 GCLOUD_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/gcloud-cli/default/85_gcloud.sh"
 GCLOUD_SH_PATH="$IH_DEFAULT_DIR/85_gcloud.sh"
+GCLOUD_SDK_BIN="$(brew --prefix)/share/google-cloud-sdk/bin"
 
 function ih::setup::core.gcloud-cli::help() {
   echo "Install the Google Cloud CLI
@@ -12,6 +13,7 @@ function ih::setup::core.gcloud-cli::help() {
         - Install the gcloud-cli Homebrew cask (gcloud, gsutil, bq)
         - Add the Google Cloud SDK bin directory to your PATH so components
           installed with 'gcloud components install' are available
+        - Install the gke-gcloud-auth-plugin component
     "
 }
 
@@ -20,6 +22,11 @@ function ih::setup::core.gcloud-cli::help() {
 function ih::setup::core.gcloud-cli::test() {
   if ! brew list --cask gcloud-cli >/dev/null 2>&1; then
     ih::log::debug "gcloud-cli cask is not installed"
+    return 1
+  fi
+
+  if [ ! -x "$GCLOUD_SDK_BIN/gke-gcloud-auth-plugin" ]; then
+    ih::log::debug "gke-gcloud-auth-plugin component is not installed"
     return 1
   fi
 
@@ -39,6 +46,12 @@ function ih::setup::core.gcloud-cli::install() {
   ih::log::info "Installing the gcloud-cli cask"
   if ! brew install --cask gcloud-cli; then
     ih::log::error "Failed to install the gcloud-cli cask"
+    return 1
+  fi
+
+  ih::log::info "Installing the gke-gcloud-auth-plugin component"
+  if ! "$GCLOUD_SDK_BIN/gcloud" components install gke-gcloud-auth-plugin --quiet; then
+    ih::log::error "Failed to install the gke-gcloud-auth-plugin component"
     return 1
   fi
 
