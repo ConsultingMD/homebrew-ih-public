@@ -23,7 +23,7 @@ function ih::setup::core.claude-code::test() {
     return 1
   fi
 
-  if ! claude auth status --json 2>/dev/null | jq -e '.loggedIn == true' >/dev/null; then
+  if ! ih::claude::is-signed-in; then
     ih::log::debug "Claude Code is not signed in"
     return 1
   fi
@@ -50,7 +50,7 @@ function ih::setup::core.claude-code::install() {
     fi
   fi
 
-  if claude auth status --json 2>/dev/null | jq -e '.loggedIn == true' >/dev/null; then
+  if ih::claude::is-signed-in; then
     return 0
   fi
 

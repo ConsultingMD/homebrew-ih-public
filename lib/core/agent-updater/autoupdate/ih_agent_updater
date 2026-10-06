@@ -22,8 +22,7 @@ IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 
 LOG_DIR="${HOME}/.ih/logs"
 LOG_FILE="${LOG_DIR}/agent-updater.log"
-# Holds "<ok|failed> <epoch seconds>" for the last attempt.
-STATUS_FILE="${IH_AGENT_STATE_DIR}/agent-updater.status"
+STATUS_FILE="$IH_AGENT_UPDATER_STATUS"
 WEEK_SECONDS=604800
 
 mkdir -p "$LOG_DIR" "$IH_AGENT_STATE_DIR"

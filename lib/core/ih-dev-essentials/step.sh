@@ -22,15 +22,12 @@ function ih::setup::core.ih-dev-essentials::test() {
     return 1
   fi
 
+  # Only checks the install. Updates come from the weekly agent updater and from
+  # `ih-setup upgrade`, so a new commit on ih-agent-smith does not fail this step.
   local STATE
   STATE=$(ih::claude::plugin-state)
   if [ "$STATE" != "enabled" ]; then
     ih::log::debug "$IH_CLAUDE_PLUGIN is $STATE"
-    return 1
-  fi
-
-  if ! ih::claude::plugins-up-to-date; then
-    ih::log::debug "Plugins from $IH_CLAUDE_MARKETPLACE are out of date"
     return 1
   fi
 }

@@ -24,13 +24,21 @@ function ih::setup::core.agent-updater::create-temp-plist() {
   local TEMP_PLIST
   TEMP_PLIST=$(mktemp /tmp/ih_agent_updater.XXXXXX)
 
-  local LIB_ESC HOME_ESC
+  # launchd starts with a bare PATH, so add the directory of the claude that ih-setup found.
+  # An npm or asdf install is not in any of the standard directories.
+  local CLAUDE_BIN_DIR
+  ih::claude::ensure-path
+  CLAUDE_BIN_DIR=$(dirname "$(command -v claude 2>/dev/null || echo "${HOME}/.local/bin/claude")")
+
+  local LIB_ESC HOME_ESC CLAUDE_ESC
   # shellcheck disable=SC2001
   LIB_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
   # shellcheck disable=SC2001
   HOME_ESC=$(echo "$HOME" | sed 's_/_\\/_g')
+  # shellcheck disable=SC2001
+  CLAUDE_ESC=$(echo "$CLAUDE_BIN_DIR" | sed 's_/_\\/_g')
 
-  sed "s/\$IH_CORE_LIB_DIR/${LIB_ESC}/g; s/\$HOME/${HOME_ESC}/g" \
+  sed "s/\$IH_CORE_LIB_DIR/${LIB_ESC}/g; s/\$CLAUDE_BIN_DIR/${CLAUDE_ESC}/g; s/\$HOME/${HOME_ESC}/g" \
     "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/${IH_AGENT_UPDATER_LABEL}.plist" >"$TEMP_PLIST"
 
   echo "$TEMP_PLIST"
@@ -51,8 +59,7 @@ function ih::setup::core.agent-updater::test() {
     return 1
   fi
 
-  local STATUS_FILE="${IH_AGENT_STATE_DIR}/agent-updater.status"
-  if grep -q '^failed' "$STATUS_FILE" 2>/dev/null; then
+  if grep -q '^failed' "$IH_AGENT_UPDATER_STATUS" 2>/dev/null; then
     ih::log::warn "The last agent setup update failed. See ~/.ih/logs/agent-updater.log"
     return 1
   fi
@@ -72,15 +79,25 @@ function ih::setup::core.agent-updater::install() {
   if launchctl list "$IH_AGENT_UPDATER_LABEL" >/dev/null 2>&1; then
     launchctl unload "$IH_AGENT_UPDATER_PLIST"
   fi
-  launchctl load "$IH_AGENT_UPDATER_PLIST" || return 1
-  ih::log::info "Loaded $IH_AGENT_UPDATER_PLIST"
 
-  # Run once now so that a failed update is retried and its status is cleared.
-  if grep -q '^failed' "${IH_AGENT_STATE_DIR}/agent-updater.status" 2>/dev/null; then
-    ih::log::info "Retrying the failed agent setup update"
-    if ! IH_AGENT_UPDATER_FORCE=1 "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"; then
-      ih::log::error "The update failed again. See ~/.ih/logs/agent-updater.log"
-      return 1
+  # Retry a failed update while the agent is unloaded, so the run that launchd starts at
+  # load time sees the new status and does not run at the same time as this one.
+  local RETRY_FAILED=0
+  if grep -q '^failed' "$IH_AGENT_UPDATER_STATUS" 2>/dev/null; then
+    if ih::claude::is-running; then
+      # The updater skips without an error while Claude Code is open, so check first.
+      ih::log::error "Quit every Claude Code session, then run this step again to retry the failed update"
+      RETRY_FAILED=1
+    else
+      ih::log::info "Retrying the failed agent setup update"
+      if ! IH_AGENT_UPDATER_FORCE=1 "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"; then
+        ih::log::error "The update failed again. See ~/.ih/logs/agent-updater.log"
+        RETRY_FAILED=1
+      fi
     fi
   fi
+
+  launchctl load "$IH_AGENT_UPDATER_PLIST" || return 1
+  ih::log::info "Loaded $IH_AGENT_UPDATER_PLIST"
+  return $RETRY_FAILED
 }

@@ -22,6 +22,8 @@ IH_CLAUDE_SETTINGS="${IH_CLAUDE_DIR}/settings.json"
 IH_AGENT_STATE_DIR="${HOME}/.ih/state"
 # Records every settings default that was applied once, so it is never applied again.
 IH_CLAUDE_SETTINGS_APPLIED="${IH_AGENT_STATE_DIR}/claude-settings-applied.json"
+# Holds "<ok|failed> <epoch seconds>" for the last agent updater attempt.
+IH_AGENT_UPDATER_STATUS="${IH_AGENT_STATE_DIR}/agent-updater.status"
 
 # Puts the native installer's bin directory on the PATH if claude is not already there.
 function ih::claude::ensure-path() {
@@ -34,6 +36,11 @@ function ih::claude::ensure-path() {
 function ih::claude::is-installed() {
   ih::claude::ensure-path
   command -v claude >/dev/null 2>&1
+}
+
+# Returns 0 if the claude CLI is signed in.
+function ih::claude::is-signed-in() {
+  claude auth status --json 2>/dev/null | jq -e '.loggedIn == true' >/dev/null
 }
 
 # Returns 0 if any Claude Code CLI session is running. The native install runs a binary
@@ -56,25 +63,6 @@ function ih::claude::plugin-state() {
     | jq -r --arg id "$IH_CLAUDE_PLUGIN" \
       'first(.[] | select(.id == $id and .scope == "user") | if .enabled then "enabled" else "disabled" end) // "missing"')
   echo "${STATE:-missing}"
-}
-
-# Returns 0 if the plugins from the marketplace match what it publishes on GitHub.
-# A network failure counts as up to date, so being offline does not fail `ih-setup check`.
-function ih::claude::plugins-up-to-date() {
-  local LOCAL_HEAD REMOTE_HEAD
-  LOCAL_HEAD=$(git -C "$IH_CLAUDE_MARKETPLACE_DIR" rev-parse HEAD 2>/dev/null) || return 1
-  if REMOTE_HEAD=$(git -C "$IH_CLAUDE_MARKETPLACE_DIR" ls-remote origin HEAD 2>/dev/null | cut -f1) \
-    && [ -n "$REMOTE_HEAD" ] && [ "$REMOTE_HEAD" != "$LOCAL_HEAD" ]; then
-    ih::log::debug "Marketplace clone is at $LOCAL_HEAD but GitHub is at $REMOTE_HEAD"
-    return 1
-  fi
-
-  # The refresh script also catches plugins whose files changed without a version bump.
-  if python3 "${IH_CLAUDE_MARKETPLACE_DIR}/scripts/refresh_plugins.py" --dry-run 2>/dev/null \
-    | grep -q 'would '; then
-    ih::log::debug "refresh_plugins.py reports plugins to update"
-    return 1
-  fi
 }
 
 # Refreshes the marketplace clone and updates every plugin installed from it.
@@ -162,6 +150,7 @@ function ih::claude::apply-settings-defaults() {
           elif $current == null then .settings |= setpath($item.path; $item.value)
           else . end
         | .applied += [$item.id])
+    | .changed = (.settings != $settings)
   ') || {
     ih::log::error "Could not merge settings defaults into $IH_CLAUDE_SETTINGS"
     return 1
@@ -180,8 +169,15 @@ function ih::claude::apply-settings-defaults() {
 
   mkdir -p "$IH_CLAUDE_DIR" "$IH_AGENT_STATE_DIR"
   # Write through temp files so a failed write never leaves half a settings file.
-  jq '.settings' <<<"$RESULT" >"${IH_CLAUDE_SETTINGS}.ih-tmp" \
-    && mv -f "${IH_CLAUDE_SETTINGS}.ih-tmp" "$IH_CLAUDE_SETTINGS" \
-    && jq '.applied' <<<"$RESULT" >"${IH_CLAUDE_SETTINGS_APPLIED}.ih-tmp" \
+  # Leave the settings file alone when every pending default was already set.
+  if [ "$(jq -r '.changed' <<<"$RESULT")" = "true" ]; then
+    # Write to the symlink target, so a settings file kept in a dotfiles repo stays linked.
+    local SETTINGS_PATH
+    SETTINGS_PATH=$(realpath "$IH_CLAUDE_SETTINGS" 2>/dev/null || echo "$IH_CLAUDE_SETTINGS")
+    jq '.settings' <<<"$RESULT" >"${SETTINGS_PATH}.ih-tmp" \
+      && mv -f "${SETTINGS_PATH}.ih-tmp" "$SETTINGS_PATH" \
+      || return 1
+  fi
+  jq '.applied' <<<"$RESULT" >"${IH_CLAUDE_SETTINGS_APPLIED}.ih-tmp" \
     && mv -f "${IH_CLAUDE_SETTINGS_APPLIED}.ih-tmp" "$IH_CLAUDE_SETTINGS_APPLIED"
 }

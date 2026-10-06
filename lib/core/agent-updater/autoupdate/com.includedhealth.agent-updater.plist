@@ -12,7 +12,7 @@
         <key>IH_CORE_LIB_DIR</key>
         <string>$IH_CORE_LIB_DIR</string>
         <key>PATH</key>
-        <string>$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>$CLAUDE_BIN_DIR:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
     <key>StandardOutPath</key>
     <string>/tmp/ih_agent_updater.stdout</string>

@@ -49,7 +49,7 @@ setting that you own. The content comes from the private `ConsultingMD/ih-agent-
 | Step                     | What it does                                                                                     |
 | ------------------------ | ------------------------------------------------------------------------------------------------ |
 | `core.claude-code`       | Keeps your Claude Code install, or installs it with the native installer. Then starts sign-in.   |
-| `core.ih-dev-essentials` | Installs the `ih-dev-essentials` plugin, or updates your `ih-coding-agents` plugins.             |
+| `core.ih-dev-essentials` | Installs and enables the `ih-dev-essentials` plugin. `ih-setup upgrade` updates your `ih-coding-agents` plugins. |
 | `core.agents-md`         | Copies the standard `AGENTS.md` to `~/.claude/ih/AGENTS.md` and imports it from `~/.claude/CLAUDE.md`. |
 | `core.claude-settings`   | Adds each default setting that you do not have to `~/.claude/settings.json`, one time only.      |
 | `core.agent-updater`     | Installs a launchd agent that updates all of the above weekly and at login.                      |
