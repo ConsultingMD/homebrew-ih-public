@@ -344,6 +344,24 @@ function ih::private::trust-tap() {
   fi
 }
 
+# Updates the plugins from the ih-coding-agents marketplace, if ih-dev-essentials is
+# installed and enabled. A failure here does not stop the ih-core upgrade.
+function ih::private::upgrade-agent-plugins() {
+  if ! ih::claude::is-installed || [ "$(ih::claude::plugin-state)" != "enabled" ]; then
+    return 0
+  fi
+
+  if ih::claude::is-running; then
+    ih::log::warn "Skipped the Claude Code plugin update because Claude Code is running. Quit it and run 'ih-setup upgrade' again."
+    return 0
+  fi
+
+  ih::log::info "Updating Claude Code plugins from $IH_CLAUDE_MARKETPLACE"
+  if ! ih::claude::refresh-plugins; then
+    ih::log::error "The Claude Code plugin update failed"
+  fi
+}
+
 function ih::private::upgrade() {
   ih::log::info "Checking for updates..."
 
@@ -356,6 +374,8 @@ function ih::private::upgrade() {
     ih::log::error "brew update failed"
     return 1
   fi
+
+  ih::private::upgrade-agent-plugins
 
   local OUTDATED
   OUTDATED=$(brew outdated ih-core)
