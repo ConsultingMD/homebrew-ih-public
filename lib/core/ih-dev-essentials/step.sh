@@ -44,7 +44,8 @@ function ih::setup::core.ih-dev-essentials::install() {
   ih::claude::ensure-path
 
   while ih::claude::is-running; do
-    if ! ih::ask::retry-cancel "Claude Code is running. Quit every Claude Code session, then retry."; then
+    # Without a terminal the prompt reads nothing and would retry forever.
+    if [ ! -t 0 ] || ! ih::ask::retry-cancel "Claude Code is running. Quit every Claude Code session, then retry."; then
       ih::log::error "Claude Code must be closed to install or update plugins"
       return 1
     fi
