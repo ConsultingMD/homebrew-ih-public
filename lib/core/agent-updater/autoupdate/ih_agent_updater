@@ -4,10 +4,8 @@
 # AGENTS.md, and new Claude settings defaults. It never reinstalls a plugin or an
 # import line that the engineer removed.
 #
-# launchd starts this every hour and at login. It does the update only when a week has
-# passed since the last attempt, or the Mac restarted after it. A run that finds Claude
-# Code open is skipped and does not count as an attempt, so the next hourly run retries.
-# Set IH_AGENT_UPDATER_FORCE=1 to skip the schedule check.
+# launchd starts this weekly and at login. If Claude Code is open, the run is skipped
+# and the update waits for the next login or the next week.
 
 set -o pipefail
 
@@ -23,23 +21,11 @@ IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 LOG_DIR="${HOME}/.ih/logs"
 LOG_FILE="${LOG_DIR}/agent-updater.log"
 STATUS_FILE="$IH_AGENT_UPDATER_STATUS"
-WEEK_SECONDS=604800
 
 mkdir -p "$LOG_DIR" "$IH_AGENT_STATE_DIR"
 
 function log() {
   echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $*" >>"$LOG_FILE"
-}
-
-function due() {
-  [ "$IH_AGENT_UPDATER_FORCE" = "1" ] && return 0
-  [ -f "$STATUS_FILE" ] || return 0
-
-  local LAST NOW BOOT
-  LAST=$(cut -d' ' -f2 "$STATUS_FILE")
-  NOW=$(date +%s)
-  BOOT=$(sysctl -n kern.boottime | sed -E 's/.*sec = ([0-9]+).*/\1/')
-  [ $((NOW - LAST)) -ge $WEEK_SECONDS ] || [ "$LAST" -lt "$BOOT" ]
 }
 
 function update() {
@@ -75,10 +61,6 @@ function update() {
 # Keep the log from growing without bound.
 if [ -f "$LOG_FILE" ]; then
   tail -n 2000 "$LOG_FILE" >"${LOG_FILE}.tmp" && mv -f "${LOG_FILE}.tmp" "$LOG_FILE"
-fi
-
-if ! due; then
-  exit 0
 fi
 
 if ih::claude::is-running; then

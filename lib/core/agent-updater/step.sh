@@ -90,7 +90,7 @@ function ih::setup::core.agent-updater::install() {
       RETRY_FAILED=1
     else
       ih::log::info "Retrying the failed agent setup update"
-      if ! IH_AGENT_UPDATER_FORCE=1 "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"; then
+      if ! "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"; then
         ih::log::error "The update failed again. See ~/.ih/logs/agent-updater.log"
         RETRY_FAILED=1
       fi
