@@ -52,7 +52,14 @@ setting that you own. The content comes from the private `ConsultingMD/ih-agent-
 | `core.ih-dev-essentials` | Installs and enables the `ih-dev-essentials` plugin. `ih-setup upgrade` updates your `ih-coding-agents` plugins. |
 | `core.agents-md`         | Copies the standard `AGENTS.md` to `~/.claude/ih/AGENTS.md` and imports it from `~/.claude/CLAUDE.md`. |
 | `core.claude-settings`   | Adds each default setting that you do not have to `~/.claude/settings.json`, one time only.      |
+| `core.cursor-standards`  | Writes the `ih-standards` local plugin to `~/.cursor/plugins/local/`. It holds the standard `AGENTS.md` as an always-apply rule, and some shared skills. |
+| `core.cursor-settings`   | Adds each default setting that you do not have to `~/.cursor/cli-config.json`, one time only.    |
 | `core.agent-updater`     | Installs a launchd agent that updates all of the above weekly and at login.                      |
+
+The Cursor steps run even if Cursor is not installed, so a later Cursor install gets the standards.
+`ih-setup` does not install `ih-dev-essentials` in Cursor, because Cursor installs plugins only from
+its team marketplace. To add it, type `/add-plugin ih-dev-essentials` in Cursor Agent chat. After a
+Cursor step changes a file, run Developer: Reload Window in Cursor.
 
 The updater runs only while Claude Code is closed. It writes its log to
 `~/.ih/logs/agent-updater.log`, and it shows a macOS notification if an update fails. After a failed
@@ -60,7 +67,8 @@ update, `ih-setup check` reports `core.agent-updater` as not installed. Run
 `ih-setup install core agent-updater` to try the update again.
 
 If you disable the plugin, remove the import line, or delete a default setting, the updater keeps
-your change. The next `ih-setup install` adds the plugin and the import line again, but not a
+your change. The `ih-standards` Cursor plugin is different: `ih-setup` owns it and replaces your
+edits. The next `ih-setup install` adds the plugin and the import line again, but not a
 deleted setting.
 
 ## Working in this repo

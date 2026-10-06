@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Keeps the standard agent setup current: the ih-coding-agents plugins, the managed
-# AGENTS.md, and new Claude settings defaults. It never reinstalls a plugin or an
-# import line that the engineer removed.
+# AGENTS.md, the ih-standards Cursor plugin, and new Claude and Cursor settings defaults.
+# It never reinstalls a plugin or an import line that the engineer removed.
 #
 # launchd starts this weekly and at login. If Claude Code is open, the run is skipped
 # and the update waits for the next login or the next week.
@@ -17,6 +17,8 @@ IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 . "$IH_CORE_LIB_DIR/utils/file.sh"
 # shellcheck source=/dev/null
 . "$IH_CORE_LIB_DIR/utils/claude.sh"
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/cursor.sh"
 
 LOG_DIR="${HOME}/.ih/logs"
 LOG_FILE="${LOG_DIR}/agent-updater.log"
@@ -55,6 +57,8 @@ function update() {
 
   ih::claude::sync-agents-md || FAILED=1
   ih::claude::apply-settings-defaults || FAILED=1
+  ih::cursor::sync-plugin || FAILED=1
+  ih::cursor::apply-cli-config-defaults || FAILED=1
   return $FAILED
 }
 

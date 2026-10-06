@@ -11,7 +11,8 @@ function ih::setup::core.agent-updater::help() {
     This step will:
     - Install a launchd agent that runs weekly and at login while
       Claude Code is closed. It updates the ih-coding-agents plugins,
-      the managed AGENTS.md, and new Claude settings defaults.
+      the managed AGENTS.md, the ih-standards Cursor plugin, and new
+      Claude and Cursor settings defaults.
     - Write a log to ~/.ih/logs/agent-updater.log
     - Show a macOS notification when an update fails
 
@@ -66,7 +67,7 @@ function ih::setup::core.agent-updater::test() {
 }
 
 function ih::setup::core.agent-updater::deps() {
-  echo "core.ih-dev-essentials core.agents-md core.claude-settings"
+  echo "core.ih-dev-essentials core.agents-md core.claude-settings core.cursor-standards core.cursor-settings"
 }
 
 function ih::setup::core.agent-updater::install() {

@@ -107,27 +107,42 @@ function ih::claude::agents-md-imported() {
 }
 
 # Applies the standard settings defaults to ~/.claude/settings.json without changing
-# any value that is already there. Each leaf value and each array entry is applied at
-# most one time, and is recorded in $IH_CLAUDE_SETTINGS_APPLIED, so a default that the
-# engineer deletes stays deleted. If $1 is "test", changes nothing and returns 1 when
+# any value that is already there. If $1 is "test", changes nothing and returns 1 when
 # there are defaults that were never applied.
 function ih::claude::apply-settings-defaults() {
-  local MODE="${1:-install}"
-  local DEFAULTS
-  DEFAULTS=$(ih::claude::standards-file claude-settings.json)
+  ih::agent::apply-json-defaults "${1:-install}" \
+    "$(ih::claude::standards-file claude-settings.json)" \
+    "$IH_CLAUDE_SETTINGS" "$IH_CLAUDE_SETTINGS_APPLIED"
+}
+
+# Fill-once merge of a defaults file into a JSON settings file.
+#   $1 "install" or "test". In test mode, changes nothing and returns 1 when
+#      there are defaults that were never applied.
+#   $2 the defaults file. If it does not exist, there is nothing to apply.
+#   $3 the settings file to change.
+#   $4 the state file that records each default that was applied.
+#   $5 optional JSON to start from when the settings file does not exist.
+#   $6 optional; if "expand-home", a "(~/" in a string becomes "($HOME/".
+# Each leaf value and each array entry is applied at most one time, and is recorded in
+# the state file, so a default that the engineer deletes stays deleted. A value that is
+# already set is never changed.
+function ih::agent::apply-json-defaults() {
+  local MODE="$1" DEFAULTS="$2" TARGET="$3" APPLIED_FILE="$4" SEED="${5:-"{}"}" EXPAND="${6:-}"
   if [ ! -f "$DEFAULTS" ]; then
     ih::log::debug "No standard settings defaults at $DEFAULTS; skipping"
     return 0
   fi
 
-  local SETTINGS_JSON='{}' APPLIED_JSON='[]'
-  [ -s "$IH_CLAUDE_SETTINGS" ] && SETTINGS_JSON=$(cat "$IH_CLAUDE_SETTINGS")
-  [ -s "$IH_CLAUDE_SETTINGS_APPLIED" ] && APPLIED_JSON=$(cat "$IH_CLAUDE_SETTINGS_APPLIED")
+  local SETTINGS_JSON="$SEED" APPLIED_JSON='[]'
+  [ -s "$TARGET" ] && SETTINGS_JSON=$(cat "$TARGET")
+  [ -s "$APPLIED_FILE" ] && APPLIED_JSON=$(cat "$APPLIED_FILE")
 
   local RESULT
   RESULT=$(jq -n \
     --argjson settings "$SETTINGS_JSON" \
     --argjson applied "$APPLIED_JSON" \
+    --arg home "$HOME" \
+    --arg expand "$EXPAND" \
     --slurpfile defaults "$DEFAULTS" '
     # Leaf paths in the defaults: values that are not objects, outside any array.
     def leaves: [paths(type != "object") as $p
@@ -139,7 +154,11 @@ function ih::claude::apply-settings-defaults() {
                   then .path as $p | .value[] | {id: (($p | tojson) + "[]" + tojson), path: $p, entry: .}
                   else {id: (.path | tojson), path: .path, value: .value}
                   end];
-    ($defaults[0] | items | map(select(.id as $id | $applied | index([$id]) | not))) as $pending
+    ($defaults[0]
+     | if $expand == "expand-home"
+       then walk(if type == "string" then gsub("\\(~/"; "(" + $home + "/") else . end)
+       else . end) as $source
+    | ($source | items | map(select(.id as $id | $applied | index([$id]) | not))) as $pending
     | reduce $pending[] as $item ({settings: $settings, applied: $applied, pending: ($pending | length)};
         (.settings | getpath($item.path)) as $current
         | if $item | has("entry") then
@@ -152,14 +171,14 @@ function ih::claude::apply-settings-defaults() {
         | .applied += [$item.id])
     | .changed = (.settings != $settings)
   ') || {
-    ih::log::error "Could not merge settings defaults into $IH_CLAUDE_SETTINGS"
+    ih::log::error "Could not merge settings defaults into $TARGET"
     return 1
   }
 
   local PENDING
   PENDING=$(jq -r '.pending' <<<"$RESULT")
   if [ "$MODE" = "test" ]; then
-    ih::log::debug "$PENDING settings defaults were never applied"
+    ih::log::debug "$PENDING settings defaults for $TARGET were never applied"
     [ "$PENDING" -eq 0 ]
     return
   fi
@@ -167,17 +186,17 @@ function ih::claude::apply-settings-defaults() {
     return 0
   fi
 
-  mkdir -p "$IH_CLAUDE_DIR" "$IH_AGENT_STATE_DIR"
+  mkdir -p "$(dirname "$TARGET")" "$(dirname "$APPLIED_FILE")"
   # Write through temp files so a failed write never leaves half a settings file.
   # Leave the settings file alone when every pending default was already set.
   if [ "$(jq -r '.changed' <<<"$RESULT")" = "true" ]; then
     # Write to the symlink target, so a settings file kept in a dotfiles repo stays linked.
-    local SETTINGS_PATH
-    SETTINGS_PATH=$(realpath "$IH_CLAUDE_SETTINGS" 2>/dev/null || echo "$IH_CLAUDE_SETTINGS")
-    jq '.settings' <<<"$RESULT" >"${SETTINGS_PATH}.ih-tmp" \
-      && mv -f "${SETTINGS_PATH}.ih-tmp" "$SETTINGS_PATH" \
+    local TARGET_PATH
+    TARGET_PATH=$(realpath "$TARGET" 2>/dev/null || echo "$TARGET")
+    jq '.settings' <<<"$RESULT" >"${TARGET_PATH}.ih-tmp" \
+      && mv -f "${TARGET_PATH}.ih-tmp" "$TARGET_PATH" \
       || return 1
   fi
-  jq '.applied' <<<"$RESULT" >"${IH_CLAUDE_SETTINGS_APPLIED}.ih-tmp" \
-    && mv -f "${IH_CLAUDE_SETTINGS_APPLIED}.ih-tmp" "$IH_CLAUDE_SETTINGS_APPLIED"
+  jq '.applied' <<<"$RESULT" >"${APPLIED_FILE}.ih-tmp" \
+    && mv -f "${APPLIED_FILE}.ih-tmp" "$APPLIED_FILE"
 }
