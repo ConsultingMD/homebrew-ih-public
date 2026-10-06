@@ -40,6 +40,29 @@ but you can modify them to suit your needs. If you don't already have a pattern 
 customizations consider using the `.ih/custom` folder as a place for them. In particular, if you don't like
 the effects of the `.ih/default` scripts, `.ih/custom` is a good place to override them.
 
+### What does ih-setup do for AI coding agents?
+
+`ih-setup` installs the standard agent setup and keeps it current. It never overwrites a file or a
+setting that you own. The content comes from the private `ConsultingMD/ih-agent-smith` repo, in its
+`standards/` directory.
+
+| Step                     | What it does                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| `core.claude-code`       | Keeps your Claude Code install, or installs it with the native installer. Then starts sign-in.   |
+| `core.ih-dev-essentials` | Installs the `ih-dev-essentials` plugin, or updates your `ih-coding-agents` plugins.             |
+| `core.agents-md`         | Copies the standard `AGENTS.md` to `~/.claude/ih/AGENTS.md` and imports it from `~/.claude/CLAUDE.md`. |
+| `core.claude-settings`   | Adds each default setting that you do not have to `~/.claude/settings.json`, one time only.      |
+| `core.agent-updater`     | Installs a launchd agent that updates all of the above weekly and at login.                      |
+
+The updater runs only while Claude Code is closed. It writes its log to
+`~/.ih/logs/agent-updater.log`, and it shows a macOS notification if an update fails. After a failed
+update, `ih-setup check` reports `core.agent-updater` as not installed. Run
+`ih-setup install core agent-updater` to try the update again.
+
+If you disable the plugin, remove the import line, or delete a default setting, the updater keeps
+your change. The next `ih-setup install` adds the plugin and the import line again, but not a
+deleted setting.
+
 ## Working in this repo
 
 ### How to release a new version
