@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Keeps the standard agent setup current: the ih-coding-agents plugins, the managed
+# AGENTS.md, the ih-standards Cursor plugin, and new Claude and Cursor settings defaults.
+# It never reinstalls a plugin or an import line that the engineer removed.
+#
+# launchd starts this weekly and at login. If Claude Code is open, the run is skipped
+# and the update waits for the next login or the next week.
+
+set -o pipefail
+
+IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
+
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/log.sh"
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/file.sh"
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/claude.sh"
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/cursor.sh"
+
+LOG_DIR="${HOME}/.ih/logs"
+LOG_FILE="${LOG_DIR}/agent-updater.log"
+STATUS_FILE="$IH_AGENT_UPDATER_STATUS"
+
+mkdir -p "$LOG_DIR" "$IH_AGENT_STATE_DIR"
+
+function log() {
+  echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $*" >>"$LOG_FILE"
+}
+
+function update() {
+  if ! ih::claude::is-installed; then
+    ih::log::error "claude is not installed"
+    return 1
+  fi
+
+  # Fail loudly if the CLI is broken, so it is not mistaken for an unregistered marketplace.
+  if ! claude plugin marketplace list --json >/dev/null; then
+    ih::log::error "claude plugin marketplace list failed"
+    return 1
+  fi
+
+  if ! ih::claude::marketplace-registered; then
+    ih::log::warn "The $IH_CLAUDE_MARKETPLACE marketplace is not registered; nothing to update"
+    return 0
+  fi
+
+  local FAILED=0
+  if [ "$(ih::claude::plugin-state)" = "enabled" ]; then
+    ih::claude::refresh-plugins || FAILED=1
+  else
+    # Respect an engineer who disabled or removed the plugin, but still fetch the standards.
+    claude plugin marketplace update "$IH_CLAUDE_MARKETPLACE" || FAILED=1
+  fi
+
+  ih::claude::sync-agents-md || FAILED=1
+  ih::claude::apply-settings-defaults || FAILED=1
+  ih::cursor::sync-plugin || FAILED=1
+  ih::cursor::apply-cli-config-defaults || FAILED=1
+  return $FAILED
+}
+
+# Keep the log from growing without bound.
+if [ -f "$LOG_FILE" ]; then
+  tail -n 2000 "$LOG_FILE" >"${LOG_FILE}.tmp" && mv -f "${LOG_FILE}.tmp" "$LOG_FILE"
+fi
+
+if ih::claude::is-running; then
+  log "Skipped: Claude Code is running"
+  exit 0
+fi
+
+log "Starting update"
+if update >>"$LOG_FILE" 2>&1; then
+  echo "ok $(date +%s)" >"$STATUS_FILE"
+  log "Update finished"
+else
+  echo "failed $(date +%s)" >"$STATUS_FILE"
+  log "Update failed"
+  osascript -e "display notification \"The agent setup update failed. See ${LOG_FILE}\" with title \"ih-setup\"" \
+    >/dev/null 2>&1
+  exit 1
+fi
