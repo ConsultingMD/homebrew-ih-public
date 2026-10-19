@@ -16,6 +16,8 @@ IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 # shellcheck source=/dev/null
 . "$IH_CORE_LIB_DIR/utils/file.sh"
 # shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/path.sh"
+# shellcheck source=/dev/null
 . "$IH_CORE_LIB_DIR/utils/claude.sh"
 # shellcheck source=/dev/null
 . "$IH_CORE_LIB_DIR/utils/cursor.sh"

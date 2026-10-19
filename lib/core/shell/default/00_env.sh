@@ -36,6 +36,9 @@ fi
 #Make sure home ~/bin is in the path
 [[ ! "$PATH" =~ ${HOME}/bin ]] && export PATH="${HOME}/bin:${PATH}"
 
+# Native installers (Claude Code, twg) put their CLIs in ~/.local/bin
+[[ ! "$PATH" =~ ${HOME}/.local/bin ]] && export PATH="${HOME}/.local/bin:${PATH}"
+
 # Allow importing of private repos in GO
 export GOPRIVATE="github.com/ConsultingMD/*"
 

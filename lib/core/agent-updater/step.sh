@@ -28,7 +28,7 @@ function ih::setup::core.agent-updater::create-temp-plist() {
   # launchd starts with a bare PATH, so add the directory of the claude that ih-setup found.
   # An npm or asdf install is not in any of the standard directories.
   local CLAUDE_BIN_DIR
-  ih::claude::ensure-path
+  ih::path::ensure-local-bin
   CLAUDE_BIN_DIR=$(dirname "$(command -v claude 2>/dev/null || echo "${HOME}/.local/bin/claude")")
 
   local LIB_ESC HOME_ESC CLAUDE_ESC

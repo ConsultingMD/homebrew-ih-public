@@ -8,7 +8,10 @@ If the version does not change, users do not get your change.
 1. Run `meta/bump` with no argument to print the current version.
 2. Run `meta/bump {new version}`. This updates `VERSION` and `formula/ih-core.rb` together.
    It does not commit or push.
+   For a normal change, increase the last number by one (0.1.104 → 0.1.105).
+   Change the middle number (0.1.x → 0.2.0) only when a maintainer asks for it.
 3. Commit the two files in the same PR as your change.
 
 Do not edit `VERSION` or the `VERSION=` line in `formula/ih-core.rb` by hand. `meta/bump` keeps the two in sync.
+The `check-version` PR check runs `meta/check-version` and fails if you skip this. Run it locally before you push.
 See "How to release a new version" in [README.md](./README.md).
