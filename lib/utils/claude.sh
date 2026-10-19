@@ -25,17 +25,9 @@ IH_CLAUDE_SETTINGS_APPLIED="${IH_AGENT_STATE_DIR}/claude-settings-applied.json"
 # Holds "<ok|failed> <epoch seconds>" for the last agent updater attempt.
 IH_AGENT_UPDATER_STATUS="${IH_AGENT_STATE_DIR}/agent-updater.status"
 
-# Puts the native installer's bin directory on the PATH if claude is not already there.
-function ih::claude::ensure-path() {
-  if ! command -v claude >/dev/null 2>&1 && [ -x "${HOME}/.local/bin/claude" ]; then
-    export PATH="${HOME}/.local/bin:${PATH}"
-  fi
-}
-
 # Returns 0 if the claude CLI is available.
 function ih::claude::is-installed() {
-  ih::claude::ensure-path
-  command -v claude >/dev/null 2>&1
+  ih::path::has-command claude
 }
 
 # Returns 0 if the claude CLI is signed in.

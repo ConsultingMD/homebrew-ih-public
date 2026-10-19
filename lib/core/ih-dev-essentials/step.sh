@@ -15,7 +15,7 @@ function ih::setup::core.ih-dev-essentials::help() {
 }
 
 function ih::setup::core.ih-dev-essentials::test() {
-  ih::claude::ensure-path
+  ih::path::ensure-local-bin
 
   if ! ih::claude::marketplace-registered; then
     ih::log::debug "The $IH_CLAUDE_MARKETPLACE marketplace is not registered"
@@ -38,7 +38,7 @@ function ih::setup::core.ih-dev-essentials::deps() {
 }
 
 function ih::setup::core.ih-dev-essentials::install() {
-  ih::claude::ensure-path
+  ih::path::ensure-local-bin
 
   while ih::claude::is-running; do
     # Without a terminal the prompt reads nothing and would retry forever.

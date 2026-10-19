@@ -33,35 +33,22 @@ function ih::setup::core.jira::test() {
     return 1
   fi
 
-  if ! ih::setup::core.jira::twg-installed; then
+  if ! ih::path::has-command twg; then
     ih::log::debug "twg is not on the PATH or in ~/.local/bin"
     return 1
   fi
 }
 
-# Puts the installer's bin directory on the PATH if twg is not already there.
-function ih::setup::core.jira::ensure-twg-path() {
-  if ! command -v twg >/dev/null 2>&1 && [ -x "${HOME}/.local/bin/twg" ]; then
-    export PATH="${HOME}/.local/bin:${PATH}"
-  fi
-}
-
-# Returns 0 if the twg CLI is available.
-function ih::setup::core.jira::twg-installed() {
-  ih::setup::core.jira::ensure-twg-path
-  command -v twg >/dev/null 2>&1
-}
-
 # Installs the twg CLI if it is missing, then runs its interactive setup
 # (skills, login, upkeep). twg upgrades itself after the first install.
 function ih::setup::core.jira::install-twg() {
-  if ! ih::setup::core.jira::twg-installed; then
+  if ! ih::path::has-command twg; then
     ih::log::info "Installing the twg CLI"
     if ! curl -fsSL --retry 2 https://teamwork-graph.atlassian.com/cli/install | bash; then
       ih::log::error "The twg installer failed"
       return 1
     fi
-    if ! ih::setup::core.jira::twg-installed; then
+    if ! ih::path::has-command twg; then
       ih::log::error "The installer finished but twg is not in ~/.local/bin"
       return 1
     fi
