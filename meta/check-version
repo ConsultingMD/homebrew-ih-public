@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Checks that this change bumps the release version.
+# Fails if VERSION and the VERSION= line in formula/ih-core.rb disagree,
+# or if VERSION is not greater than the version at the merge base with BASE_REF.
+# Usage: meta/check-version [BASE_REF]   (BASE_REF defaults to origin/master)
+
+THIS_DIR=$(dirname "$(realpath "$0")")
+ROOT_DIR=$(dirname "$THIS_DIR")
+
+BASE_REF=${1:-origin/master}
+
+function fail() {
+  printf "\e[31m%b\e[0m\n" "$1"
+  echo "Run 'meta/bump {new version}' and commit VERSION and formula/ih-core.rb."
+  exit 1
+}
+
+VERSION=$(cat "$ROOT_DIR/VERSION")
+FORMULA_VERSION=$(sed -n 's/^ *VERSION="\(.*\)"$/\1/p' "$ROOT_DIR/formula/ih-core.rb")
+
+if [[ "$VERSION" != "$FORMULA_VERSION" ]]; then
+  fail "VERSION is '$VERSION' but formula/ih-core.rb has VERSION=\"$FORMULA_VERSION\"."
+fi
+
+if ! MERGE_BASE=$(git -C "$ROOT_DIR" merge-base "$BASE_REF" HEAD); then
+  echo "Could not find the merge base of $BASE_REF and HEAD."
+  exit 1
+fi
+BASE_VERSION=$(git -C "$ROOT_DIR" show "$MERGE_BASE:VERSION")
+
+if [[ "$VERSION" == "$BASE_VERSION" ]]; then
+  fail "VERSION is $VERSION, the same as on $BASE_REF. A merged PR only releases when VERSION changes."
+fi
+
+HIGHEST=$(printf "%s\n%s\n" "$BASE_VERSION" "$VERSION" | sort -V | tail -n 1)
+if [[ "$HIGHEST" != "$VERSION" ]]; then
+  fail "VERSION is $VERSION, which is lower than $BASE_VERSION on $BASE_REF."
+fi
+
+echo "Version bumped from $BASE_VERSION to $VERSION."
