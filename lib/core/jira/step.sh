@@ -9,7 +9,9 @@ function ih::setup::core.jira::help() {
         - Help you create an (unscoped) Atlassian API token
         - Validate it against both the Jira and JSM on-call (ops) APIs
         - Store the token in your keychain for use by JIRA CLI tools
+          (an existing token is kept; use --force to replace it)
         - Install the twg CLI (Atlassian Teamwork Graph) and start its setup
+          (opens a browser to log in)
     '
 }
 
@@ -31,30 +33,35 @@ function ih::setup::core.jira::test() {
     return 1
   fi
 
-  if ! ih::setup::core.jira::twg-path >/dev/null; then
+  if ! ih::setup::core.jira::twg-installed; then
     ih::log::debug "twg is not on the PATH or in ~/.local/bin"
     return 1
   fi
 }
 
-# Prints the path to the twg binary. The installer puts it in ~/.local/bin,
-# which may not be on the PATH yet in the current shell.
-function ih::setup::core.jira::twg-path() {
-  command -v twg 2>/dev/null && return 0
-  [[ -x "$HOME/.local/bin/twg" ]] && echo "$HOME/.local/bin/twg"
+# Puts the installer's bin directory on the PATH if twg is not already there.
+function ih::setup::core.jira::ensure-twg-path() {
+  if ! command -v twg >/dev/null 2>&1 && [ -x "${HOME}/.local/bin/twg" ]; then
+    export PATH="${HOME}/.local/bin:${PATH}"
+  fi
+}
+
+# Returns 0 if the twg CLI is available.
+function ih::setup::core.jira::twg-installed() {
+  ih::setup::core.jira::ensure-twg-path
+  command -v twg >/dev/null 2>&1
 }
 
 # Installs the twg CLI if it is missing, then runs its interactive setup
 # (skills, login, upkeep). twg upgrades itself after the first install.
 function ih::setup::core.jira::install-twg() {
-  local twg
-  if ! twg=$(ih::setup::core.jira::twg-path); then
+  if ! ih::setup::core.jira::twg-installed; then
     ih::log::info "Installing the twg CLI"
     if ! curl -fsSL --retry 2 https://teamwork-graph.atlassian.com/cli/install | bash; then
       ih::log::error "The twg installer failed"
       return 1
     fi
-    if ! twg=$(ih::setup::core.jira::twg-path); then
+    if ! ih::setup::core.jira::twg-installed; then
       ih::log::error "The installer finished but twg is not in ~/.local/bin"
       return 1
     fi
@@ -65,7 +72,7 @@ function ih::setup::core.jira::install-twg() {
     ih::log::warn "Run 'twg setup' in a terminal to finish the twg setup."
     return 0
   fi
-  "$twg" setup || ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
+  twg setup || ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
 }
 
 function ih::setup::core.jira::deps() {
@@ -146,16 +153,16 @@ full-access token. Please recreate it using \"Create API token\" (WITHOUT scopes
 # ex/jira/{cloudId} gateway; until then, unscoped is the only token that works
 # everywhere. See platform-api/pkg/jira (JiraURL) and engineering/tracker-scripts.
 function ih::setup::core.jira::install() {
-  ih::setup::core.jira::install-twg || return 1
-
   # Keep a token that is already stored. Use --force to replace it.
   if [[ "$IH_FORCE" != "1" ]] && security find-generic-password -s "jira-api" >/dev/null 2>&1; then
-    ih::log::info "JIRA API token already in the keychain. Use --force to replace it."
-    cp -f "$IH_CORE_LIB_DIR/core/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
-    return 0
+    ih::log::info "JIRA API token already in the keychain. Use 'ih-setup install --force core jira' to replace it."
+  else
+    ih::setup::core.jira::install-token || return
   fi
+  ih::file::sync-shell-defaults "$IH_CORE_LIB_DIR/core/jira/default"
 
-  ih::setup::core.jira::install-token
+  # The token is stored by now, so a twg failure leaves the step pending but never blocks Jira.
+  ih::setup::core.jira::install-twg
 }
 
 # Retries recurse into this function, not install, so twg setup runs only once.
@@ -228,6 +235,5 @@ If you don't want to do this now, press n.
     return 1
   fi
 
-  cp -f "$IH_CORE_LIB_DIR/core/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
   ih::log::info "JIRA API token stored."
 }

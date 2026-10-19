@@ -681,7 +681,7 @@ function main() {
         export IH_NO_CONFIRM=1
         unset 'args[index]'
         ;;
-      -f)
+      -f | --force)
         export IH_FORCE=1
         unset 'args[index]'
         ;;
