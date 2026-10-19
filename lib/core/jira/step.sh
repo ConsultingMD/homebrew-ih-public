@@ -9,6 +9,7 @@ function ih::setup::core.jira::help() {
         - Help you create an (unscoped) Atlassian API token
         - Validate it against both the Jira and JSM on-call (ops) APIs
         - Store the token in your keychain for use by JIRA CLI tools
+        - Install the twg CLI (Atlassian Teamwork Graph) and start its setup
     '
 }
 
@@ -29,6 +30,42 @@ function ih::setup::core.jira::test() {
     ih::log::debug "JIRA API token not found in keychain"
     return 1
   fi
+
+  if ! ih::setup::core.jira::twg-path >/dev/null; then
+    ih::log::debug "twg is not on the PATH or in ~/.local/bin"
+    return 1
+  fi
+}
+
+# Prints the path to the twg binary. The installer puts it in ~/.local/bin,
+# which may not be on the PATH yet in the current shell.
+function ih::setup::core.jira::twg-path() {
+  command -v twg 2>/dev/null && return 0
+  [[ -x "$HOME/.local/bin/twg" ]] && echo "$HOME/.local/bin/twg"
+}
+
+# Installs the twg CLI if it is missing, then runs its interactive setup
+# (skills, login, upkeep). twg upgrades itself after the first install.
+function ih::setup::core.jira::install-twg() {
+  local twg
+  if ! twg=$(ih::setup::core.jira::twg-path); then
+    ih::log::info "Installing the twg CLI"
+    if ! curl -fsSL --retry 2 https://teamwork-graph.atlassian.com/cli/install | bash; then
+      ih::log::error "The twg installer failed"
+      return 1
+    fi
+    if ! twg=$(ih::setup::core.jira::twg-path); then
+      ih::log::error "The installer finished but twg is not in ~/.local/bin"
+      return 1
+    fi
+  fi
+
+  # Setup opens a browser for the Atlassian login, so it only runs in a terminal.
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    ih::log::warn "Run 'twg setup' in a terminal to finish the twg setup."
+    return 0
+  fi
+  "$twg" setup || ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
 }
 
 function ih::setup::core.jira::deps() {
@@ -119,6 +156,8 @@ function ih::setup::core.jira::install() {
     KEYCHAIN_ARG=("$TEST_KEYCHAIN")
   fi
   local JIRA_SITE="includedhealth.atlassian.net"
+
+  ih::setup::core.jira::install-twg || return 1
 
   ih::ask::confirm "You will need to log in to JIRA and create an API token.
 Your JIRA login is $JIRA_USERNAME.
