@@ -120,7 +120,7 @@ function ih::private::step-install() {
 # Echoes the content of the file where step $1 is defined
 function ih::private::step-show() {
   local STEP_PATH OK
-  STEP_PATH=$(grep -R "ih::setup::$1::install" "$IH_CORE_LIB_DIR" | cut -d: -f1)
+  STEP_PATH=$(grep -Rl "ih::setup::$1::install()" "$IH_CORE_LIB_DIR" | cut -d: -f1)
   OK=$?
   if [[ $OK -eq 0 ]]; then
     cat "$STEP_PATH"
@@ -630,7 +630,7 @@ function ih::setup::private::init() {
     fi
   done
 
-  STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install' | sed -E 's/ih::setup::(.+)::install/\1/' | sort | tr '\n' ' ')
+  STEPS=$(compgen -A function | grep -E '^ih::setup::.+::install$' | sed -E 's/ih::setup::(.+)::install$/\1/' | sort | tr '\n' ' ')
 
   for STEP in $STEPS; do
 
