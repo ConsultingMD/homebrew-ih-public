@@ -9,6 +9,9 @@ function ih::setup::core.jira::help() {
         - Help you create an (unscoped) Atlassian API token
         - Validate it against both the Jira and JSM on-call (ops) APIs
         - Store the token in your keychain for use by JIRA CLI tools
+          (an existing token is kept; use --force to replace it)
+        - Install the twg CLI (Atlassian Teamwork Graph) and start its setup
+          (opens a browser to log in)
     '
 }
 
@@ -29,6 +32,47 @@ function ih::setup::core.jira::test() {
     ih::log::debug "JIRA API token not found in keychain"
     return 1
   fi
+
+  if ! ih::setup::core.jira::twg-installed; then
+    ih::log::debug "twg is not on the PATH or in ~/.local/bin"
+    return 1
+  fi
+}
+
+# Puts the installer's bin directory on the PATH if twg is not already there.
+function ih::setup::core.jira::ensure-twg-path() {
+  if ! command -v twg >/dev/null 2>&1 && [ -x "${HOME}/.local/bin/twg" ]; then
+    export PATH="${HOME}/.local/bin:${PATH}"
+  fi
+}
+
+# Returns 0 if the twg CLI is available.
+function ih::setup::core.jira::twg-installed() {
+  ih::setup::core.jira::ensure-twg-path
+  command -v twg >/dev/null 2>&1
+}
+
+# Installs the twg CLI if it is missing, then runs its interactive setup
+# (skills, login, upkeep). twg upgrades itself after the first install.
+function ih::setup::core.jira::install-twg() {
+  if ! ih::setup::core.jira::twg-installed; then
+    ih::log::info "Installing the twg CLI"
+    if ! curl -fsSL --retry 2 https://teamwork-graph.atlassian.com/cli/install | bash; then
+      ih::log::error "The twg installer failed"
+      return 1
+    fi
+    if ! ih::setup::core.jira::twg-installed; then
+      ih::log::error "The installer finished but twg is not in ~/.local/bin"
+      return 1
+    fi
+  fi
+
+  # Setup opens a browser for the Atlassian login, so it only runs in a terminal.
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    ih::log::warn "Run 'twg setup' in a terminal to finish the twg setup."
+    return 0
+  fi
+  twg setup || ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
 }
 
 function ih::setup::core.jira::deps() {
@@ -109,6 +153,20 @@ full-access token. Please recreate it using \"Create API token\" (WITHOUT scopes
 # ex/jira/{cloudId} gateway; until then, unscoped is the only token that works
 # everywhere. See platform-api/pkg/jira (JiraURL) and engineering/tracker-scripts.
 function ih::setup::core.jira::install() {
+  # Keep a token that is already stored. Use --force to replace it.
+  if [[ "$IH_FORCE" != "1" ]] && security find-generic-password -s "jira-api" >/dev/null 2>&1; then
+    ih::log::info "JIRA API token already in the keychain. Use 'ih-setup install --force core jira' to replace it."
+  else
+    ih::setup::core.jira::install-token || return
+  fi
+  ih::file::sync-shell-defaults "$IH_CORE_LIB_DIR/core/jira/default"
+
+  # The token is stored by now, so a twg failure leaves the step pending but never blocks Jira.
+  ih::setup::core.jira::install-twg
+}
+
+# Retries recurse into this function, not install, so twg setup runs only once.
+function ih::setup::core.jira::install-token() {
   # Only name a keychain when TEST_KEYCHAIN is set (tests use a throwaway one).
   # Otherwise pass NO keychain arg so `security` uses the login/default keychain.
   # A literal "default" is not the default keychain - `security` treats it as a
@@ -146,7 +204,7 @@ If you don't want to do this now, press n.
   if [[ "$TOKEN" != ATATT* ]]; then
     ih::log::warn "That doesn't look like an Atlassian API token (they start with 'ATATT')."
     ih::ask::retry-cancel "Paste it again?" || return 2
-    ih::setup::core.jira::install
+    ih::setup::core.jira::install-token
     return $?
   fi
 
@@ -155,11 +213,11 @@ If you don't want to do this now, press n.
   local VALID=$?
   if [[ $VALID -eq 1 ]]; then
     ih::ask::retry-cancel "The token isn't valid for Jira. Recreate it?" || return 2
-    ih::setup::core.jira::install
+    ih::setup::core.jira::install-token
     return $?
   elif [[ $VALID -eq 3 ]]; then
     if ih::ask::retry-cancel "Recreate the token WITHOUT scopes now? (Cancel keeps this token.)"; then
-      ih::setup::core.jira::install
+      ih::setup::core.jira::install-token
       return $?
     fi
     ih::log::warn "Keeping a token that can't manage JSM on-call settings. Story automation may still work."
@@ -177,6 +235,5 @@ If you don't want to do this now, press n.
     return 1
   fi
 
-  cp -f "$IH_CORE_LIB_DIR/core/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
   ih::log::info "JIRA API token stored."
 }

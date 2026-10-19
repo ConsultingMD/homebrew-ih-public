@@ -76,7 +76,8 @@ deleted setting.
 ### How to release a new version
 
 Before you submit a PR with your change, run `meta/bump`. This will print off the current version.
-Then run `meta/bump {version you want}`. This will update the version everywhere it needs to be updated.
+Then run `meta/bump {version you want}`. This updates the version everywhere it needs to be updated.
+Commit the result in your PR; `meta/bump` does not commit or push.
 When your PR is merged, a new release with the new version will be created.
 
 ### Updating Casks

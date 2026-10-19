@@ -1,45 +1,24 @@
 #!/bin/bash
 
-# This script creates and pushes a release
-# It takes one parameter: the version number of the release
-# The current version number is in ih-core/bin/VERSION
-# This command will fail if the repo is dirty, or if the release already exists.
-# It will cause a commit with the new version updates
+# Sets the release version in VERSION and formula/ih-core.rb.
+# With no argument, prints the current version.
+# Commit the result in the same PR as your change. A merged PR releases the new version.
 
 THIS_DIR=$(dirname "$(realpath "$0")")
 ROOT_DIR=$(dirname "$THIS_DIR")
 
-CURRENT_VERSION=$(cat "$ROOT_DIR/VERSION")
-
-VERSION=${1:?"You must provide a version for the release (current version is $CURRENT_VERSION)"}
-
-if [[ $(git status --short) != '' ]]; then
-  echo 'Working directory is dirty, commit and push everything making a release commit.'
-  exit 1
+if [[ $# -eq 0 ]]; then
+  cat "$ROOT_DIR/VERSION"
+  exit 0
 fi
 
-echo "Bumping version to $VERSION and pushing."
-
-# We want to abort if any of the following commands fail
+VERSION=$1
 set -e
 
-git pull
-
-# Update the formula and the version file with the new version
 if [ "$(uname)" = "Linux" ]; then
-  sed -i "s/VERSION=.*/VERSION=\"$VERSION\""/ "$ROOT_DIR/formula/ih-core.rb"
+  sed -i "s/VERSION=.*/VERSION=\"$VERSION\"/" "$ROOT_DIR/formula/ih-core.rb"
 else
-  sed -i '' "s/VERSION=.*/VERSION=\"$VERSION\""/ "$ROOT_DIR/formula/ih-core.rb"
+  sed -i '' "s/VERSION=.*/VERSION=\"$VERSION\"/" "$ROOT_DIR/formula/ih-core.rb"
 fi
 echo "$VERSION" >"$ROOT_DIR/VERSION"
-
-# If updating the files caused a change then commit that change.
-if [[ $(git status --short) != '' ]]; then
-  git add "$ROOT_DIR/formula/ih-core.rb"
-  git add "$ROOT_DIR/VERSION"
-  git commit -m "Bump version to $VERSION"
-fi
-
-git push
-
-set +e
+echo "Version set to $VERSION in VERSION and formula/ih-core.rb."
