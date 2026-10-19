@@ -146,6 +146,20 @@ full-access token. Please recreate it using \"Create API token\" (WITHOUT scopes
 # ex/jira/{cloudId} gateway; until then, unscoped is the only token that works
 # everywhere. See platform-api/pkg/jira (JiraURL) and engineering/tracker-scripts.
 function ih::setup::core.jira::install() {
+  ih::setup::core.jira::install-twg || return 1
+
+  # Keep a token that is already stored. Use --force to replace it.
+  if [[ "$IH_FORCE" != "1" ]] && security find-generic-password -s "jira-api" >/dev/null 2>&1; then
+    ih::log::info "JIRA API token already in the keychain. Use --force to replace it."
+    cp -f "$IH_CORE_LIB_DIR/core/jira/default/09_jira.sh" "$IH_DEFAULT_DIR/09_jira.sh"
+    return 0
+  fi
+
+  ih::setup::core.jira::install-token
+}
+
+# Retries recurse into this function, not install, so twg setup runs only once.
+function ih::setup::core.jira::install-token() {
   # Only name a keychain when TEST_KEYCHAIN is set (tests use a throwaway one).
   # Otherwise pass NO keychain arg so `security` uses the login/default keychain.
   # A literal "default" is not the default keychain - `security` treats it as a
@@ -156,8 +170,6 @@ function ih::setup::core.jira::install() {
     KEYCHAIN_ARG=("$TEST_KEYCHAIN")
   fi
   local JIRA_SITE="includedhealth.atlassian.net"
-
-  ih::setup::core.jira::install-twg || return 1
 
   ih::ask::confirm "You will need to log in to JIRA and create an API token.
 Your JIRA login is $JIRA_USERNAME.
@@ -185,7 +197,7 @@ If you don't want to do this now, press n.
   if [[ "$TOKEN" != ATATT* ]]; then
     ih::log::warn "That doesn't look like an Atlassian API token (they start with 'ATATT')."
     ih::ask::retry-cancel "Paste it again?" || return 2
-    ih::setup::core.jira::install
+    ih::setup::core.jira::install-token
     return $?
   fi
 
@@ -194,11 +206,11 @@ If you don't want to do this now, press n.
   local VALID=$?
   if [[ $VALID -eq 1 ]]; then
     ih::ask::retry-cancel "The token isn't valid for Jira. Recreate it?" || return 2
-    ih::setup::core.jira::install
+    ih::setup::core.jira::install-token
     return $?
   elif [[ $VALID -eq 3 ]]; then
     if ih::ask::retry-cancel "Recreate the token WITHOUT scopes now? (Cancel keeps this token.)"; then
-      ih::setup::core.jira::install
+      ih::setup::core.jira::install-token
       return $?
     fi
     ih::log::warn "Keeping a token that can't manage JSM on-call settings. Story automation may still work."
