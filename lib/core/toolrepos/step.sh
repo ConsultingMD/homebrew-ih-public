@@ -35,7 +35,11 @@ function ih::setup::core.toolrepos::create_temp_plist() {
   # shellcheck disable=SC2001
   IH_CORE_LIB_DIR_ESC=$(echo "$IH_CORE_LIB_DIR" | sed 's_/_\\/_g')
 
-  sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g" \
+  local HOME_ESC
+  # shellcheck disable=SC2001
+  HOME_ESC=$(echo "$HOME" | sed 's_/_\\/_g')
+
+  sed "s/\$IH_HOME/${GR_HOME_ESC}/g; s/\$IH_CORE_LIB_DIR/${IH_CORE_LIB_DIR_ESC}/g; s/\$HOME/${HOME_ESC}/g" \
     "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/com.includedhealth.auto-update-repositories.plist" >"$TEMP_PLIST_DST"
 
   echo "$TEMP_PLIST_DST"
@@ -124,6 +128,8 @@ function ih::setup::core.toolrepos::test-or-install() {
     fi
     mkdir -p "$(dirname "$plist_tgt_path")"
     cp -f "$temp_plist" "$plist_tgt_path"
+    # Ensure the log directory exists for launchd Standard{Out,Error}Path
+    mkdir -p "$HOME/Library/Logs/ih-setup"
     ih::log::info "Plist file updated."
     ih::setup::core.toolrepos::set-auto-update-repositories-job
   fi
