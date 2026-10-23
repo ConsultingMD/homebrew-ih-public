@@ -11,11 +11,13 @@
     <dict>
         <key>IH_HOME</key>
         <string>$IH_HOME</string>
+        <key>IH_CORE_LIB_DIR</key>
+        <string>$IH_CORE_LIB_DIR</string>
     </dict>
     <key>StandardOutPath</key>
-    <string>/tmp/ih_auto_update_repositories.stdout</string>
+    <string>$HOME/Library/Logs/ih-setup/repo-updater.log</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/ih_auto_update_repositories.stderr</string>
+    <string>$HOME/Library/Logs/ih-setup/repo-updater.log</string>
     <key>StartInterval</key>
     <integer>3600</integer>
 </dict>

@@ -62,7 +62,7 @@ its team marketplace. To add it, type `/add-plugin ih-dev-essentials` in Cursor 
 Cursor step changes a file, run Developer: Reload Window in Cursor.
 
 The updater runs only while Claude Code is closed. It writes its log to
-`~/.ih/logs/agent-updater.log`, and it shows a macOS notification if an update fails. After a failed
+`~/Library/Logs/ih-setup/agent-updater.log`, and it shows a macOS notification if an update fails. After a failed
 update, `ih-setup check` reports `core.agent-updater` as not installed. Run
 `ih-setup install core agent-updater` to try the update again.
 
@@ -70,6 +70,25 @@ If you disable the plugin, remove the import line, or delete a default setting, 
 your change. The `ih-standards` Cursor plugin is different: `ih-setup` owns it and replaces your
 edits. The next `ih-setup install` adds the plugin and the import line again, but not a
 deleted setting.
+
+### Troubleshooting background updaters
+
+`ih-setup` installs two background daemons:
+
+- `agent-updater` (updates Claude/Cursor plugins and settings)
+- `repo-updater` (keeps repos like `image-builder` current)
+
+Both daemons:
+- Write logs to `~/Library/Logs/ih-setup/<daemon>.log`
+- Fire a macOS Notification Center banner on failure, throttled to at most once every 6 hours
+- Suggest uploading the last 200 log lines to Slack `#infrastructure-support` if you cannot resolve the issue
+
+To simulate a failure for testing, you can run a daemon with `SIMULATE_FAILURE=1`, for example:
+
+```bash
+SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"
+SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/ih_auto_update_repositories.sh"
+```
 
 ## Working in this repo
 

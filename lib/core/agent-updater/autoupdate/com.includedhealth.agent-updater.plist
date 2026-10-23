@@ -15,9 +15,9 @@
         <string>$CLAUDE_BIN_DIR:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
     <key>StandardOutPath</key>
-    <string>/tmp/ih_agent_updater.stdout</string>
+    <string>$HOME/Library/Logs/ih-setup/agent-updater.log</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/ih_agent_updater.stderr</string>
+    <string>$HOME/Library/Logs/ih-setup/agent-updater.log</string>
     <key>RunAtLoad</key>
     <true/>
     <key>StartInterval</key>
