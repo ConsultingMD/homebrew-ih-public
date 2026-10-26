@@ -3,8 +3,6 @@
 # Lightweight macOS notification + throttle helpers.
 # No external dependencies beyond the built-in osascript.
 
-set -Euo pipefail
-
 # ih::notify::mac "Title" "Body"
 # Shows a Notification Center banner on macOS using osascript.
 function ih::notify::mac() {

@@ -3,17 +3,11 @@
 set -Eeuo pipefail
 
 # shellcheck source=/dev/null
-. "${IH_CORE_LIB_DIR:-$(dirname "$(dirname "$(dirname "$0")")")}/utils/notify.sh"
+. "${IH_CORE_LIB_DIR:-$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")}/utils/notify.sh"
 
 LOG_DIR="${HOME}/Library/Logs/ih-setup"
 NOTIFY_SENTINEL="${LOG_DIR}/.notified-repo-updater"
 mkdir -p "$LOG_DIR" || true
-
-# Allow easy manual verification of notifications
-if [ "${SIMULATE_FAILURE:-}" = "1" ]; then
-  echo "Simulated failure requested via SIMULATE_FAILURE=1" >&2
-  exit 1
-fi
 
 function on_exit() {
   local status=$?
@@ -27,6 +21,12 @@ function on_exit() {
   return $status
 }
 trap on_exit EXIT
+
+# Allow easy manual verification of notifications (after trap so it fires)
+if [ "${SIMULATE_FAILURE:-}" = "1" ]; then
+  echo "Simulated failure requested via SIMULATE_FAILURE=1" >&2
+  exit 1
+fi
 
 # These repos are needed to be kept up to date
 # as they are used daily in the SDLC.
