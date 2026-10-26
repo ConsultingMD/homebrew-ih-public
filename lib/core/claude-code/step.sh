@@ -3,7 +3,7 @@
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
 function ih::setup::core.claude-code::help() {
-  echo 'Install Claude Code and sign in
+  echo 'Install Claude Code and sign in (engineers only)
 
     This step will:
     - Keep any Claude Code install you already have (npm, brew, or native)
@@ -12,6 +12,12 @@ function ih::setup::core.claude-code::help() {
 }
 
 function ih::setup::core.claude-code::test() {
+  # Only engineers need Claude Code; silently pass for others.
+  if ! ih::user::is-engineer; then
+    ih::log::debug "Skipping Claude Code check: user is not an engineer"
+    return 0
+  fi
+
   if ! ih::claude::is-installed; then
     ih::log::debug "claude is not on the PATH or in ~/.local/bin"
     return 1
@@ -28,15 +34,22 @@ function ih::setup::core.claude-code::deps() {
 }
 
 function ih::setup::core.claude-code::install() {
+  # Guard: only run for engineers. For non-engineers, skip cleanly.
+  if ! ih::user::is-engineer; then
+    ih::log::info "Skipping Claude Code install: not required for non-engineers"
+    return 0
+  fi
+
   if ! ih::claude::is-installed; then
     ih::log::info "Installing Claude Code with the native installer"
     if ! curl -fsSL https://claude.ai/install.sh | bash; then
-      ih::log::error "The Claude Code installer failed"
-      return 1
+      # IT restrictions or connectivity may block this installer. Skip gracefully.
+      ih::log::warn "Claude Code installer failed or was blocked; skipping this step for now"
+      return 0
     fi
     if ! ih::claude::is-installed; then
-      ih::log::error "The installer finished but claude is not in ~/.local/bin"
-      return 1
+      ih::log::warn "Installer finished but claude is not in ~/.local/bin; skipping for now"
+      return 0
     fi
   fi
 
@@ -47,7 +60,8 @@ function ih::setup::core.claude-code::install() {
   # Sign-in opens a browser and waits for the engineer, so it only runs in a terminal.
   if [ ! -t 0 ] || [ ! -t 1 ]; then
     ih::log::warn "Claude Code is not signed in. Run 'claude auth login' in a terminal."
-    return 1
+    # Do not fail the overall ih-setup run; allow other steps to proceed.
+    return 0
   fi
 
   ih::log::info "Signing in to Claude Code. Use your Included Health account."

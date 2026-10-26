@@ -3,7 +3,7 @@
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
 function ih::setup::core.ih-dev-essentials::help() {
-  echo 'Install and update the ih-dev-essentials Claude Code plugin
+  echo 'Install and update the ih-dev-essentials Claude Code plugin (engineers only)
 
     This step will:
     - Add the ih-coding-agents marketplace (ConsultingMD/ih-agent-smith)
@@ -15,6 +15,12 @@ function ih::setup::core.ih-dev-essentials::help() {
 }
 
 function ih::setup::core.ih-dev-essentials::test() {
+  # Engineers only — skip quietly otherwise.
+  if ! ih::user::is-engineer; then
+    ih::log::debug "Skipping ih-dev-essentials check: user is not an engineer"
+    return 0
+  fi
+
   ih::path::ensure-local-bin
 
   if ! ih::claude::marketplace-registered; then
@@ -38,6 +44,12 @@ function ih::setup::core.ih-dev-essentials::deps() {
 }
 
 function ih::setup::core.ih-dev-essentials::install() {
+  # Guard: only run for engineers. For non-engineers, skip cleanly.
+  if ! ih::user::is-engineer; then
+    ih::log::info "Skipping ih-dev-essentials: not required for non-engineers"
+    return 0
+  fi
+
   ih::path::ensure-local-bin
 
   while ih::claude::is-running; do
@@ -47,6 +59,11 @@ function ih::setup::core.ih-dev-essentials::install() {
       return 1
     fi
   done
+
+  if ! ih::claude::is-installed; then
+    ih::log::warn "Claude CLI is not installed; skipping ih-dev-essentials for now"
+    return 0
+  fi
 
   if ! ih::claude::marketplace-registered; then
     ih::log::info "Adding the $IH_CLAUDE_MARKETPLACE marketplace"

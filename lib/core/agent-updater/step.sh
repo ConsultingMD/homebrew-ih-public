@@ -6,7 +6,7 @@ IH_AGENT_UPDATER_LABEL="com.includedhealth.agent-updater"
 IH_AGENT_UPDATER_PLIST="${HOME}/Library/LaunchAgents/${IH_AGENT_UPDATER_LABEL}.plist"
 
 function ih::setup::core.agent-updater::help() {
-  echo 'Keep the standard agent setup up to date in the background
+  echo 'Keep the standard agent setup up to date in the background (engineers only)
 
     This step will:
     - Install a launchd agent that runs weekly and at login while
@@ -46,6 +46,12 @@ function ih::setup::core.agent-updater::create-temp-plist() {
 }
 
 function ih::setup::core.agent-updater::test() {
+  # Engineers only — non-engineers skip quietly.
+  if ! ih::user::is-engineer; then
+    ih::log::debug "Skipping agent-updater check: user is not an engineer"
+    return 0
+  fi
+
   local TEMP_PLIST IN_SYNC=0
   TEMP_PLIST=$(ih::setup::core.agent-updater::create-temp-plist)
   ih::file::check-file-in-sync "$TEMP_PLIST" "$IH_AGENT_UPDATER_PLIST" || IN_SYNC=1
@@ -71,6 +77,12 @@ function ih::setup::core.agent-updater::deps() {
 }
 
 function ih::setup::core.agent-updater::install() {
+  # Guard: only run for engineers. For non-engineers, skip cleanly.
+  if ! ih::user::is-engineer; then
+    ih::log::info "Skipping agent-updater: not required for non-engineers"
+    return 0
+  fi
+
   local TEMP_PLIST
   TEMP_PLIST=$(ih::setup::core.agent-updater::create-temp-plist)
   mkdir -p "$(dirname "$IH_AGENT_UPDATER_PLIST")"
