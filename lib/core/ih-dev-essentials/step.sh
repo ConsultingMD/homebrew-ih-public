@@ -21,6 +21,13 @@ function ih::setup::core.ih-dev-essentials::test() {
     return 0
   fi
 
+  # If the Claude CLI is not present, treat as a no-op so dependent steps
+  # can decide to skip gracefully without failing the whole run.
+  if ! ih::claude::is-installed; then
+    ih::log::debug "Claude CLI is not installed; ih-dev-essentials not required yet"
+    return 0
+  fi
+
   ih::path::ensure-local-bin
 
   if ! ih::claude::marketplace-registered; then
@@ -40,7 +47,8 @@ function ih::setup::core.ih-dev-essentials::test() {
 
 function ih::setup::core.ih-dev-essentials::deps() {
   # core.github sets up the SSH key that the marketplace clone uses.
-  echo "core.claude-code core.github"
+  # Do NOT depend on core.claude-code here; allow graceful skip when claude is missing.
+  echo "core.github"
 }
 
 function ih::setup::core.ih-dev-essentials::install() {

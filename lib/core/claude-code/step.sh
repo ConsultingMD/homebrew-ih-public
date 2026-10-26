@@ -30,7 +30,8 @@ function ih::setup::core.claude-code::test() {
 }
 
 function ih::setup::core.claude-code::deps() {
-  echo "core.shell"
+  # Require GitHub auth first so engineer detection is accurate.
+  echo "core.shell core.github"
 }
 
 function ih::setup::core.claude-code::install() {

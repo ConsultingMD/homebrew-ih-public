@@ -52,6 +52,12 @@ function ih::setup::core.agent-updater::test() {
     return 0
   fi
 
+  # If the Claude CLI is not present, this updater has nothing to do.
+  if ! ih::claude::is-installed; then
+    ih::log::debug "Claude CLI is not installed; skipping agent-updater test"
+    return 0
+  fi
+
   local TEMP_PLIST IN_SYNC=0
   TEMP_PLIST=$(ih::setup::core.agent-updater::create-temp-plist)
   ih::file::check-file-in-sync "$TEMP_PLIST" "$IH_AGENT_UPDATER_PLIST" || IN_SYNC=1
@@ -80,6 +86,12 @@ function ih::setup::core.agent-updater::install() {
   # Guard: only run for engineers. For non-engineers, skip cleanly.
   if ! ih::user::is-engineer; then
     ih::log::info "Skipping agent-updater: not required for non-engineers"
+    return 0
+  fi
+
+  # Skip when the Claude CLI is not installed yet; the updater would be a no-op.
+  if ! ih::claude::is-installed; then
+    ih::log::info "Skipping agent-updater: Claude CLI not installed"
     return 0
   fi
 
