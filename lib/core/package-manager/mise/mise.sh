@@ -17,6 +17,11 @@ function ih::pm::mise::test() {
     return 1
   fi
 
+  if [[ ! -f "$MISE_SH_PATH" ]]; then
+    ih::log::debug "mise augment file $MISE_SH_PATH is missing"
+    return 1
+  fi
+
   if ! ih::file::check-file-in-sync "$MISE_SH_TEMPLATE_PATH" "$MISE_SH_PATH"; then
     ih::log::debug "mise augment file is missing or out of sync with template"
     return 1

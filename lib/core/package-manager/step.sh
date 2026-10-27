@@ -13,7 +13,7 @@ TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/package-manager/.tool-version
 # Echoes the package manager to use: mise or asdf. The first match wins:
 #   1. IH_PACKAGE_MANAGER
 #   2. The choice saved in ~/.ih/package-manager
-#   3. A tool that is already installed (mise first), so ih-setup does not break a working setup
+#   3. A tool that is already installed (asdf first), so ih-setup does not break a working setup
 #   4. The answer to a prompt, if $1 is "ask" (the default is mise)
 #   5. mise
 function ih::pm::choice() {
@@ -25,10 +25,10 @@ function ih::pm::choice() {
   fi
 
   if [[ "$CHOICE" != "mise" && "$CHOICE" != "asdf" ]]; then
-    if command -v mise >/dev/null; then
-      CHOICE=mise
-    elif command -v asdf >/dev/null || [[ -d "$HOME/.asdf" ]]; then
+    if command -v asdf >/dev/null || [[ -d "$HOME/.asdf" ]]; then
       CHOICE=asdf
+    elif command -v mise >/dev/null; then
+      CHOICE=mise
     elif [[ "$ASK" == "ask" ]]; then
       CHOICE=$(ih::ask::choice "Which package manager do you want to use?" mise asdf)
     else
