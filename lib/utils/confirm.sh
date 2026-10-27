@@ -76,20 +76,20 @@ function ih::ask::enter-continue() {
 # Prints the prompt $1 and asks the user to choose one of the remaining
 # arguments. Pressing enter picks the first option, which is the default.
 # Prints the chosen option on stdout, so the prompt goes to stderr.
-# With IH_NO_CONFIRM=1 it skips the prompt and prints the default.
+# With IH_NO_CONFIRM=1, or with no terminal, it skips the prompt and prints the default.
 function ih::ask::choice() {
   local prompt="${1}"
   shift
   local default="${1}"
   local response option
 
-  if [[ $IH_NO_CONFIRM -eq 1 ]]; then
+  if [[ "${IH_NO_CONFIRM:-0}" -eq 1 || ! -r /dev/tty ]]; then
     echo "${default}"
     return 0
   fi
 
   while true; do
-    read -rp "${prompt} ($*; default ${default}): " response </dev/tty >&2
+    read -rp "${prompt} ($*; default ${default}): " response </dev/tty >&2 || response=""
     response="${response:-$default}"
     for option in "$@"; do
       if [[ "${response}" == "${option}" ]]; then
