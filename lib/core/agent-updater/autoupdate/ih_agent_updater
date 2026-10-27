@@ -38,7 +38,7 @@ function on_exit() {
   local status=$?
   if [ $status -ne 0 ]; then
     local title="IH Setup background updater failed"
-    local body="The agent-updater daemon failed. Open ~/Library/Logs/ih-setup/agent-updater.log for details. If you can’t resolve it, upload the last 200 lines to Slack channel #C03GXCDA48Y."
+    local body="The agent-updater daemon failed. Open ~/Library/Logs/ih-setup/agent-updater.log for details. If you cannot resolve it, post the last 200 lines of that log in #infrastructure-support on Slack."
     if ih::notify::throttle_by_file "$NOTIFY_SENTINEL" 21600; then
       ih::notify::mac "$title" "$body"
     fi

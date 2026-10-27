@@ -87,7 +87,7 @@ To simulate a failure for testing, you can run a daemon with `SIMULATE_FAILURE=1
 
 ```bash
 SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"
-SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/ih_auto_update_repositories.sh"
+SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/ih_auto_update_repositories"
 ```
 
 ## Working in this repo
