@@ -30,7 +30,7 @@ function ih::pm::choice() {
     elif command -v mise >/dev/null; then
       CHOICE=mise
     elif [[ "$ASK" == "ask" ]]; then
-      CHOICE=$(ih::ask::choice "Which package manager do you want to use?" mise asdf)
+      CHOICE=$(ih::ask::choice "Which package manager do you want to use? Choose mise unless it gives you a problem, then choose asdf." mise asdf)
     else
       CHOICE=mise
     fi
@@ -45,7 +45,7 @@ function ih::setup::core.package-manager::help() {
   echo "Install a package manager (mise or asdf) and common tools, and wire it into the shell
 
     This step will:
-        - Ask which package manager you want, mise (default) or asdf
+        - Ask which package manager you want, mise (default, recommended) or asdf
           (set IH_PACKAGE_MANAGER=asdf or IH_PACKAGE_MANAGER=mise to skip the question)
         - Keep the one you already have installed, if any
         - Install mise with Homebrew, or asdf by cloning into $HOME/.asdf
