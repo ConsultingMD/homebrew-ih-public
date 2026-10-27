@@ -8,15 +8,14 @@ function activate_mise() {
 
   # asdf shims in the PATH take precedence over mise and give the wrong tool versions.
   local ASDF_SHIMS="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
-  PATH=":${PATH}:"
-  PATH="${PATH//:$ASDF_SHIMS:/:}"
-  PATH="${PATH//:$HOME\/.asdf\/shims:/:}"
-  PATH="${PATH#:}"
-  export PATH="${PATH%:}"
+  local NEW_PATH=":${PATH}:"
+  while [[ "$NEW_PATH" == *":$ASDF_SHIMS:"* ]]; do
+    NEW_PATH="${NEW_PATH//:$ASDF_SHIMS:/:}"
+  done
+  NEW_PATH="${NEW_PATH#:}"
+  export PATH="${NEW_PATH%:}"
 
-  local CURRENT_SHELL
-  CURRENT_SHELL=$(ps -cp "$$" -o command="")
-  if [[ $CURRENT_SHELL =~ "zsh" ]]; then
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
     eval "$(mise activate zsh)"
   else
     eval "$(mise activate bash)"
