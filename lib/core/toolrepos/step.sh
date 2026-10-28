@@ -8,6 +8,10 @@ function ih::setup::core.toolrepos::help() {
       This repo contains tools for
     - Clone the ConsultingMD/image-builder repo
       This repo contains tools for building images
+    - Clone the ConsultingMD/product-docs repo
+      Centralized product documentation starter and references
+    - Clone the ConsultingMD/team-docs repo
+      Shared team documentation and non-code artifacts
       and for setting up development environments"
 }
 
@@ -90,6 +94,9 @@ function ih::setup::core.toolrepos::test-or-install() {
   # was left in place, creating a fragile combination of full history with missing blobs.
   ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/engineering" "$1" || return 1
   ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/image-builder" "$1" || return 1
+  # Product and team docs are simple repos; repair is a no-op unless they were partially cloned.
+  ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/product-docs" "$1" || return 1
+  ih::setup::core.toolrepos::repair-partial-clone "${GR_HOME}/team-docs" "$1" || return 1
 
   if [ ! -d "${GR_HOME}/engineering" ]; then
     if [ "$1" == "test" ]; then
@@ -105,6 +112,22 @@ function ih::setup::core.toolrepos::test-or-install() {
     fi
     ih::log::info "Cloning image-builder repo.."
     git clone git@github.com:ConsultingMD/image-builder.git "${GR_HOME}/image-builder" || return
+  fi
+
+  if [ ! -d "${GR_HOME}/product-docs" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
+    ih::log::info "Cloning product-docs repo.."
+    git clone git@github.com:ConsultingMD/product-docs.git "${GR_HOME}/product-docs" || return
+  fi
+
+  if [ ! -d "${GR_HOME}/team-docs" ]; then
+    if [ "$1" == "test" ]; then
+      return 1
+    fi
+    ih::log::info "Cloning team-docs repo.."
+    git clone git@github.com:ConsultingMD/team-docs.git "${GR_HOME}/team-docs" || return
   fi
 
   if [ ! -d "${GR_HOME}/kore" ]; then
