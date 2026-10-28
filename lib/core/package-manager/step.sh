@@ -16,6 +16,8 @@ TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/package-manager/.tool-version
 #   3. A tool that is already installed (asdf first), so ih-setup does not break a working setup
 #   4. The answer to a prompt, if $1 is "ask" (the default is mise)
 #   5. mise
+# With "ask" and IH_FORCE=1 (ih-setup install -f), a saved choice is offered again as the default,
+# so the user can switch tools.
 function ih::pm::choice() {
   local ASK="${1:-}"
   local CHOICE="${IH_PACKAGE_MANAGER:-}"
@@ -36,6 +38,12 @@ function ih::pm::choice() {
     fi
   fi
 
+  if [[ "$ASK" == "ask" && "${IH_FORCE:-0}" == "1" && -z "${IH_PACKAGE_MANAGER:-}" && -f "$PM_CHOICE_PATH" ]]; then
+    local OTHER=mise
+    [[ "$CHOICE" == "mise" ]] && OTHER=asdf
+    CHOICE=$(ih::ask::choice "Which package manager do you want to use? Your current choice is $CHOICE." "$CHOICE" "$OTHER")
+  fi
+
   echo "$CHOICE"
 }
 
@@ -47,6 +55,7 @@ function ih::setup::core.package-manager::help() {
     This step will:
         - Ask which package manager you want, mise (default, recommended) or asdf
           (set IH_PACKAGE_MANAGER=asdf or IH_PACKAGE_MANAGER=mise to skip the question)
+        - Ask again if you run it with -f, so you can switch tools (your current tool is the default)
         - Keep the one you already have installed, if any
         - Install mise with Homebrew, or asdf by cloning into $HOME/.asdf
         - Wire the package manager into the shell
