@@ -73,7 +73,7 @@ function ih::setup::core.agent-updater::deps() {
 function ih::setup::core.agent-updater::install() {
   local TEMP_PLIST
   TEMP_PLIST=$(ih::setup::core.agent-updater::create-temp-plist)
-  mkdir -p "$(dirname "$IH_AGENT_UPDATER_PLIST")"
+  mkdir -p "$(dirname "$IH_AGENT_UPDATER_PLIST")" "${HOME}/Library/Logs/ih-setup"
   cp -f "$TEMP_PLIST" "$IH_AGENT_UPDATER_PLIST"
   rm -f "$TEMP_PLIST"
 
