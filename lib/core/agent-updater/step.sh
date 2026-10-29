@@ -13,7 +13,7 @@ function ih::setup::core.agent-updater::help() {
       Claude Code is closed. It updates the ih-coding-agents plugins,
       the managed AGENTS.md, the ih-standards Cursor plugin, and new
       Claude and Cursor settings defaults.
-    - Write a log to ~/.ih/logs/agent-updater.log
+    - Write a log to ~/Library/Logs/ih-setup/agent-updater.log
     - Show a macOS notification when an update fails
 
     If an update failed, this step shows as not installed.
@@ -73,7 +73,7 @@ function ih::setup::core.agent-updater::test() {
   fi
 
   if grep -q '^failed' "$IH_AGENT_UPDATER_STATUS" 2>/dev/null; then
-    ih::log::warn "The last agent setup update failed. See ~/.ih/logs/agent-updater.log"
+    ih::log::warn "The last agent setup update failed. See ~/Library/Logs/ih-setup/agent-updater.log"
     return 1
   fi
 }
@@ -116,7 +116,7 @@ function ih::setup::core.agent-updater::install() {
     else
       ih::log::info "Retrying the failed agent setup update"
       if ! "$IH_CORE_LIB_DIR/core/agent-updater/autoupdate/ih_agent_updater"; then
-        ih::log::error "The update failed again. See ~/.ih/logs/agent-updater.log"
+        ih::log::error "The update failed again. See ~/Library/Logs/ih-setup/agent-updater.log"
         RETRY_FAILED=1
       fi
     fi

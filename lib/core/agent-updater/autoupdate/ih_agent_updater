@@ -7,7 +7,7 @@
 # launchd starts this weekly and at login. If Claude Code is open, the run is skipped
 # and the update waits for the next login or the next week.
 
-set -o pipefail
+set -Eeuo pipefail
 
 IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 
@@ -21,16 +21,37 @@ IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 . "$IH_CORE_LIB_DIR/utils/claude.sh"
 # shellcheck source=/dev/null
 . "$IH_CORE_LIB_DIR/utils/cursor.sh"
+# shellcheck source=/dev/null
+. "$IH_CORE_LIB_DIR/utils/notify.sh"
 
-LOG_DIR="${HOME}/.ih/logs"
+LOG_DIR="${HOME}/Library/Logs/ih-setup"
 LOG_FILE="${LOG_DIR}/agent-updater.log"
 STATUS_FILE="$IH_AGENT_UPDATER_STATUS"
+NOTIFY_SENTINEL="${LOG_DIR}/.notified-agent-updater"
 
 mkdir -p "$LOG_DIR" "$IH_AGENT_STATE_DIR"
-
 function log() {
   echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $*" >>"$LOG_FILE"
 }
+
+function on_exit() {
+  local status=$?
+  if [ $status -ne 0 ]; then
+    local title="IH Setup background updater failed"
+    local body="The agent-updater daemon failed. Open ~/Library/Logs/ih-setup/agent-updater.log for details. If you cannot resolve it, post the last 200 lines of that log in #infrastructure-support on Slack."
+    if ih::notify::throttle_by_file "$NOTIFY_SENTINEL" 21600; then
+      ih::notify::mac "$title" "$body"
+    fi
+  fi
+  return $status
+}
+trap on_exit EXIT
+
+# Allow easy manual verification of notifications (after trap so it fires)
+if [ "${SIMULATE_FAILURE:-}" = "1" ]; then
+  echo "Simulated failure requested via SIMULATE_FAILURE=1" >>"$LOG_FILE"
+  exit 1
+fi
 
 function update() {
   if ! ih::claude::is-installed; then
@@ -81,7 +102,5 @@ if update >>"$LOG_FILE" 2>&1; then
 else
   echo "failed $(date +%s)" >"$STATUS_FILE"
   log "Update failed"
-  osascript -e "display notification \"The agent setup update failed. See ${LOG_FILE}\" with title \"ih-setup\"" \
-    >/dev/null 2>&1
   exit 1
 fi
