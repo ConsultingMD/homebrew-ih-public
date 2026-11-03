@@ -8,6 +8,7 @@ function ih::setup::core.twg::help() {
     This step will:
         - Install the twg CLI with its native installer, if it is missing
         - Run twg setup if you are not logged in (opens a browser to log in)
+        - If twg setup fails, log in again with the site cloud ID
     '
 }
 
@@ -61,8 +62,55 @@ function ih::setup::core.twg::install() {
     ih::log::warn "Run 'twg setup' in a terminal to finish the twg setup."
     return 1
   fi
-  if ! twg setup; then
-    ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
+  if twg setup; then
+    return 0
+  fi
+
+  ih::log::warn "twg setup did not finish. Trying to log in with the site cloud ID."
+  if ih::setup::core.twg::login-with-cloud-id; then
+    return 0
+  fi
+  ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
+  return 1
+}
+
+# The Atlassian site that IH uses. Its public tenant info holds the cloud ID.
+IH_TWG_SITE_HOST="includedhealth.atlassian.net"
+
+# Prints the cloud ID of the IH Atlassian site, or nothing if the lookup fails.
+function ih::setup::core.twg::cloud-id() {
+  curl -fsSL --max-time 10 "https://${IH_TWG_SITE_HOST}/_edge/tenant_info" 2>/dev/null \
+    | sed -n 's/.*"cloudId" *: *"\([^"]*\)".*/\1/p'
+}
+
+# Fallback for a login that fails on the site name. On Island, DNS returns
+# 100.64.0.0/10 addresses for the Atlassian hosts, and twg rejects them as
+# non-public. A login with the cloud ID skips the name lookup. If a stale
+# profile is the cause, the stale profile must be cleared first.
+# This only runs after `twg setup` failed, so the user has no working login to lose.
+# Returns 0 if twg is logged in at the end.
+function ih::setup::core.twg::login-with-cloud-id() {
+  local cloud_id profile
+  cloud_id=$(ih::setup::core.twg::cloud-id)
+  if [[ -z "${cloud_id}" ]]; then
+    ih::log::debug "could not read the cloud ID from ${IH_TWG_SITE_HOST}"
     return 1
   fi
+
+  local profiles_file="${HOME}/.config/twg/auth-profiles.json"
+  if [[ -f "${profiles_file}" ]]; then
+    cp -p "${profiles_file}" "${profiles_file}.bak"
+    ih::log::info "Saved a copy of the twg profiles to ${profiles_file}.bak"
+  fi
+
+  # Newer twg versions list the login profile in `twg doctor`.
+  profile=$(twg doctor 2>/dev/null | sed -n 's/^ *Login profile: *//p' | head -n 1)
+  if [[ -n "${profile}" ]]; then
+    twg logout --profile "${profile}" >/dev/null 2>&1
+  else
+    twg logout >/dev/null 2>&1
+  fi
+
+  twg login --site "${cloud_id}" || return 1
+  ih::setup::core.twg::signed-in
 }
