@@ -3,48 +3,45 @@
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
 CA_DIR="$HOME/.ih/certs"
-SOURCE_CA_PATH="$IH_CORE_LIB_DIR/core/certificates/certs/grand_rounds_chained_ca.pem"
-INSTALLED_CA_PATH="$CA_DIR/grand_rounds_chained_ca.pem"
-SOURCE_CERT_SCRIPT="$IH_CORE_LIB_DIR/core/certificates/default/11_certificates.sh"
-INSTALLED_CERT_SCRIPT="$IH_DEFAULT_DIR/11_certificates.sh"
+SOURCE_CA_DIR="$IH_CORE_LIB_DIR/core/certificates/certs"
+LEGACY_CERT_SCRIPT="$IH_DEFAULT_DIR/11_certificates.sh"
 MOZILLA_PATH="$CA_DIR/mozilla.pem"
+SYSTEM_BUNDLE="/etc/ssl/cert.pem"
 
 function ih::setup::core.certificates::help() {
   # shellcheck disable=SC2016
-  echo 'Trust the certificates used by the VPN DLP
+  echo 'Place the internal CA certs in $HOME/.ih/certs
 
-    The GlobalProtect VPN uses self-signed certs to
-    intercept and inspect SSL traffic. This is called the
-    Data Loss Prevention or DLP system in various documents
-    The CA used to sign the certs it uses is trusted by the OS,
-    but some tools do not use the OS trust store. This step
-    configures those tools to work correctly.
+    The internal Grand Rounds CA certs are trusted by the OS
+    through the System keychain. Some tools read them from
+    $HOME/.ih/certs instead, such as the Java keystore import
+    in bobs.bazel and docker-compose files that mount
+    mozilla.pem.
 
     This step will:
         - Place the CA files in $HOME/.ih/certs
-        - Update the OpenSSL used by Homebrew
-        - Tell node about the CA using NODE_EXTRA_CA_CERTS
-        - Tell npm/yarn about CA certs
+        - Point $HOME/.ih/certs/mozilla.pem at /etc/ssl/cert.pem
+        - Remove the 11_certificates.sh shell script that older
+          versions installed, which set SSL_CERT_FILE and other
+          variables to a downloaded bundle
     '
 }
 
 # Check if the step has been installed and return 0 if it has.
 # Otherwise return 1.
 function ih::setup::core.certificates::test() {
-  if [ ! -f "$INSTALLED_CERT_SCRIPT" ]; then
+  if [ -f "$LEGACY_CERT_SCRIPT" ]; then
     return 1
   fi
 
-  if [ ! -d "$CA_DIR" ]; then
-    return 1
-  fi
+  local SOURCE_CA
+  for SOURCE_CA in "$SOURCE_CA_DIR"/*.pem; do
+    if ! diff -q "$SOURCE_CA" "$CA_DIR/$(basename "$SOURCE_CA")" >/dev/null 2>&1; then
+      return 1
+    fi
+  done
 
-  # Compare both the CA cert and the certificates script with their sources
-  if [ ! -f "$INSTALLED_CA_PATH" ] || ! diff -q "$SOURCE_CA_PATH" "$INSTALLED_CA_PATH" >/dev/null; then
-    return 1
-  fi
-
-  if ! diff -q "$SOURCE_CERT_SCRIPT" "$INSTALLED_CERT_SCRIPT" >/dev/null; then
+  if [ ! -L "$MOZILLA_PATH" ] || [ "$(readlink "$MOZILLA_PATH")" != "$SYSTEM_BUNDLE" ]; then
     return 1
   fi
 
@@ -59,72 +56,18 @@ function ih::setup::core.certificates::deps() {
 function ih::setup::core.certificates::install() {
   mkdir -p "$CA_DIR"
   ih::log::info "Copying internal CA certs into $CA_DIR"
+  cp -f "$SOURCE_CA_DIR"/*.pem "$CA_DIR"
 
-  cp -f "$IH_CORE_LIB_DIR"/core/certificates/certs/* "$CA_DIR"
-
-  # Our VPN performs an adversary-in-the-middle attack on
-  # many domains so that it can scan traffic in an effort
-  # to improve security. We need our engineering tools
-  # (e.g. pip or npm) to trust the self-signed certificate
-  # the VPN presents when it intercepts this traffic.
-  # Unfortunately some versions of some tools don't trust
-  # the system certificate store or the common OpenSSL store
-  # and instead need to be given a path to CA file containing the
-  # private root cert the VPN uses. Even more unfortunately,
-  # some systems don't fall back to some other CA store when
-  # the path you give them doesn't contain the cert they
-  # are trying to verify, so if you're NOT on the VPN, or
-  # you're hitting a domain which is excluded from the
-  # inspection regime, validation fails because the
-  # cert is NOT signed by our private CA. The solution is
-  # to provide a CA file containing a collection of trusted
-  # CA certs as well as our private CA cert, so that tools
-  # will work in all scenarios. We download a certificate
-  # bundle extracted from Firefox and documented at
-  # https://curl.se/docs/caextract.html.
-  local MOZILLA_BUNDLE_URL="https://curl.se/ca/cacert.pem"
-  ih::log::info "Acquiring cert bundle from Mozilla"
-  # Since we may be on the VPN and not trust the DLP certificate,
-  # or our certificate bundle may be broken, we need to ignore
-  # security problems when downloading the bundle. This is
-  # obviously a security risk in its own right, but that's how
-  # it goes with the VPN "security" system.
-  curl --insecure "$MOZILLA_BUNDLE_URL" >"$MOZILLA_PATH"
-  RESULT=$?
-  if [ $RESULT -ne 0 ]; then
-    ih::log::error "Could not download certificate bundle from $MOZILLA_BUNDLE_URL"
-    return 1
-  fi
-  # Append our DLP certs to the mozilla bundle.
-  cat "$INSTALLED_CA_PATH" >>"$MOZILLA_PATH"
-
-  # Download a CA cert that AWS sometimes uses, which is not
-  # included in the Mozilla bundle. This affects a few people
-  # with no obvious pattern.
-  curl https://www.amazontrust.com/repository/SFSRootCAG2.pem >>"$MOZILLA_PATH"
-
-  # Configure NPM to use the bundle, if npm exists.
-  if command -v npm &>/dev/null; then
-    npm config set cafile "$MOZILLA_PATH"
+  # Device management maintains /etc/ssl/cert.pem and re-links an
+  # existing mozilla.pem to it, so a copy here would be replaced.
+  if [ ! -L "$MOZILLA_PATH" ] || [ "$(readlink "$MOZILLA_PATH")" != "$SYSTEM_BUNDLE" ]; then
+    ih::log::info "Linking $MOZILLA_PATH to $SYSTEM_BUNDLE"
+    rm -f "$MOZILLA_PATH"
+    ln -s "$SYSTEM_BUNDLE" "$MOZILLA_PATH"
   fi
 
-  if command -v yarn &>/dev/null; then
-    # Configure yarn to use the bundle.
-    yarn config set cafile "$MOZILLA_PATH"
+  if [ -f "$LEGACY_CERT_SCRIPT" ]; then
+    ih::log::info "Removing $LEGACY_CERT_SCRIPT. Open a new shell to clear SSL_CERT_FILE and the other variables it set."
+    rm -f "$LEGACY_CERT_SCRIPT"
   fi
-
-  local OPENSSL_PATH OPENSSL_FOUND REHASH_PATH
-  OPENSSL_PATH=$(brew info openssl | grep -oE "/usr/local/etc/openssl.*")
-  OPENSSL_FOUND=$?
-  if [[ "$OPENSSL_FOUND" -eq 0 ]]; then
-    ih::log::info "Copying internal CA cert to brew OpenSSL certs..."
-    cp "$INSTALLED_CA_PATH" "$OPENSSL_PATH"/gr_root_ca.pem
-    REHASH_PATH=$(brew info openssl | grep -oE "/usr/local/opt/openssl.*")
-    $REHASH_PATH
-  fi
-
-  ih::log::info "Rehashing brew OpenSSL certs..."
-  "$(brew --prefix)"/opt/openssl/bin/c_rehash
-
-  cp -f "$SOURCE_CERT_SCRIPT" "$INSTALLED_CERT_SCRIPT"
 }
