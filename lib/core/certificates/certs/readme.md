@@ -2,7 +2,7 @@ These certificates are copied from https://github.com/ConsultingMD/paloaltonetwo
 
 They are the internal Grand Rounds root and DLP CAs. The OS trusts them through the System
 keychain. The core.certificates step copies them to ~/.ih/certs for tools that read them from
-there, such as the Java keystore import in bobs.bazel.
+there, such as docker-compose files that mount mozilla.pem.
 
 If these certs expire John Walsh is probably the person to talk to.
 
