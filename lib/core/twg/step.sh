@@ -68,6 +68,11 @@ function ih::setup::core.twg::install() {
 
   ih::log::warn "twg setup did not finish. Trying to log in with the site cloud ID."
   if ih::setup::core.twg::login-with-cloud-id; then
+    # The login worked, but twg setup stopped there. Run it again so that it
+    # skips the login and finishes the skills and the upkeep.
+    if ! twg setup; then
+      ih::log::warn "twg is logged in, but twg setup did not finish. Run 'twg setup' again later."
+    fi
     return 0
   fi
   ih::log::warn "twg setup did not finish. Run 'twg setup' again later."
@@ -98,7 +103,8 @@ function ih::setup::core.twg::login-with-cloud-id() {
   fi
 
   local profiles_file="${HOME}/.config/twg/auth-profiles.json"
-  if [[ -f "${profiles_file}" ]]; then
+  # Keep the first backup. A second run must not replace it with a logged-out file.
+  if [[ -f "${profiles_file}" && ! -e "${profiles_file}.bak" ]]; then
     cp -p "${profiles_file}" "${profiles_file}.bak"
     ih::log::info "Saved a copy of the twg profiles to ${profiles_file}.bak"
   fi
