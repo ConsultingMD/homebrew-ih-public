@@ -34,7 +34,8 @@ function ih::notify::mac() {
   if notifier="$(ih::notify::find-terminal-notifier)"; then
     local args=(-title "$title" -message "$body")
     if [ -n "$open_file" ]; then
-      args+=(-open "file://${open_file}")
+      # terminal-notifier rejects a URL with a space in it (exit 2).
+      args+=(-open "file://${open_file// /%20}")
     fi
     # terminal-notifier exits non-zero when notifications are turned off for it.
     "$notifier" "${args[@]}" >/dev/null 2>&1 && return 0

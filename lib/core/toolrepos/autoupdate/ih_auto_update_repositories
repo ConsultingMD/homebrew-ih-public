@@ -45,8 +45,10 @@ for repo in "${repos[@]}"; do
   echo "$(date '+%Y-%m-%dT%H:%M:%S%z') Updating $repo"
 
   # Any git error marks this repo as failed and moves on to the next repo.
+  # A repo that was not made with 'git clone' can lack origin/HEAD, so ask the remote for it.
   if ! currentBranch=$(git branch --show-current) \
-    || ! defaultBranch=$(git symbolic-ref --short refs/remotes/origin/HEAD); then
+    || ! defaultBranch=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null \
+      || { git remote set-head origin --auto >/dev/null && git symbolic-ref --short refs/remotes/origin/HEAD; }); then
     failed+=("$repo")
     continue
   fi

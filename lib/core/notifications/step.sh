@@ -2,10 +2,6 @@
 
 # IH_CORE_DIR will be set to the directory containing the bin and lib directories.
 
-# Written after a test notification succeeds. A script cannot read the
-# notification permission without showing a banner, so the test checks this file.
-IH_NOTIFICATIONS_OK_FILE="${HOME}/.ih/state/notifications.ok"
-
 function ih::setup::core.notifications::help() {
   echo 'Allow ih-setup to show notifications that open their log
 
@@ -19,12 +15,16 @@ function ih::setup::core.notifications::help() {
 }
 
 function ih::setup::core.notifications::test() {
-  if ! ih::notify::find-terminal-notifier >/dev/null; then
+  local notifier
+  if ! notifier="$(ih::notify::find-terminal-notifier)"; then
     ih::log::debug "terminal-notifier is not installed"
     return 1
   fi
-  if [ ! -f "$IH_NOTIFICATIONS_OK_FILE" ]; then
-    ih::log::debug "No successful test notification is recorded in $IH_NOTIFICATIONS_OK_FILE"
+  # -diagnose reads the permission without showing a banner. It exits non-zero
+  # when notifications are not allowed, which also catches a permission that a
+  # macOS upgrade reset.
+  if ! "$notifier" -diagnose >/dev/null 2>&1; then
+    ih::log::debug "Notifications are not allowed for terminal-notifier"
     return 1
   fi
 }
@@ -41,12 +41,6 @@ function ih::setup::core.notifications::send-test() {
     -group "ih-setup-test" >/dev/null 2>&1
 }
 
-function ih::setup::core.notifications::record-ok() {
-  mkdir -p "$(dirname "$IH_NOTIFICATIONS_OK_FILE")"
-  touch "$IH_NOTIFICATIONS_OK_FILE"
-  ih::log::info "Notifications for terminal-notifier are on"
-}
-
 function ih::setup::core.notifications::install() {
   local notifier
   if ! notifier="$(ih::notify::find-terminal-notifier)"; then
@@ -56,11 +50,16 @@ function ih::setup::core.notifications::install() {
 
   # If the permission is already on, or macOS asks and you allow it, nothing else is needed.
   if ih::setup::core.notifications::send-test "$notifier"; then
-    ih::setup::core.notifications::record-ok
+    ih::log::info "Notifications for terminal-notifier are on"
     return 0
   fi
 
-  rm -f "$IH_NOTIFICATIONS_OK_FILE"
+  # The steps below wait for you to press Enter, so they only run in a terminal.
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    ih::log::warn "Notifications are turned off for terminal-notifier. Run 'ih-setup install core notifications' in a terminal to turn them on."
+    return 1
+  fi
+
   echo "Notifications are turned off for terminal-notifier."
   echo "ih-setup uses it to tell you when a background update fails."
   echo ""
@@ -73,7 +72,7 @@ function ih::setup::core.notifications::install() {
   ih::ask::enter-continue "When you turned on notifications, press Enter to send a test notification."
 
   if ih::setup::core.notifications::send-test "$notifier"; then
-    ih::setup::core.notifications::record-ok
+    ih::log::info "Notifications for terminal-notifier are on"
     return 0
   fi
 
