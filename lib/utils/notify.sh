@@ -3,6 +3,23 @@
 # Lightweight macOS notification + throttle helpers.
 # Uses terminal-notifier when it is installed, else the built-in osascript.
 
+# Echoes the path of terminal-notifier, or returns 1 if it is not installed.
+# launchd jobs can run with a PATH that does not include Homebrew, so this
+# also looks in the Homebrew bin directories.
+function ih::notify::find-terminal-notifier() {
+  if command -v terminal-notifier 2>/dev/null; then
+    return 0
+  fi
+  local candidate
+  for candidate in /opt/homebrew/bin/terminal-notifier /usr/local/bin/terminal-notifier; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # ih::notify::mac "Title" "Body" [file_to_open]
 # Shows a Notification Center banner on macOS.
 # If terminal-notifier is installed and you give a file, a click on the
@@ -13,23 +30,13 @@ function ih::notify::mac() {
   local body="${2:-}"
   local open_file="${3:-}"
 
-  # launchd jobs can run with a PATH that does not include Homebrew.
   local notifier
-  notifier="$(command -v terminal-notifier 2>/dev/null || true)"
-  if [ -z "$notifier" ]; then
-    for candidate in /opt/homebrew/bin/terminal-notifier /usr/local/bin/terminal-notifier; do
-      if [ -x "$candidate" ]; then
-        notifier="$candidate"
-        break
-      fi
-    done
-  fi
-
-  if [ -n "$notifier" ]; then
+  if notifier="$(ih::notify::find-terminal-notifier)"; then
     local args=(-title "$title" -message "$body")
     if [ -n "$open_file" ]; then
       args+=(-open "file://${open_file}")
     fi
+    # terminal-notifier exits non-zero when notifications are turned off for it.
     "$notifier" "${args[@]}" >/dev/null 2>&1 && return 0
   fi
 
