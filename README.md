@@ -85,9 +85,9 @@ Both daemons:
 
 The banner comes from `terminal-notifier`. When you click it, it opens the log. macOS does not let a
 script turn on notification permission, so the `core.notifications` step asks you to turn it on in
-System Settings, then sends a test notification. If the test fails, the step fails. If
-`terminal-notifier` is blocked, the daemons fall back to `osascript`. A click on that banner opens
-Script Editor, not the log.
+System Settings, then sends a test notification. If the test fails, the step shows a warning, and
+`ih-setup check` reports the step as not installed. If `terminal-notifier` is blocked, the daemons
+fall back to `osascript`. A click on that banner opens Script Editor, not the log.
 
 A repo on a branch that has commits that are not on the default branch is skipped, not reported as a
 failure. The log shows a "Skipping" line for it.

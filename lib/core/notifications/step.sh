@@ -41,11 +41,13 @@ function ih::setup::core.notifications::send-test() {
     -group "ih-setup-test" >/dev/null 2>&1
 }
 
+# This step only warns. Blocked notifications fall back to osascript, so they
+# must not fail ih-setup install, for example on a Mac where MDM blocks them.
 function ih::setup::core.notifications::install() {
   local notifier
   if ! notifier="$(ih::notify::find-terminal-notifier)"; then
-    ih::log::error "terminal-notifier is not installed. Run 'brew install terminal-notifier', then run this step again."
-    return 1
+    ih::log::warn "terminal-notifier is not installed. Run 'brew install terminal-notifier', then run this step again."
+    return 0
   fi
 
   # If the permission is already on, or macOS asks and you allow it, nothing else is needed.
@@ -57,7 +59,7 @@ function ih::setup::core.notifications::install() {
   # The steps below wait for you to press Enter, so they only run in a terminal.
   if [[ ! -t 0 || ! -t 1 ]]; then
     ih::log::warn "Notifications are turned off for terminal-notifier. Run 'ih-setup install core notifications' in a terminal to turn them on."
-    return 1
+    return 0
   fi
 
   echo "Notifications are turned off for terminal-notifier."
@@ -76,6 +78,6 @@ function ih::setup::core.notifications::install() {
     return 0
   fi
 
-  ih::log::error "Notifications for terminal-notifier are still turned off. Turn on Allow notifications for terminal-notifier in System Settings > Notifications, then run this step again."
-  return 1
+  ih::log::warn "Notifications for terminal-notifier are still turned off. Failure notifications will open Script Editor, not the log. Turn on Allow notifications for terminal-notifier in System Settings > Notifications, then run this step again."
+  return 0
 }
