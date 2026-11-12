@@ -6,6 +6,7 @@ set -Eeuo pipefail
 . "${IH_CORE_LIB_DIR:-$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")}/utils/notify.sh"
 
 LOG_DIR="${HOME}/Library/Logs/ih-setup"
+LOG_FILE="${LOG_DIR}/repo-updater.log"
 NOTIFY_SENTINEL="${LOG_DIR}/.notified-repo-updater"
 mkdir -p "$LOG_DIR" || true
 
@@ -13,9 +14,9 @@ function on_exit() {
   local status=$?
   if [ $status -ne 0 ]; then
     local title="IH Setup background updater failed"
-    local body="The repo-updater daemon failed. Open ~/Library/Logs/ih-setup/repo-updater.log for details. If you cannot resolve it, post the last 200 lines of that log in #infrastructure-support on Slack."
+    local body="The repo-updater daemon failed. Open ${LOG_FILE} for details. If you cannot resolve it, post the last 200 lines of that log in #infrastructure-support on Slack."
     if ih::notify::throttle_by_file "$NOTIFY_SENTINEL" 21600; then
-      ih::notify::mac "$title" "$body"
+      ih::notify::mac "$title" "$body" "$LOG_FILE"
     fi
   fi
   return $status
@@ -32,6 +33,8 @@ fi
 # as they are used daily in the SDLC.
 repos=(engineering image-builder janus temporal kafka ih-observability)
 
+failed=()
+
 for repo in "${repos[@]}"; do
   if [[ ! -d "$IH_HOME/$repo" ]]; then
     echo "Skipping $repo (not cloned)" >&2
@@ -39,16 +42,52 @@ for repo in "${repos[@]}"; do
   fi
 
   cd "$IH_HOME/$repo" || continue
+  echo "$(date '+%Y-%m-%dT%H:%M:%S%z') Updating $repo"
 
-  currentBranch=$(git branch --show-current)
-  defaultBranch=$(git branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev)
-
-  # Do git pull only if the default branch is checked out.
-  if [[ "$currentBranch" == "$defaultBranch" ]]; then
-    git pull
-  else
-    # Try to pull the latest into the current branch instead
-    git pull origin "$defaultBranch" --ff-only --autostash
+  # Any git error marks this repo as failed and moves on to the next repo.
+  if ! currentBranch=$(git branch --show-current); then
+    failed+=("$repo")
+    continue
   fi
 
+  # A repo that was not made with 'git clone' can lack origin/HEAD,
+  # so ask the remote for it when it is missing.
+  if ! defaultBranch=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null); then
+    if ! git remote set-head origin --auto >/dev/null; then
+      failed+=("$repo")
+      continue
+    fi
+    if ! defaultBranch=$(git symbolic-ref --short refs/remotes/origin/HEAD); then
+      failed+=("$repo")
+      continue
+    fi
+  fi
+  defaultBranch="${defaultBranch#origin/}"
+
+  if [[ -z "$currentBranch" ]]; then
+    echo "Skipping $repo: HEAD is detached"
+    continue
+  fi
+
+  if ! git fetch origin "$defaultBranch"; then
+    failed+=("$repo")
+    continue
+  fi
+
+  # Bring the checked-out branch up to date only when it fast-forwards.
+  # A branch with its own commits cannot fast-forward. That is normal work
+  # in progress, so skip the repo and do not report a failure.
+  # merge-base exits 0 for "is an ancestor", 1 for "is not", and more on error.
+  ancestor=0
+  git merge-base --is-ancestor HEAD FETCH_HEAD || ancestor=$?
+  case "$ancestor" in
+    0) git merge --ff-only --autostash FETCH_HEAD || failed+=("$repo") ;;
+    1) echo "Skipping $repo: branch $currentBranch has commits that are not on $defaultBranch" ;;
+    *) failed+=("$repo") ;;
+  esac
 done
+
+if [ ${#failed[@]} -gt 0 ]; then
+  echo "Update failed for: ${failed[*]}" >&2
+  exit 1
+fi
