@@ -6,6 +6,7 @@ function ih::setup::core.notifications::help() {
   echo 'Allow ih-setup to show notifications that open their log
 
     This step will:
+    - Install terminal-notifier with Homebrew if it is missing
     - Ask you to allow notifications for terminal-notifier
       in System Settings, and wait for you to confirm
     - Send a test notification to make sure that the permission is on
@@ -46,8 +47,15 @@ function ih::setup::core.notifications::send-test() {
 function ih::setup::core.notifications::install() {
   local notifier
   if ! notifier="$(ih::notify::find-terminal-notifier)"; then
-    ih::log::warn "terminal-notifier is not installed. Run 'brew install terminal-notifier', then run this step again."
-    return 0
+    ih::log::info "Installing terminal-notifier"
+    if ! brew install terminal-notifier; then
+      ih::log::warn "Could not install terminal-notifier. Run 'brew install terminal-notifier', then run this step again."
+      return 0
+    fi
+    if ! notifier="$(ih::notify::find-terminal-notifier)"; then
+      ih::log::warn "terminal-notifier is not on the PATH after the install. Run this step again in a new shell."
+      return 0
+    fi
   fi
 
   # If the permission is already on, or macOS asks and you allow it, nothing else is needed.
