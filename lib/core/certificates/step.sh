@@ -14,9 +14,8 @@ function ih::setup::core.certificates::help() {
 
     The internal Grand Rounds CA certs are trusted by the OS
     through the System keychain. Some tools read them from
-    $HOME/.ih/certs instead, such as the Java keystore import
-    in bobs.bazel and docker-compose files that mount
-    mozilla.pem.
+    $HOME/.ih/certs instead, such as docker-compose files that
+    mount mozilla.pem.
 
     This step will:
         - Place the CA files in $HOME/.ih/certs
