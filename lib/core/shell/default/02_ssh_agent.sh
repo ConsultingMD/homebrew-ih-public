@@ -7,7 +7,7 @@
 # passphrases are in the Keychain. Only the local launchd agent is touched, so a
 # forwarded or third-party agent can't hang shell start. Safe under set -e.
 case "${SSH_AUTH_SOCK:-}" in
-  /private/tmp/com.apple.launchd.*/Listeners)
+  */com.apple.launchd.*/Listeners)
     if [[ -x /usr/bin/ssh-add ]]; then
       ih_ssh_agent_rc=0
       /usr/bin/ssh-add -l >/dev/null 2>&1 || ih_ssh_agent_rc=$?
