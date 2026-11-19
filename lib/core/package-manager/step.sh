@@ -57,7 +57,7 @@ function ih::setup::core.package-manager::help() {
           (set IH_PACKAGE_MANAGER=asdf or IH_PACKAGE_MANAGER=mise to skip the question)
         - Ask again if you run it with -f, so you can switch tools (your current tool is the default)
         - Keep the one you already have installed, if any
-        - Install mise with Homebrew, or asdf by cloning into $HOME/.asdf
+        - Install mise ${MISE_VERSION} with the official installer, or asdf by cloning into $HOME/.asdf
         - Wire the package manager into the shell
         - Install default versions for commonly used apps:
 ${CURRENT_VERSIONS}

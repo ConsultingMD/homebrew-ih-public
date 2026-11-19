@@ -2,6 +2,10 @@
 
 # mise support for the core.package-manager step. step.sh sources this file.
 
+# Keep this version the same as MISE_VER in image-builder's docker/install-mise.sh, which pins
+# the mise version that CI uses. image-builder's CI check fails when the two versions differ.
+MISE_VERSION="v2026.11.5"
+
 MISE_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/package-manager/mise/90_mise.sh"
 MISE_SH_PATH="$IH_DEFAULT_DIR/90_mise.sh"
 
@@ -10,10 +14,20 @@ function ih::pm::mise::tools() {
   awk 'NF >= 2 {print $1 "@" $2}' "$TOOL_VERSIONS_TEMPLATE_PATH"
 }
 
-# Returns 0 if mise is installed, wired into the shell, and has the default tools.
+# Echoes the installed mise version without the leading "v", for example "2026.10.21".
+function ih::pm::mise::installed-version() {
+  mise --version 2>/dev/null | awk 'NR == 1 {print $1}'
+}
+
+# Returns 0 if mise is installed at the pinned version, wired into the shell, and has the default tools.
 function ih::pm::mise::test() {
   if ! command -v mise >/dev/null; then
     ih::log::debug "mise command is not available"
+    return 1
+  fi
+
+  if [[ "$(ih::pm::mise::installed-version)" != "${MISE_VERSION#v}" ]]; then
+    ih::log::debug "Found mise version $(ih::pm::mise::installed-version), expecting ${MISE_VERSION#v}"
     return 1
   fi
 
@@ -39,10 +53,27 @@ function ih::pm::mise::test() {
 }
 
 function ih::pm::mise::install() {
-  if ! command -v mise >/dev/null; then
-    ih::log::info "Installing mise with Homebrew"
-    if ! brew install mise; then
-      ih::log::error "Failed to install mise with brew"
+  if [[ "$(ih::pm::mise::installed-version)" != "${MISE_VERSION#v}" ]]; then
+    ih::log::info "Installing mise ${MISE_VERSION} with the official installer"
+    local INSTALLER
+    INSTALLER=$(mktemp)
+    if ! curl -fsSL -o "$INSTALLER" https://mise.jdx.dev/install.sh; then
+      ih::log::error "Failed to download the mise installer"
+      rm -f "$INSTALLER"
+      return 1
+    fi
+    if ! MISE_VERSION="$MISE_VERSION" sh "$INSTALLER"; then
+      ih::log::error "Failed to install mise ${MISE_VERSION}"
+      rm -f "$INSTALLER"
+      return 1
+    fi
+    rm -f "$INSTALLER"
+
+    # The installer writes to $HOME/.local/bin, which the shell augment puts ahead of Homebrew.
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if [[ "$(ih::pm::mise::installed-version)" != "${MISE_VERSION#v}" ]]; then
+      ih::log::error "mise at $(command -v mise) is version $(ih::pm::mise::installed-version), expecting ${MISE_VERSION#v}"
       return 1
     fi
   fi
