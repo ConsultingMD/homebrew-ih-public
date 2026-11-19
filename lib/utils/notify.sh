@@ -8,6 +8,11 @@
 function ih::notify::mac() {
   local title="${1:?title is required}"
   local body="${2:-}"
+  # Escape backslashes and double quotes for the AppleScript string.
+  title="${title//\\/\\\\}"
+  title="${title//\"/\\\"}"
+  body="${body//\\/\\\\}"
+  body="${body//\"/\\\"}"
   # Guard if osascript is unavailable (e.g., in non-macOS test shells)
   if command -v osascript >/dev/null 2>&1; then
     osascript -e "display notification \"${body}\" with title \"${title}\"" \
@@ -37,7 +42,7 @@ function ih::notify::throttle_by_file() {
     mtime="$(stat -c '%Y' "$sentinel_path")"
   fi
   now="$(date +%s)"
-  age=$(( now - mtime ))
+  age=$((now - mtime))
   if [ "$age" -ge "$window_seconds" ]; then
     # Refresh sentinel and allow notify
     touch "$sentinel_path"
@@ -45,4 +50,3 @@ function ih::notify::throttle_by_file() {
   fi
   return 1
 }
-

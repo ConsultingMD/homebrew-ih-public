@@ -7,7 +7,7 @@
 # launchd starts this weekly and at login. If Claude Code is open, the run is skipped
 # and the update waits for the next login or the next week.
 
-set -Eeuo pipefail
+set -o pipefail
 
 IH_CORE_LIB_DIR=${IH_CORE_LIB_DIR:?IH_CORE_LIB_DIR is required}
 

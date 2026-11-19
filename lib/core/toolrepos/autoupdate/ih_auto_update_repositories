@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -Eeuo pipefail
+set -Eu -o pipefail
 
 # shellcheck source=/dev/null
 . "${IH_CORE_LIB_DIR:-$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")}/utils/notify.sh"
@@ -40,15 +40,20 @@ for repo in "${repos[@]}"; do
 
   cd "$IH_HOME/$repo" || continue
 
-  currentBranch=$(git branch --show-current)
-  defaultBranch=$(git branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev)
+  currentBranch=$(git branch --show-current || true)
+  defaultBranch=$(git branch -rl '*/HEAD' | rev | cut -d/ -f1 | rev || true)
+
+  if [[ -z "$defaultBranch" ]]; then
+    echo "Skipping $repo (no default branch found)" >&2
+    continue
+  fi
 
   # Do git pull only if the default branch is checked out.
   if [[ "$currentBranch" == "$defaultBranch" ]]; then
-    git pull
+    git pull || echo "Failed to update $repo" >&2
   else
     # Try to pull the latest into the current branch instead
-    git pull origin "$defaultBranch" --ff-only --autostash
+    git pull origin "$defaultBranch" --ff-only --autostash || echo "Failed to update $repo" >&2
   fi
 
 done

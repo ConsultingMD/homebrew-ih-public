@@ -1,26 +1,11 @@
 #!/bin/bash
 
-# IH_CORE_DIR will be set to the directory containing the bin and lib directories.
+# asdf support for the core.package-manager step. step.sh sources this file.
 
-ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/default/90_asdf.sh"
+ASDF_SH_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/package-manager/asdf/90_asdf.sh"
 ASDF_SH_PATH="$IH_DEFAULT_DIR/90_asdf.sh"
-TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/asdf/.tool-versions"
+TOOL_VERSIONS_TEMPLATE_PATH="$IH_CORE_LIB_DIR/core/package-manager/.tool-versions"
 ASDF_VERSION="v0.14.1"
-
-function ih::setup::core.asdf::help() {
-
-  local CURRENT_VERSIONS
-  CURRENT_VERSIONS=$(awk -v fmt="           %s %s\n" '{ printf fmt, $1, $2}' <"$TOOL_VERSIONS_TEMPLATE_PATH")
-  echo "Install common asdf plugins and wire into shell
-
-    This step will:
-        - Install asdf by cloning into $HOME/.asdf (if it isn't installed)
-        - Wire asdf shims into the shell
-        - Install asdf plugins for commonly used apps
-        - Install default versions for commonly used apps:
-${CURRENT_VERSIONS}
-    "
-}
 
 function detect_brew_asdf() {
   # Check if asdf is installed via Homebrew
@@ -71,9 +56,8 @@ function check_asdf_version() {
   return 0
 }
 
-# Check if the step has been installed and return 0 if it has.
-# Otherwise return 1.
-function ih::setup::core.asdf::test() {
+# Returns 0 if asdf is installed, wired into the shell, and has the default tools.
+function ih::pm::asdf::test() {
   if ! command -v asdf >/dev/null; then
     ih::log::debug "asdf command is not available"
     return 1
@@ -131,10 +115,6 @@ function ih::setup::core.asdf::test() {
   return 0
 }
 
-function ih::setup::core.asdf::deps() {
-  echo "core.shell core.git"
-}
-
 function recreate_shims() {
   ih::log::info "Removing existing asdf shims..."
   if [ -d "$HOME/.asdf/shims" ]; then
@@ -171,7 +151,7 @@ function clean_and_install_asdf() {
   return 0
 }
 
-function ih::setup::core.asdf::install() {
+function ih::pm::asdf::install() {
   if detect_brew_asdf; then
     uninstall_brew_asdf
     # Even if user chooses not to uninstall, we continue with the rest of the setup
@@ -232,6 +212,8 @@ function ih::setup::core.asdf::install() {
 
   ih::log::info "Copying augment file for shell"
   cp -f "$ASDF_SH_TEMPLATE_PATH" "$ASDF_SH_PATH"
+  # Only one package manager can own the shell, so drop the mise augment file.
+  rm -f "$IH_DEFAULT_DIR/90_mise.sh"
 
   export IH_WANT_RE_SOURCE=1
 }
