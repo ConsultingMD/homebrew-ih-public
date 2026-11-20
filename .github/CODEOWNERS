@@ -1,1 +1,5 @@
 * @ConsultingMD/infrastructure
+
+# Platform folks need to be able to make, review and approve platform changes
+/platform/ @ConsultingMD/infrastructure
+**/*.tf @ConsultingMD/infrastructure
