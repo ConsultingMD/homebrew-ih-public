@@ -89,8 +89,12 @@ System Settings, then sends a test notification. If the test fails, the step sho
 `ih-setup check` reports the step as not installed. If `terminal-notifier` is blocked, the daemons
 fall back to `osascript`. A click on that banner opens Script Editor, not the log.
 
-A repo on a branch that has commits that are not on the default branch is skipped, not reported as a
-failure. The log shows a "Skipping" line for it.
+A repo on a branch that has its own commits gets a merge of the default branch into that branch. The
+updater merges only when tracked files have no uncommitted changes. If the merge conflicts, the
+updater aborts it and skips the repo, so it never leaves a half-finished merge behind. It sends one
+notification that names each repo where it merged. It sends no notification for a fast-forward on the
+default branch, because that adds no commit to a branch of yours. The log shows a "Skipping" line for
+a repo it did not change.
 
 To simulate a failure for testing, you can run a daemon with `SIMULATE_FAILURE=1`, for example:
 
@@ -100,6 +104,12 @@ SIMULATE_FAILURE=1 "$IH_CORE_LIB_DIR/core/toolrepos/autoupdate/ih_auto_update_re
 ```
 
 ## Working in this repo
+
+### How to test the repo-updater
+
+Run `meta/test-repo-updater`. It builds throwaway repositories in a temporary directory and checks
+each merge case, including the notification text. It does not touch your real clones or your home
+directory.
 
 ### How to release a new version
 

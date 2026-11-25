@@ -34,6 +34,7 @@ fi
 repos=(engineering image-builder janus temporal kafka ih-observability)
 
 failed=()
+merged=()
 
 for repo in "${repos[@]}"; do
   if [[ ! -d "$IH_HOME/$repo" ]]; then
@@ -74,18 +75,48 @@ for repo in "${repos[@]}"; do
     continue
   fi
 
-  # Bring the checked-out branch up to date only when it fast-forwards.
-  # A branch with its own commits cannot fast-forward. That is normal work
-  # in progress, so skip the repo and do not report a failure.
+  # Bring the checked-out branch up to date. A branch that is behind the
+  # default branch fast-forwards. A branch on its own line of work cannot
+  # fast-forward, so merge the default branch into it instead.
   # merge-base exits 0 for "is an ancestor", 1 for "is not", and more on error.
   ancestor=0
   git merge-base --is-ancestor HEAD FETCH_HEAD || ancestor=$?
   case "$ancestor" in
     0) git merge --ff-only --autostash FETCH_HEAD || failed+=("$repo") ;;
-    1) echo "Skipping $repo: branch $currentBranch has commits that are not on $defaultBranch" ;;
+    1)
+      # The branch may already contain the default branch from an earlier run.
+      if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+        echo "Skipping $repo: $currentBranch already contains $defaultBranch"
+      # A merge needs a clean tree for the tracked files, because a background
+      # daemon must not mix the user's edits into a merge commit.
+      elif ! git diff-index --quiet HEAD --; then
+        echo "Skipping $repo: branch $currentBranch has uncommitted changes"
+      elif git merge --no-edit FETCH_HEAD; then
+        echo "Merged $defaultBranch into $currentBranch in $repo"
+        merged+=("$defaultBranch into $currentBranch in $repo")
+      else
+        # A conflict must not leave a half-finished merge in the background.
+        git merge --abort >/dev/null 2>&1 || true
+        echo "Skipping $repo: cannot merge $defaultBranch into $currentBranch cleanly"
+      fi
+      ;;
     *) failed+=("$repo") ;;
   esac
 done
+
+# Tell the user about each merge into a working branch, because that commit
+# lands on their branch. A fast-forward on the default branch adds no commit
+# of its own, so it needs no message.
+if [ ${#merged[@]} -gt 0 ]; then
+  details=""
+  for item in "${merged[@]}"; do
+    if [ -n "$details" ]; then
+      details+="; "
+    fi
+    details+="$item"
+  done
+  ih::notify::mac "IH Setup merged the default branch into your branch" "Merged $details" || true
+fi
 
 if [ ${#failed[@]} -gt 0 ]; then
   echo "Update failed for: ${failed[*]}" >&2
