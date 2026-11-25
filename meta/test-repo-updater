@@ -1,0 +1,198 @@
+#!/bin/bash
+
+# Tests the repo-updater against throwaway git repositories. It never touches
+# your real clones or your real home directory.
+#
+# Each case below maps to one of the six repos the updater knows about. A fake
+# terminal-notifier records the banners, so the test checks the notifications
+# without showing them.
+
+set -Eeuo pipefail
+
+THIS_DIR=$(dirname "$(realpath "$0")")
+UPDATER="$THIS_DIR/../lib/core/toolrepos/autoupdate/ih_auto_update_repositories"
+WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/ih-repo-updater-test.XXXXXX")
+trap 'rm -rf "$WORK_DIR"' EXIT
+
+export GIT_AUTHOR_NAME=repo-updater-test
+export GIT_AUTHOR_EMAIL=repo-updater-test@example.com
+export GIT_COMMITTER_NAME=repo-updater-test
+export GIT_COMMITTER_EMAIL=repo-updater-test@example.com
+export GIT_CONFIG_GLOBAL="$WORK_DIR/gitconfig"
+export GIT_CONFIG_SYSTEM=/dev/null
+: >"$GIT_CONFIG_GLOBAL"
+
+export HOME="$WORK_DIR/home"
+export IH_HOME="$WORK_DIR/home"
+export IH_CORE_LIB_DIR="$THIS_DIR/../lib"
+mkdir -p "$HOME"
+
+# A fake terminal-notifier that records the banner instead of showing it.
+FAKE_BIN="$WORK_DIR/bin"
+NOTIFY_LOG="$WORK_DIR/notifications.log"
+mkdir -p "$FAKE_BIN"
+cat >"$FAKE_BIN/terminal-notifier" <<'FAKE'
+#!/bin/bash
+printf '%s\n' "$*" >>"$NOTIFY_LOG"
+FAKE
+chmod +x "$FAKE_BIN/terminal-notifier"
+export NOTIFY_LOG
+export PATH="$FAKE_BIN:$PATH"
+
+failures=0
+function not_grep() {
+  ! grep -q "$@"
+}
+
+function check() {
+  local description="$1"
+  shift
+  if "$@"; then
+    echo "ok: $description"
+  else
+    echo "FAIL: $description" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+function make_origin() {
+  local name="$1" branch="$2"
+  git init -q --bare -b "$branch" "$WORK_DIR/remote/$name.git"
+  git init -q -b "$branch" "$WORK_DIR/seed/$name"
+  (
+    cd "$WORK_DIR/seed/$name"
+    echo "line one" >file.txt
+    git add file.txt
+    git commit -qm "first"
+    git remote add origin "$WORK_DIR/remote/$name.git"
+    git push -q origin "$branch"
+  )
+}
+
+function clone() {
+  local name="$1"
+  git clone -q "$WORK_DIR/remote/$name.git" "$HOME/$name"
+}
+
+function advance_origin() {
+  local name="$1" branch="$2"
+  (
+    cd "$WORK_DIR/seed/$name"
+    echo "$3" >>file.txt
+    git commit -qam "second"
+    git push -q origin "$branch"
+  )
+}
+
+# engineering: behind master, so it fast-forwards and needs no banner.
+make_origin engineering master
+clone engineering
+
+# image-builder: own commit on master's line, so the updater merges master in.
+make_origin image-builder master
+clone image-builder
+(
+  cd "$HOME/image-builder"
+  git checkout -qb feature
+  echo feature >feature.txt
+  git add feature.txt
+  git commit -qm feature
+)
+
+# janus: same case on a repo whose default branch is main.
+make_origin janus main
+clone janus
+(
+  cd "$HOME/janus"
+  git checkout -qb bug/thing
+  echo fix >fix.txt
+  git add fix.txt
+  git commit -qm fix
+)
+
+# temporal: the merge conflicts, so the updater must abort and leave no trace.
+make_origin temporal master
+clone temporal
+(
+  cd "$HOME/temporal"
+  git checkout -qb conflict
+  echo "my line" >file.txt
+  git commit -qam mine
+)
+
+# kafka: uncommitted tracked changes, so the updater must not merge.
+make_origin kafka master
+clone kafka
+(
+  cd "$HOME/kafka"
+  git checkout -qb work
+  echo tracked >tracked.txt
+  git add tracked.txt
+  git commit -qm tracked
+  echo "unsaved" >>tracked.txt
+)
+
+advance_origin engineering master "second"
+advance_origin image-builder master "second"
+advance_origin janus main "second"
+advance_origin temporal master "second"
+advance_origin kafka master "second"
+
+temporal_head_before=$(git -C "$HOME/temporal" rev-parse HEAD)
+kafka_head_before=$(git -C "$HOME/kafka" rev-parse HEAD)
+
+status=0
+"$UPDATER" || status=$?
+
+check "the updater exits 0" [ "$status" -eq 0 ]
+
+check "engineering fast-forwarded onto master" \
+  git -C "$HOME/engineering" merge-base --is-ancestor origin/master HEAD
+check "engineering stayed on master" \
+  [ "$(git -C "$HOME/engineering" branch --show-current)" = "master" ]
+
+check "image-builder merged master into feature" \
+  git -C "$HOME/image-builder" merge-base --is-ancestor origin/master HEAD
+check "image-builder kept its own commit" \
+  git -C "$HOME/image-builder" merge-base --is-ancestor HEAD~1 HEAD
+check "image-builder stayed on feature" \
+  [ "$(git -C "$HOME/image-builder" branch --show-current)" = "feature" ]
+
+check "janus merged main into bug/thing" \
+  git -C "$HOME/janus" merge-base --is-ancestor origin/main HEAD
+check "janus stayed on bug/thing" \
+  [ "$(git -C "$HOME/janus" branch --show-current)" = "bug/thing" ]
+
+check "temporal kept its branch" \
+  [ "$(git -C "$HOME/temporal" branch --show-current)" = "conflict" ]
+check "temporal kept its commit" \
+  [ "$(git -C "$HOME/temporal" rev-parse HEAD)" = "$temporal_head_before" ]
+check "temporal has no merge in progress" \
+  [ ! -f "$HOME/temporal/.git/MERGE_HEAD" ]
+check "temporal has a clean working tree" \
+  [ -z "$(git -C "$HOME/temporal" status --porcelain)" ]
+
+check "kafka kept its uncommitted change" \
+  grep -qx "unsaved" "$HOME/kafka/tracked.txt"
+check "kafka kept its commit" \
+  [ "$(git -C "$HOME/kafka" rev-parse HEAD)" = "$kafka_head_before" ]
+
+check "ih-observability was not cloned" [ ! -d "$HOME/ih-observability" ]
+
+check "one banner was sent" [ "$(wc -l <"$NOTIFY_LOG" | tr -d ' ')" -eq 1 ]
+check "the banner names image-builder" grep -q "master into feature in image-builder" "$NOTIFY_LOG"
+check "the banner names janus" grep -q "main into bug/thing in janus" "$NOTIFY_LOG"
+check "the banner does not name engineering" \
+  not_grep "in engineering" "$NOTIFY_LOG"
+
+# A second run must not merge again or send another banner.
+status=0
+"$UPDATER" || status=$?
+check "the second run exits 0" [ "$status" -eq 0 ]
+check "the second run sends no banner" [ "$(wc -l <"$NOTIFY_LOG" | tr -d ' ')" -eq 1 ]
+
+if [ "$failures" -gt 0 ]; then
+  echo "$failures check(s) failed" >&2
+  exit 1
+fi
+echo "All repo-updater checks passed"
